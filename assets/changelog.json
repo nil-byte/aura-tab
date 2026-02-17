@@ -1,4 +1,22 @@
 {
+  "3.4.1": {
+    "en": [
+      "WebDAV Password Toggle: Show/hide password visibility button",
+      "Backup Stability Fix: Fixed DOMException in icon cache export",
+      "Code Cleanup: Removed legacy migration code"
+    ],
+    "zh_CN": [
+      "WebDAV 密码显示切换：添加显示/隐藏密码按钮",
+      "备份稳定性修复：修复图标缓存导出时的 DOMException",
+      "代码清理：移除旧版迁移代码"
+    ],
+    "zh_TW": [
+      "WebDAV 密碼顯示切換：新增顯示/隱藏密碼按鈕",
+      "備份穩定性修復：修復圖示快取匯出時的 DOMException",
+      "代碼清理：移除舊版遷移代碼"
+    ],
+    "moreUrl": ""
+  },
   "3.4": {
     "en": [
       "i18n Support: Full Chinese and English localization",
