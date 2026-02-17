@@ -56,9 +56,7 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 
 ### Chrome Web Store (Recommended)
 
-<a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank">
-  <img src="https://developer.chrome.com/webstore/images/ChromeWebStore_BadgeWBorder_v2_206x58.png" alt="Available in the Chrome Web Store">
-</a>
+[![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/adeamimoopnlcflnpjgcfmebboajlkja.svg?label=Chrome%20Web%20Store&style=for-the-badge&logo=googlechrome&logoColor=white&color=brightgreen)](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja)
 
 Or install directly from [Chrome Web Store](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja)
 
@@ -205,9 +203,7 @@ Background image sources:
 
 ### Chrome Web Store（推荐）
 
-<a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank">
-  <img src="https://developer.chrome.com/webstore/images/ChromeWebStore_BadgeWBorder_v2_206x58.png" alt="在 Chrome Web Store 中安装">
-</a>
+[![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/adeamimoopnlcflnpjgcfmebboajlkja.svg?label=Chrome%20Web%20Store&style=for-the-badge&logo=googlechrome&logoColor=white&color=brightgreen)](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja)
 
 或直接访问 [Chrome Web Store](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja) 安装
 
