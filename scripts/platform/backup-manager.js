@@ -291,14 +291,18 @@ export class BackupManager {
         const file = new ZipPassThrough(path);
         zipper.add(file);
         const reader = blob.stream().getReader();
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            if (value && value.length) {
-                file.push(value, false);
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value && value.length) {
+                    file.push(value, false);
+                }
             }
+            file.push(new Uint8Array(0), true);
+        } finally {
+            reader.releaseLock();
         }
-        file.push(new Uint8Array(0), true);
     }
     async _databaseExists(name) {
         try {
@@ -381,7 +385,8 @@ export class BackupManager {
             if (config.required) {
                 throw error;
             }
-            console.warn(`[BackupManager] _exportIDBToZipStream ${configKey} error:`, error);
+            const errorMsg = error?.message || String(error);
+            console.warn(`[BackupManager] _exportIDBToZipStream ${configKey} error: ${errorMsg}`, error);
         }
         this._addFileToZip(zipper, `${basePath}/index.json`, strToU8(JSON.stringify(indexEntries, null, 2)));
         onProgress?.(100);
