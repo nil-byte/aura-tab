@@ -14,7 +14,12 @@ const IDB_CONFIGS = {
     iconCache: {
         dbName: 'aura-tab-icon-cache',
         storeName: 'icons',
-        version: 1,
+        version: 2,
+        keyPath: 'cacheKey',
+        indexes: [
+            { name: 'lastAccessedAt', keyPath: 'lastAccessedAt', unique: false },
+            { name: 'cachedAt', keyPath: 'cachedAt', unique: false }
+        ],
         blobFields: ['blob'],
         required: false
     },
@@ -22,6 +27,7 @@ const IDB_CONFIGS = {
         dbName: 'aura-tab-toolbar-icon',
         storeName: 'icons',
         version: 1,
+        keyPath: 'id',
         blobFields: ['imageBlob'],
         required: false
     },
@@ -29,6 +35,13 @@ const IDB_CONFIGS = {
         dbName: 'aura-tab-assets',
         storeName: 'images',
         version: 1,
+        keyPath: 'id',
+        indexes: [
+            { name: 'lastAccessedAt', keyPath: 'lastAccessedAt', unique: false },
+            { name: 'cachedAt', keyPath: 'cachedAt', unique: false },
+            { name: 'isUserPinned', keyPath: 'isUserPinned', unique: false },
+            { name: 'status', keyPath: 'status', unique: false }
+        ],
         blobFields: ['thumbnailBlob', 'fullBlob'],
         required: true
     },
@@ -36,6 +49,7 @@ const IDB_CONFIGS = {
         dbName: 'aura-tab-local-files',
         storeName: 'files',
         version: 1,
+        keyPath: 'id',
         blobFields: ['fullBlob', 'smallBlob'],
         required: true
     }
@@ -359,7 +373,7 @@ export class BackupManager {
             for (let i = 0; i < entries.length; i++) {
                 const entry = entries[i];
                 const indexEntry = { ...entry };
-                const entryId = this._sanitizeZipPathSegment(entry.id || entry.hostname || `entry_${i}`);
+                const entryId = this._sanitizeZipPathSegment(entry.id || entry.cacheKey || entry.hostname || `entry_${i}`);
                 for (const blobField of config.blobFields) {
                     const blob = entry[blobField];
                     if (blob instanceof Blob && blob.size > 0) {
@@ -448,21 +462,115 @@ export class BackupManager {
         const time = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
         return `aura-tab-backup_${date}_${time}.zip`;
     }
-    _openDatabase(dbName, version, storeName) {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(dbName, version);
+    async _getExistingDatabaseVersion(dbName) {
+        if (typeof indexedDB?.databases !== 'function') {
+            return null;
+        }
+        try {
+            const dbs = await indexedDB.databases();
+            if (!Array.isArray(dbs)) {
+                return null;
+            }
+            const matched = dbs.find((db) => db?.name === dbName && Number.isFinite(db?.version));
+            if (!matched) {
+                return null;
+            }
+            const version = Number(matched.version);
+            return Number.isFinite(version) && version > 0 ? version : null;
+        } catch {
+            return null;
+        }
+    }
+    _isVersionError(error) {
+        if (!error) {
+            return false;
+        }
+        if (error.name === 'VersionError') {
+            return true;
+        }
+        const message = error?.message || String(error);
+        return /requested version .* less than the existing version/i.test(message);
+    }
+    async _resolveOpenVersion(dbName, fallbackVersion) {
+        const configuredVersion = Number.isFinite(fallbackVersion) && fallbackVersion > 0
+            ? Math.floor(fallbackVersion)
+            : null;
+        const existingVersion = await this._getExistingDatabaseVersion(dbName);
+        if (existingVersion && configuredVersion) {
+            return Math.max(existingVersion, configuredVersion);
+        }
+        return existingVersion || configuredVersion || undefined;
+    }
+    _resolveStoreSchema(dbName, storeName) {
+        if (dbName === STAGING_DB_CONFIG.dbName && storeName === STAGING_DB_CONFIG.storeName) {
+            return { keyPath: 'path', indexes: [] };
+        }
+        const matched = Object.values(IDB_CONFIGS).find((config) =>
+            config.dbName === dbName && config.storeName === storeName
+        );
+        if (matched) {
+            return {
+                keyPath: matched.keyPath || 'id',
+                indexes: Array.isArray(matched.indexes) ? matched.indexes : []
+            };
+        }
+        return { keyPath: 'id', indexes: [] };
+    }
+    _createObjectStoreWithSchema(db, storeName, schema) {
+        const keyPath = schema?.keyPath || 'id';
+        const store = db.createObjectStore(storeName, { keyPath });
+        if (Array.isArray(schema?.indexes)) {
+            for (const index of schema.indexes) {
+                if (!index?.name || !index?.keyPath) continue;
+                if (!store.indexNames.contains(index.name)) {
+                    store.createIndex(index.name, index.keyPath, { unique: Boolean(index.unique) });
+                }
+            }
+        }
+        return store;
+    }
+    async _openDatabase(dbName, version, storeName) {
+        const schema = this._resolveStoreSchema(dbName, storeName);
+        const openWithVersion = (openVersion) => new Promise((resolve, reject) => {
+            const hasVersion = Number.isFinite(openVersion) && openVersion > 0;
+            const request = hasVersion ? indexedDB.open(dbName, openVersion) : indexedDB.open(dbName);
             request.onerror = () => reject(request.error);
             request.onsuccess = () => resolve(request.result);
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                const keyPath =
-                    dbName === STAGING_DB_CONFIG.dbName ? 'path' :
-                        storeName === 'icons' ? 'hostname' : 'id';
+                const upgradeTx = event.target.transaction;
                 if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName, { keyPath });
+                    this._createObjectStoreWithSchema(db, storeName, schema);
+                    return;
+                }
+                if (!upgradeTx || !Array.isArray(schema?.indexes) || schema.indexes.length === 0) {
+                    return;
+                }
+                const store = upgradeTx.objectStore(storeName);
+                for (const index of schema.indexes) {
+                    if (!index?.name || !index?.keyPath) continue;
+                    if (!store.indexNames.contains(index.name)) {
+                        store.createIndex(index.name, index.keyPath, { unique: Boolean(index.unique) });
+                    }
                 }
             };
         });
+        const targetVersion = await this._resolveOpenVersion(dbName, version);
+        let db;
+        try {
+            db = await openWithVersion(targetVersion);
+        } catch (error) {
+            if (!this._isVersionError(error)) {
+                throw error;
+            }
+            db = await openWithVersion(undefined);
+        }
+        if (storeName && !db.objectStoreNames.contains(storeName)) {
+            const nextVersion = Math.max((db.version || 0) + 1, (targetVersion || 0) + 1, 1);
+            db.close();
+            db = await openWithVersion(nextVersion);
+        }
+        return db;
     }
     async _getCurrentWebdavConfig() {
         try {
@@ -668,10 +776,29 @@ export class BackupManager {
     }
     async _importIDBFromStaging(configKey, stagingDb, basePath, onProgress) {
         const config = IDB_CONFIGS[configKey];
-        const indexData = await this._getStagingFile(stagingDb, `${basePath}/index.json`);
-        if (!indexData) {
-            if (config.required) throw new Error('backup_integrity_check_failed');
+        try {
+            const indexData = await this._getStagingFile(stagingDb, `${basePath}/index.json`);
+            if (!indexData) {
+                if (config.required) throw new Error('backup_integrity_check_failed');
+                const db = await this._openDatabase(config.dbName, config.version, config.storeName);
+                try {
+                    await new Promise((resolve, reject) => {
+                        const tx = db.transaction(config.storeName, 'readwrite');
+                        const store = tx.objectStore(config.storeName);
+                        const req = store.clear();
+                        req.onsuccess = () => resolve();
+                        req.onerror = () => reject(req.error);
+                    });
+                } finally {
+                    db.close();
+                }
+                onProgress?.(100);
+                return;
+            }
+            const index = JSON.parse(await indexData.text());
+            if (!Array.isArray(index)) throw new Error('backup_integrity_check_failed');
             const db = await this._openDatabase(config.dbName, config.version, config.storeName);
+            const total = index.length;
             try {
                 await new Promise((resolve, reject) => {
                     const tx = db.transaction(config.storeName, 'readwrite');
@@ -680,57 +807,47 @@ export class BackupManager {
                     req.onsuccess = () => resolve();
                     req.onerror = () => reject(req.error);
                 });
+                if (index.length === 0) {
+                    onProgress?.(100);
+                    return;
+                }
+                for (let i = 0; i < index.length; i++) {
+                    const entry = { ...index[i] };
+                    for (const blobField of config.blobFields) {
+                        const blobRef = entry[blobField];
+                        if (blobRef && typeof blobRef === 'object' && blobRef._blobRef) {
+                            const blobPath = `${basePath}/${blobRef._blobRef}`;
+                            const blobData = await this._getStagingFile(stagingDb, blobPath);
+                            if (blobData) {
+                                entry[blobField] = new Blob([blobData], { type: blobRef.type || 'application/octet-stream' });
+                            } else {
+                                delete entry[blobField];
+                            }
+                        }
+                    }
+                    await new Promise((resolve, reject) => {
+                        const tx = db.transaction(config.storeName, 'readwrite');
+                        const store = tx.objectStore(config.storeName);
+                        const req = store.put(entry);
+                        req.onsuccess = () => resolve();
+                        req.onerror = () => reject(req.error);
+                    });
+                    if (total > 0) {
+                        onProgress?.(((i + 1) / total) * 100);
+                    }
+                }
             } finally {
                 db.close();
             }
             onProgress?.(100);
-            return;
-        }
-        const index = JSON.parse(await indexData.text());
-        if (!Array.isArray(index)) throw new Error('backup_integrity_check_failed');
-        const db = await this._openDatabase(config.dbName, config.version, config.storeName);
-        const total = index.length;
-        try {
-            await new Promise((resolve, reject) => {
-                const tx = db.transaction(config.storeName, 'readwrite');
-                const store = tx.objectStore(config.storeName);
-                const req = store.clear();
-                req.onsuccess = () => resolve();
-                req.onerror = () => reject(req.error);
-            });
-            if (index.length === 0) {
-                onProgress?.(100);
-                return;
+        } catch (error) {
+            if (config.required) {
+                throw error;
             }
-            for (let i = 0; i < index.length; i++) {
-                const entry = { ...index[i] };
-                for (const blobField of config.blobFields) {
-                    const blobRef = entry[blobField];
-                    if (blobRef && typeof blobRef === 'object' && blobRef._blobRef) {
-                        const blobPath = `${basePath}/${blobRef._blobRef}`;
-                        const blobData = await this._getStagingFile(stagingDb, blobPath);
-                        if (blobData) {
-                            entry[blobField] = new Blob([blobData], { type: blobRef.type || 'application/octet-stream' });
-                        } else {
-                            delete entry[blobField];
-                        }
-                    }
-                }
-                await new Promise((resolve, reject) => {
-                    const tx = db.transaction(config.storeName, 'readwrite');
-                    const store = tx.objectStore(config.storeName);
-                    const req = store.put(entry);
-                    req.onsuccess = () => resolve();
-                    req.onerror = () => reject(req.error);
-                });
-                if (total > 0) {
-                    onProgress?.(((i + 1) / total) * 100);
-                }
-            }
-        } finally {
-            db.close();
+            const errorMsg = error?.message || String(error);
+            console.warn(`[BackupManager] _importIDBFromStaging ${configKey} error: ${errorMsg}`, error);
+            onProgress?.(100);
         }
-        onProgress?.(100);
     }
 }
 let _backupManagerInstance = null;
@@ -740,4 +857,3 @@ export function getBackupManager() {
     }
     return _backupManagerInstance;
 }
-
