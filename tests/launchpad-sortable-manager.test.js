@@ -25,7 +25,7 @@ describe('Launchpad SortableManager', () => {
             getSortableImpl: async () => FakeSortable
         });
 
-        const mgr = launchpad._sortableManager;
+        const mgr = launchpad._gridSortableManager;
         expect(mgr.isReady).toBe(false);
 
         const ok1 = await mgr.preload();
@@ -48,7 +48,7 @@ describe('Launchpad SortableManager', () => {
                 .mockResolvedValueOnce(function SortableOk() {})
         });
 
-        const mgr = launchpad._sortableManager;
+        const mgr = launchpad._gridSortableManager;
 
         const ok1 = await mgr.preload();
         expect(ok1).toBe(false);
@@ -85,7 +85,7 @@ describe('Launchpad SortableManager', () => {
             getSortableImpl: async () => FakeSortable
         });
 
-        const mgr = launchpad._sortableManager;
+        const mgr = launchpad._gridSortableManager;
         const pageEl = document.createElement('div');
 
         // Not ready yet => null
@@ -126,7 +126,7 @@ describe('Launchpad SortableManager', () => {
             getSortableImpl: async () => FakeSortable
         });
 
-        const mgr = launchpad._sortableManager;
+        const mgr = launchpad._gridSortableManager;
         const pageEl = document.createElement('div');
 
         await mgr.preload();

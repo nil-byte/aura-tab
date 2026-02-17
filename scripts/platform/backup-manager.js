@@ -450,21 +450,12 @@ export class BackupManager {
             request.onsuccess = () => resolve(request.result);
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                const desiredKeyPath =
+                const keyPath =
                     dbName === STAGING_DB_CONFIG.dbName ? 'path' :
                         storeName === 'icons' ? 'hostname' : 'id';
-                if (db.objectStoreNames.contains(storeName)) {
-                    if (dbName === STAGING_DB_CONFIG.dbName) {
-                        const tx = event.target.transaction;
-                        const store = tx.objectStore(storeName);
-                        if (store.keyPath !== desiredKeyPath) {
-                            db.deleteObjectStore(storeName);
-                            db.createObjectStore(storeName, { keyPath: desiredKeyPath });
-                        }
-                    }
-                    return;
+                if (!db.objectStoreNames.contains(storeName)) {
+                    db.createObjectStore(storeName, { keyPath });
                 }
-                db.createObjectStore(storeName, { keyPath: desiredKeyPath });
             };
         });
     }

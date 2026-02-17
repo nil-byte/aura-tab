@@ -208,8 +208,6 @@ export class Launchpad {
         this._tasks = new AsyncTaskTracker();
         this._gridSortableManager = new SortableManager();
         this._folderSortableManager = new SortableManager();
-        // Backward compatibility for existing tests/consumers.
-        this._sortableManager = this._gridSortableManager;
 
         this._pendingRerender = false;
         this._deferredRerenderExecutor = null;

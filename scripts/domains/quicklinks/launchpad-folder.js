@@ -123,7 +123,7 @@ export const launchpadFolderMethods = {
     },
 
     _getFolderSortableManager() {
-        return this._folderSortableManager || this._gridSortableManager || this._sortableManager;
+        return this._folderSortableManager || this._gridSortableManager;
     },
 
     _buildFolderPaginationMeta(childrenLength) {

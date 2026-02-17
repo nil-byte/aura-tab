@@ -260,7 +260,7 @@ async function _handleImportData(e) {
     const { toast } = await import('../../shared/toast.js');
 
     if (!file.name.toLowerCase().endsWith('.zip')) {
-        toast(t('importFormatChanged') || 'Data format upgraded, old version (.json) import not supported', { type: 'error' });
+        toast(t('importFormatChanged') || 'Please select a valid ZIP file', { type: 'error' });
         return;
     }
 
