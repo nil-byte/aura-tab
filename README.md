@@ -1,8 +1,8 @@
 # Aura Tab
 
-[![Tests](https://github.com/nil-byte/Chrono-Tab/actions/workflows/ci.yml/badge.svg)](https://github.com/nil-byte/Chrono-Tab/actions)
+[![Tests](https://github.com/nil-byte/aura-tab/actions/workflows/ci.yml/badge.svg)](https://github.com/nil-byte/aura-tab/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/nil-byte/Chrono-Tab/releases)
+[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/nil-byte/aura-tab/releases)
 
 A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backgrounds, quick links management, and immersive photo viewing.
 
@@ -34,7 +34,7 @@ Coming soon...
 
 ### Manual Installation (Developer Mode)
 
-1. Download the latest release from [Releases](https://github.com/nil-byte/Chrono-Tab/releases)
+1. Download the latest release from [Releases](https://github.com/nil-byte/aura-tab/releases)
 2. Unzip the file
 3. Open Chrome/Edge and navigate to `chrome://extensions` or `edge://extensions`
 4. Enable "Developer mode" in the top right
@@ -52,8 +52,8 @@ Coming soon...
 
 ```bash
 # Clone the repository
-git clone https://github.com/nil-byte/Chrono-Tab.git
-cd Chrono-Tab
+git clone https://github.com/nil-byte/aura-tab.git
+cd aura-tab
 
 # Install dependencies
 npm install

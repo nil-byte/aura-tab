@@ -139,7 +139,7 @@ export function registerDataContent(window) {
                     <div class="mac-settings-row" style="flex-direction: column; align-items: flex-start;">
                         <p class="mac-settings-row-desc" style="margin: 0; line-height: 1.6;">
                             <span data-i18n="settingsPrivacyText"></span>
-                            <a href="https://nil-byte.github.io/ChronoTab-privacy-policy/" target="_blank" rel="noopener noreferrer" data-i18n="settingsPrivacyLink" style="color: var(--mac-accent-color);"></a>
+                            <a href="https://nil-byte.github.io/aura-tab-privacy-policy/" target="_blank" rel="noopener noreferrer" data-i18n="settingsPrivacyLink" style="color: var(--mac-accent-color);"></a>
                         </p>
                     </div>
                 </div>
