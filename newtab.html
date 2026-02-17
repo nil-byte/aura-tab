@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-i18n-title="pageTitle" style="background:#1a1a2e;">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Tab</title>
+    <script src="scripts/boot/first-paint.js"></script>
+    <!-- Bundled CSS for faster new-tab startup (generated) -->
+    <link rel="stylesheet" href="styles/bundle.css">
+    <link rel="stylesheet" href="styles/photos.css">
+</head>
+
+<body>
+    <!-- Background container dynamically created by backgrounds/index.js -->
+
+    <!-- Add dynamic glow effect -->
+    <div class="light-orb"></div>
+
+    <!-- ================================================
+         Core Interaction Area - Highest DOM priority, ensure Tab key reaches first
+         ================================================ -->
+
+    <div class="layout-container">
+        <!-- Clock container -->
+        <div class="clock-container">
+            <div class="clock-wrapper">
+                <div class="clock" id="clock">00:00</div>
+                <div class="date" id="date">Monday, January 01</div>
+            </div>
+        </div>
+
+        <!-- Search box container - use autofocus for gentle focus -->
+        <div class="search-container" id="searchContainer">
+            <div class="search-engine-wrapper">
+                <button class="search-engine-btn" id="searchEngineBtn" data-i18n="ariaSwitchEngine"
+                    data-i18n-attr="aria-label" aria-label="" tabindex="-1">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                    </svg>
+                </button>
+            </div>
+            <input type="text" class="search-input" id="searchInput" data-i18n="searchPlaceholder" placeholder=""
+                autofocus>
+        </div>
+    </div>
+
+    <!-- Quick links container - fixed Dock at bottom -->
+    <div class="quicklinks-container" id="quicklinksContainer" data-style="medium">
+        <!-- Launchpad button -->
+        <button class="launchpad-btn" id="launchpadBtn" data-i18n="ariaLaunchpad" data-i18n-attr="aria-label"
+            aria-label="" tabindex="-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="2.5" y="2.5" width="8.5" height="8.5" rx="1.5" />
+                <rect x="13" y="2.5" width="8.5" height="8.5" rx="1.5" />
+                <rect x="2.5" y="13" width="8.5" height="8.5" rx="1.5" />
+                <rect x="13" y="13" width="8.5" height="8.5" rx="1.5" />
+            </svg>
+        </button>
+
+        <!-- Left divider line -->
+        <div class="dock-separator" aria-hidden="true"></div>
+        <!-- Quick links list -->
+        <ul class="quicklinks-list" id="quicklinksList"></ul>
+        <!-- Right divider line -->
+        <div class="dock-separator" aria-hidden="true"></div>
+        <!-- Add button -->
+        <div class="quicklinks-add-wrapper">
+            <button class="quicklinks-add-btn" id="quicklinksAddBtn" data-i18n="ariaAddLink" data-i18n-attr="aria-label"
+                aria-label="" tabindex="-1">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================================================
+         Modal / Overlay Area - Hidden by default, does not affect Tab order
+         ================================================ -->
+
+    <!-- Launchpad Overlay -->
+    <div class="launchpad-overlay" id="launchpadOverlay" data-modal="true" role="dialog" aria-modal="true"
+        data-i18n="ariaLaunchpad" data-i18n-attr="aria-label" aria-label="" aria-hidden="true">
+        <div class="launchpad-container" id="launchpadContainer">
+            <!-- Search bar -->
+            <div class="launchpad-search-bar">
+                <svg class="launchpad-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+                <input type="text" class="launchpad-search-input" id="launchpadSearchInput" data-i18n="searchApps"
+                    placeholder="" autocomplete="off">
+            </div>
+            <!-- Pagination container -->
+            <div class="launchpad-pages-wrapper">
+                <div class="launchpad-pages" id="launchpadPages"></div>
+            </div>
+            <!-- Page indicator -->
+            <div class="launchpad-indicator" id="launchpadIndicator"></div>
+        </div>
+    </div>
+
+    <!-- Mac-style settings window -->
+    <div class="mac-window-overlay mac-settings-overlay" id="macSettingsOverlay" data-modal="true" role="dialog"
+        aria-modal="true" aria-labelledby="macSettingsTitle" aria-hidden="true">
+        <div class="mac-window mac-settings-window" id="macSettingsWindow">
+            <!-- Dynamically rendered by mac-settings/index.js -->
+        </div>
+    </div>
+
+    <!-- Photo album window -->
+    <div class="mac-window-overlay photos-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true"
+        aria-labelledby="photosWindowTitle" aria-hidden="true">
+        <div class="mac-window photos-window" id="photosWindow">
+            <!-- Dynamically rendered by photos/photos-window.js -->
+        </div>
+    </div>
+
+    <!-- Search engine selector modal -->
+    <div class="engine-switcher-overlay" id="engineSwitcherOverlay" data-modal="true">
+        <div class="engine-switcher" id="engineSwitcher">
+            <div class="engine-switcher-buttons" id="engineSwitcherButtons">
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick link edit dialog -->
+    <div class="quicklink-dialog-overlay" id="quicklinkDialogOverlay" data-modal="true">
+        <div class="quicklink-dialog" id="quicklinkDialog">
+            <div class="quicklink-dialog-header">
+                <h3 id="quicklinkDialogTitle" data-i18n="dialogAddLink"></h3>
+                <button class="close-btn" id="quicklinkDialogClose" data-i18n="ariaClose" data-i18n-attr="aria-label"
+                    aria-label="">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18" />
+                        <path d="M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="quicklink-dialog-content">
+                <div class="quicklink-dialog-preview">
+                    <div class="quicklink-preview-icon" id="quicklinkPreviewIcon">
+                        <span class="preview-fallback">?</span>
+                    </div>
+                </div>
+                <div class="quicklink-dialog-form">
+                    <label class="quicklink-form-label">
+                        <span data-i18n="dialogTitle"></span>
+                        <input type="text" id="quicklinkTitleInput" data-i18n="dialogTitlePlaceholder" placeholder=""
+                            maxlength="64">
+                    </label>
+                    <label class="quicklink-form-label">
+                        <span data-i18n="dialogUrl"></span>
+                        <input type="url" id="quicklinkUrlInput" data-i18n="dialogUrlPlaceholder" placeholder=""
+                            maxlength="512">
+                    </label>
+                    <label class="quicklink-form-option" for="quicklinkDockCheckbox">
+                        <input type="checkbox" id="quicklinkDockCheckbox">
+                        <span data-i18n="dialogShowInDock"></span>
+                    </label>
+                    <label class="quicklink-form-label">
+                        <span><span data-i18n="dialogCustomIcon"></span> <small>(<span
+                                    data-i18n="dialogOptional"></span>)</small></span>
+                        <input type="url" id="quicklinkIconInput" data-i18n="dialogCustomIconPlaceholder" placeholder=""
+                            maxlength="512">
+                    </label>
+                    <label class="quicklink-form-label">
+                        <span><span data-i18n="dialogTags"></span> <small>(<span
+                                    data-i18n="dialogOptional"></span>)</small></span>
+                        <div class="quicklink-tags-wrapper">
+                            <div class="quicklink-tags-container" id="quicklinkTagsContainer"></div>
+                            <input type="text" id="quicklinkTagsInput" data-i18n="dialogTagsPlaceholder" placeholder=""
+                                maxlength="10" autocomplete="off">
+                            <div class="quicklink-tags-suggestions" id="quicklinkTagsSuggestions"></div>
+                        </div>
+                    </label>
+                    <div class="quicklink-form-action hidden" id="quicklinkRefreshIconRow">
+                        <button type="button" class="quicklink-btn quicklink-btn-text" id="quicklinkRefreshIconBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12a9 9 0 11-2.636-6.364" />
+                                <path d="M21 3v6h-6" />
+                            </svg>
+                            <span id="quicklinkRefreshIconLabel" data-i18n="iconCacheRefreshBtn"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="quicklink-dialog-footer">
+                <button class="quicklink-btn quicklink-btn-secondary hidden" id="quicklinkDeleteBtn"
+                    data-i18n="dialogDelete"></button>
+                <button class="quicklink-btn quicklink-btn-primary" id="quicklinkSaveBtn"
+                    data-i18n="dialogSave"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick link context menu -->
+    <div class="quicklink-context-menu" id="quicklinkContextMenu" data-modal="true" role="menu" aria-label=""
+        aria-hidden="true">
+    </div>
+
+    <!-- ================================================
+         Auxiliary buttons - Lowest DOM priority, end of Tab order
+         ================================================ -->
+
+    <!-- Top-left hotspot - refresh background button -->
+    <div class="corner-zone corner-top-left" id="cornerTopLeft">
+        <button class="refresh-bg-btn" id="refreshBgBtn" data-i18n="ariaRefreshBg" data-i18n-attr="aria-label"
+            aria-label="" tabindex="-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 11-2.636-6.364" />
+                <path d="M21 3v6h-6" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Top-right hotspot - image info (author + favorite + download) -->
+    <div class="corner-zone corner-top-right disabled" id="cornerTopRight">
+        <div class="photo-info hidden" id="photoInfo">
+            <a class="photo-author" id="photoAuthor" href="#" target="_blank" rel="noopener noreferrer" tabindex="-1">
+                <span class="author-prefix" data-i18n="photoByPrefix"></span><span class="author-name"
+                    id="authorName"></span>
+            </a>
+            <button class="favorite-bg-btn" id="favoriteBgBtn" data-i18n="ariaFavorite" data-i18n-attr="aria-label"
+                aria-label="" tabindex="-1">
+                <svg class="favorite-icon-empty" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                </svg>
+                <svg class="favorite-icon-filled hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                </svg>
+            </button>
+            <button class="download-bg-btn" id="downloadBgBtn" data-i18n="ariaDownloadBg" data-i18n-attr="aria-label"
+                aria-label="" tabindex="-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom-left hotspot - settings button -->
+    <div class="corner-zone corner-bottom-left" id="cornerBottomLeft">
+        <button class="settings-btn" id="settingsBtn" data-i18n="ariaSettings" data-i18n-attr="aria-label" aria-label=""
+            tabindex="-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                    d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Bottom-right hotspot - search button -->
+    <div class="corner-zone corner-bottom-right" id="cornerBottomRight">
+        <button class="search-toggle-btn" id="searchToggleBtn" data-i18n="ariaSearch" data-i18n-attr="aria-label"
+            aria-label="" tabindex="-1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.35-4.35" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Script loading (single entry point, all modules explicitly initialized) -->
+    <script type="module" src="scripts/main.js"></script>
+</body>
+
+</html>

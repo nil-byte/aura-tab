@@ -1,0 +1,38 @@
+{
+  "extName": {
+    "message": "Aura Tab",
+    "description": "Extension name displayed in browser"
+  },
+  "macSettingsChangelog": {
+    "message": "更新日志",
+    "description": "Settings sidebar label"
+  },
+  "macSettingsChangelogEmpty": {
+    "message": "暂无更新日志",
+    "description": "Changelog empty message"
+  },
+  "extDescription": {
+    "message": "重塑新标签页美学。独家动态光晕与毛玻璃质感，搭配 4K 高清壁纸与灵动 Dock 栏。原生极速，零广告零追踪。",
+    "description": "Extension description displayed in browser and store"
+  },
+  "changelog_title": {
+    "message": "更新日志",
+    "description": "Changelog popover title"
+  },
+  "changelog_subtitle": {
+    "message": "版本",
+    "description": "Changelog popover version label"
+  },
+  "changelog_ignore_this_version": {
+    "message": "本版本不再提醒",
+    "description": "Ignore current version button"
+  },
+  "changelog_learn_more": {
+    "message": "了解更多",
+    "description": "Learn more button"
+  },
+  "changelog_close": {
+    "message": "关闭",
+    "description": "Close button"
+  }
+}

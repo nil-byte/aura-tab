@@ -1,0 +1,104 @@
+{
+  "3.4": {
+    "en": [
+      "i18n Support: Full Chinese and English localization",
+      "Smart Background Cropping: Auto-crop based on screen size and focal point",
+      "Background Transitions: Smooth fade animations when switching backgrounds",
+      "First Paint Optimization: Faster initial load with color persistence",
+      "Toolbar Icon Customization: Upload, apply, and reset custom toolbar icons",
+      "Launchpad Folder Enhancement: Pin to Dock, responsive layout support",
+      "Background Cache Management: Configurable TTL, max entries, and size limits"
+    ],
+    "zh_CN": [
+      "国际化支持：完整的中英文本地化",
+      "背景智能裁剪：根据屏幕尺寸和焦点自动裁剪",
+      "背景过渡动画：切换背景时平滑淡入淡出效果",
+      "首屏加载优化：颜色持久化，更快显示初始界面",
+      "工具栏图标定制：上传、应用、重置自定义图标",
+      "启动台文件夹增强：支持固定到 Dock、响应式布局",
+      "背景缓存管理：可配置 TTL、最大条目数、大小限制"
+    ],
+    "zh_TW": [
+      "國際化支援：完整的中英文本地化",
+      "背景智慧裁剪：根據螢幕尺寸和焦點自動裁剪",
+      "背景過渡動畫：切換背景時平滑淡入淡出效果",
+      "首屏載入優化：顏色持久化，更快顯示初始介面",
+      "工具列圖示自訂：上傳、套用、重設自訂圖示",
+      "啟動台資料夾增強：支援釘選到 Dock、響應式佈局",
+      "背景快取管理：可設定 TTL、最大項目數、大小限制"
+    ],
+    "moreUrl": ""
+  },
+  "3.3": {
+    "en": [
+      "Cloud Backup: WebDAV support for Nutstore, Synology NAS, etc.",
+      "Unified Backup Format: Local export now uses ZIP with all data",
+      "Breaking: Old JSON exports (.json) are no longer supported"
+    ],
+    "zh_CN": [
+      "云端备份：支持坚果云、群晖 NAS 等 WebDAV 服务",
+      "统一备份格式：本地导出现采用 ZIP 包含所有数据",
+      "破坏性变更：不再支持旧版 JSON 导出文件"
+    ],
+    "zh_TW": [
+      "雲端備份：支援堅果雲、群暉 NAS 等 WebDAV 服務",
+      "統一備份格式：本地匯出現採用 ZIP 包含所有資料",
+      "破壞性變更：不再支援舊版 JSON 匯出檔案"
+    ],
+    "moreUrl": ""
+  },
+  "3.2": {
+    "en": [
+      "New Quick Link Manager: Search, pagination, and bulk actions",
+      "Storage Engine Upgrade: Migrated to chunked format (v5) for stability",
+      "Performance: Optimized local file storage using IndexedDB",
+      "UI Refinement: Modernized Settings sidebar with SF Symbols"
+    ],
+    "zh_CN": [
+      "全新快速链接管理器：支持搜索、分页与批量操作",
+      "存储引擎升级：迁移至 v5 分块格式，读写更快更安全",
+      "底层性能优化：采用 IndexedDB 管理本地文件存储",
+      "视觉细节打磨：设置侧边栏采用 SF Symbols 风格图标"
+    ],
+    "zh_TW": [
+      "全新快速連結管理器：支援搜尋、分頁與批次操作",
+      "儲存引擎升級：遷移至 v5 分塊格式，讀寫更快更安全",
+      "底層效能優化：採用 IndexedDB 管理本地檔案儲存",
+      "視覺細節打磨：設定側邊欄採用 SF Symbols 風格圖示"
+    ],
+    "moreUrl": ""
+  },
+  "3.1": {
+    "en": [
+      "Interaction Experience: Refactored layout with new search and Launchpad shortcuts",
+      "Performance, stability and visual refinements across the board"
+    ],
+    "zh_CN": [
+      "交互体验升级：重构布局，新增搜索与启动台快捷键",
+      "全面优化性能、稳定性与细节视觉表现"
+    ],
+    "zh_TW": [
+      "交互體驗升級：重構佈局，新增搜尋與啟動台快捷鍵",
+      "全面優化效能、穩定性與細節視覺表現"
+    ],
+    "moreUrl": ""
+  },
+  "3.0": {
+    "en": [
+      "New top-right changelog popover after updates",
+      "Improved performance and memory usage",
+      "Better i18n support and theme integration"
+    ],
+    "zh_CN": [
+      "更新后右上角新增更新日志弹窗",
+      "性能与内存优化",
+      "完善多语言与主题适配"
+    ],
+    "zh_TW": [
+      "更新後右上角新增更新日誌彈窗",
+      "效能與記憶體優化",
+      "完善多語言與主題適配"
+    ],
+    "moreUrl": ""
+  }
+}

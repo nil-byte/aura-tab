@@ -1,0 +1,18 @@
+# 浏览器插件应该忽略的文件
+.DS_Store
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Test coverage
+coverage/
+
+*.zip
+
+macos-web-main/
+macnewtab-main/
+vue-web-liquid-glass-main/
+assets/app-icons/
+.alma-snapshots
+docs/
