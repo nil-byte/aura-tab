@@ -24,7 +24,27 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 
 ## Screenshots
 
-![Aura Tab Preview](assets/backgrounds/Background1.jpg)
+### Main Interface
+
+![Aura Tab Preview](assets/other/case1.jpg)
+
+### Quick Links & Launchpad
+
+![Quick Links](assets/other/case2.jpg)
+
+### Settings Window
+
+![Settings](assets/other/setting.jpg)
+
+### Photo Viewer
+
+![Photo Viewer](assets/other/photo.jpg)
+
+### More Features
+
+![Features](assets/other/case3.jpg)
+
+![Details](assets/other/case4.jpg)
 
 ## Installation
 
