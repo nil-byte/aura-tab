@@ -2,7 +2,8 @@
 
 [![Tests](https://github.com/nil-byte/aura-tab/actions/workflows/ci.yml/badge.svg)](https://github.com/nil-byte/aura-tab/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/nil-byte/aura-tab/releases)
+[![Version](https://img.shields.io/badge/version-3.4-blue.svg)](https://github.com/nil-byte/aura-tab/releases)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-brightgreen)](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja)
 
 A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backgrounds, quick links management, and immersive photo viewing.
 
@@ -12,15 +13,20 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 
 ## Features
 
-- 🎨 **Smart Backgrounds**: Auto-crop based on screen size with focal point detection
-- 🖼️ **Multiple Sources**: Support for local files, Unsplash, Pixabay, and Pexels
-- 🔗 **Quick Links Manager**: Folder support, drag-and-drop, search, and pagination
-- 🎬 **Smooth Transitions**: Beautiful fade animations when switching backgrounds
+- 🎨 **Smart Backgrounds**: Auto-crop based on screen size with focal point detection, smart aspect ratio adaptation
+- 🖼️ **Multiple Sources**: Support for local files, Unsplash, Pixabay, and Pexels with configurable rotation
+- 🔗 **Quick Links Manager**: Folder support, drag-and-drop sorting, instant search, pagination, and pin to dock
+- 📑 **Bookmark Import**: One-click import from Chrome bookmarks with automatic deduplication
+- 🎬 **Smooth Transitions**: Beautiful fade animations when switching backgrounds with configurable interval
 - 🌐 **i18n Support**: Full Chinese (Simplified/Traditional) and English localization
-- ⚡ **Performance First**: First Paint optimization, background caching with TTL
-- 🎭 **Toolbar Icon Customization**: Upload and apply your own toolbar icons
-- 📱 **Responsive Design**: Adapts to different screen sizes and densities
-- 🔒 **Privacy Focused**: WebDAV backup support for Nutstore, Synology NAS, etc.
+- ⚡ **Performance First**: First Paint optimization, background caching with TTL, lazy loading
+- 🎭 **Toolbar Icon Customization**: Upload and apply your own toolbar icons with instant preview
+- 📱 **Responsive Design**: Adapts to different screen sizes, densities, and orientations
+- 🔒 **Privacy Focused**: WebDAV backup support for Nutstore, Synology NAS, etc., no data collection
+- 🖼️ **Immersive Photo Viewer**: Fullscreen browsing with keyboard navigation and EXIF display
+- ⚙️ **Flexible Settings**: Background blur effects, clock styles, search engine customization
+- 📦 **Launchpad Mode**: macOS-style application launcher with folder organization
+- 🔄 **Auto-refresh**: Configurable background refresh with warmup cache strategy
 
 ## Screenshots
 
@@ -50,7 +56,11 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 
 ### Chrome Web Store (Recommended)
 
-Coming soon...
+<a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank">
+  <img src="https://developer.chrome.com/webstore/images/ChromeWebStore_BadgeWBorder_v2_206x58.png" alt="Available in the Chrome Web Store">
+</a>
+
+Or install directly from [Chrome Web Store](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja)
 
 ### Manual Installation (Developer Mode)
 
@@ -98,7 +108,9 @@ Aura-Tab/
 │   │   ├── backgrounds/    # Background system
 │   │   ├── quicklinks/     # Quick links & launchpad
 │   │   ├── settings/       # Settings window
-│   │   └── ...
+│   │   ├── bookmarks/      # Bookmark import/export
+│   │   ├── photos/         # Immersive photo viewer
+│   │   └── changelog/      # Version changelog
 │   ├── platform/       # Platform abstractions
 │   └── shared/         # Shared utilities
 ├── tests/              # Test files (Vitest)
@@ -137,30 +149,20 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `test:` Adding or updating tests
 - `refactor:` Code refactoring
 - `perf:` Performance improvements
-
-## Roadmap
-
-- [ ] Chrome Web Store publication
-- [ ] Firefox support
-- [ ] Weather widget
-- [ ] Todo list integration
-- [ ] More background sources
-- [ ] Custom CSS themes
+- `chore:` Build process or auxiliary tool changes
 
 ## Changelog
 
 See [assets/changelog.json](assets/changelog.json) for detailed version history.
 
-### Latest (v2.7.0)
+### Latest (v3.4)
 
-- i18n Support: Full Chinese and English localization
-- Smart Background Cropping: Auto-crop based on screen size
-- Background Transitions: Smooth fade animations
-- First Paint Optimization: Faster initial load
-- Toolbar Icon Customization: Upload custom icons
-- Launchpad Folder Enhancement: Pin to Dock support
-- Background Cache Management: Configurable TTL and limits
-- Immersive Photo Viewer: Fullscreen browsing experience
+- Background System: Multi-source support, smart cropping, smooth transitions
+- Quick Links: Folder support, drag-and-drop, search, bookmark import
+- Photo Viewer: Immersive fullscreen experience
+- i18n: Full Chinese and English localization
+- Toolbar Customization: Custom icon support
+- WebDAV Backup: Privacy-focused data backup
 
 ## License
 
@@ -168,30 +170,50 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 ## Acknowledgments
 
-- [Unsplash](https://unsplash.com) for beautiful images
-- [Interact.js](https://interactjs.io) for drag-and-drop functionality
-- [SortableJS](https://sortablejs.github.io) for sorting capabilities
-- [fflate](https://github.com/101arrowz/fflate) for compression
+This project uses the following open-source libraries:
+
+- [Interact.js](https://interactjs.io) - Drag and drop, resizing and multi-touch gestures
+- [SortableJS](https://sortablejs.github.io/Sortable) - Reorderable drag-and-drop lists
+- [fflate](https://github.com/101arrowz/fflate) - High performance compression library
+
+Background image sources:
+
+- [Unsplash](https://unsplash.com) - Beautiful free photos
+- [Pixabay](https://pixabay.com) - Free images and videos
+- [Pexels](https://pexels.com) - Free stock photos
 
 ---
 
 ## 功能特性
 
-- 🎨 **智能背景裁剪**：根据屏幕尺寸和焦点自动裁剪
-- 🖼️ **多源支持**：本地文件、Unsplash、Pixabay、Pexels
-- 🔗 **快速链接管理器**：文件夹支持、拖拽排序、搜索、分页
-- 🎬 **平滑过渡动画**：切换背景时淡入淡出效果
+- 🎨 **智能背景系统**：根据屏幕尺寸自动裁剪、焦点检测、智能宽高比适配
+- 🖼️ **多源支持**：本地文件、Unsplash、Pixabay、Pexels，可配置轮播
+- 🔗 **快速链接管理器**：文件夹支持、拖拽排序、即时搜索、分页、固定到 Dock
+- 📑 **书签导入**：一键从 Chrome 书签导入，自动去重
+- 🎬 **平滑过渡动画**：切换背景时淡入淡出，可配置切换间隔
 - 🌐 **国际化**：完整的中英文（简/繁）支持
-- ⚡ **性能优先**：首屏优化、背景缓存、TTL 管理
-- 🎭 **工具栏图标定制**：上传并应用自定义图标
-- 📱 **响应式设计**：适配不同屏幕尺寸
-- 🔒 **隐私保护**：支持 WebDAV 备份（坚果云、群晖等）
+- ⚡ **性能优先**：首屏优化、背景缓存、TTL 管理、懒加载
+- 🎭 **工具栏图标定制**：上传并应用自定义图标，实时预览
+- 📱 **响应式设计**：适配不同屏幕尺寸、密度和方向
+- 🔒 **隐私保护**：支持 WebDAV 备份（坚果云、群晖等），不收集任何数据
+- 🖼️ **沉浸式照片查看器**：全屏浏览、键盘导航、EXIF 信息显示
+- ⚙️ **灵活设置**：背景模糊效果、时钟样式、搜索引擎自定义
+- 📦 **启动台模式**：macOS 风格的应用启动器，支持文件夹组织
+- 🔄 **自动刷新**：可配置的背景刷新，预热缓存策略
 
 ## 安装
 
+### Chrome Web Store（推荐）
+
+<a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank">
+  <img src="https://developer.chrome.com/webstore/images/ChromeWebStore_BadgeWBorder_v2_206x58.png" alt="在 Chrome Web Store 中安装">
+</a>
+
+或直接访问 [Chrome Web Store](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja) 安装
+
 ### 手动安装（开发者模式）
 
-1. 下载最新版本
+1. 从 [Releases](https://github.com/nil-byte/aura-tab/releases) 下载最新版本
 2. 解压文件
 3. 打开 Chrome/Edge，访问 `chrome://extensions` 或 `edge://extensions`
 4. 开启右上角"开发者模式"
@@ -201,3 +223,8 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 ## 感谢
 
 如果这个项目对你有帮助，请给个 ⭐ Star！
+
+欢迎通过以下方式支持项目：
+- 在 [Chrome Web Store](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja) 留下评价
+- 向朋友推荐
+- 提交 Issue 或 Pull Request
