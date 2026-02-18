@@ -30,13 +30,17 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 
 ## Screenshots
 
-### Main Interface
+### Desktop Experience
 
-![Aura Tab Preview](assets/other/case1.jpg)
+![Desktop](assets/other/desktop.png)
 
-### Quick Links & Launchpad
+### Dock & Quick Links
 
-![Quick Links](assets/other/case2.jpg)
+![Dock](assets/other/Dock.png)
+
+### Launchpad Mode
+
+![Launchpad](assets/other/launchpad.png)
 
 ### Settings Window
 
@@ -48,9 +52,7 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 
 ### More Features
 
-![Features](assets/other/case3.jpg)
-
-![Details](assets/other/case4.jpg)
+![Features](assets/other/case.jpg)
 
 ## Installation
 

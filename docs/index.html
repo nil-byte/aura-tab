@@ -3,912 +3,380 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Tab - A Beautiful New Tab Extension</title>
-    <meta name="description" content="A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backgrounds, quick links management, and immersive photo viewing.">
-    <meta property="og:title" content="Aura Tab - A Beautiful New Tab Extension">
-    <meta property="og:description" content="Smart backgrounds, quick links, immersive photo viewer, and more. Transform your browser new tab page.">
-    <meta property="og:image" content="images/case1.jpg">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://nil-byte.github.io/aura-tab/">
-    <meta name="twitter:card" content="summary_large_image">
+    <title>Aura Tab — Reimagining Your New Tab</title>
+    <meta name="description" content="A minimalist, native-feeling New Tab extension for macOS lovers.">
     <link rel="icon" type="image/png" href="images/icon128.png">
+
     <style>
-        /* ===== Reset & Base ===== */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            --accent: #0A84FF;
-            --accent-hover: #0070E0;
-            --accent-light: rgba(10, 132, 255, 0.08);
-            --accent-glow: rgba(10, 132, 255, 0.15);
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f7;
-            --bg-card: #ffffff;
-            --bg-card-hover: #fafafa;
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-tertiary: #86868b;
-            --border-color: rgba(0, 0, 0, 0.06);
-            --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
-            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.06), 0 24px 64px rgba(0, 0, 0, 0.1);
-            --shadow-screenshot: 0 16px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
-            --nav-bg: rgba(255, 255, 255, 0.72);
-            --nav-blur: saturate(180%) blur(20px);
-            --radius: 16px;
-            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-            --max-width: 1200px;
-            --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --hero-glow-1: rgba(10, 132, 255, 0.08);
-            --hero-glow-2: rgba(88, 86, 214, 0.06);
+            --bg: #ffffff;
+            --fg: #1d1d1f;
+            --gray: #86868b;
+            --link: #0066cc;
+            --nav-bg: rgba(255, 255, 255, 0.7);
+            --border: rgba(0,0,0,0.06);
+            --blur: saturate(180%) blur(20px);
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+            --max-w: 1020px;
         }
 
-        html[data-theme="dark"] {
-            --accent-light: rgba(10, 132, 255, 0.12);
-            --accent-glow: rgba(10, 132, 255, 0.2);
-            --bg-primary: #000000;
-            --bg-secondary: #111113;
-            --bg-card: #1c1c1e;
-            --bg-card-hover: #222224;
-            --text-primary: #f5f5f7;
-            --text-secondary: #a1a1a6;
-            --text-tertiary: #6e6e73;
-            --border-color: rgba(255, 255, 255, 0.06);
-            --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
-            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.2), 0 12px 32px rgba(0, 0, 0, 0.25);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 64px rgba(0, 0, 0, 0.35);
-            --shadow-screenshot: 0 16px 48px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
-            --nav-bg: rgba(17, 17, 19, 0.72);
-            --hero-glow-1: rgba(10, 132, 255, 0.06);
-            --hero-glow-2: rgba(88, 86, 214, 0.05);
+        [data-theme="dark"] {
+            --bg: #000000;
+            --fg: #f5f5f7;
+            --gray: #86868b;
+            --link: #2997ff;
+            --nav-bg: rgba(0, 0, 0, 0.7);
+            --border: rgba(255,255,255,0.12);
         }
 
-        html.theme-transition,
-        html.theme-transition *,
-        html.theme-transition *::before,
-        html.theme-transition *::after {
-            transition: background-color 0.5s ease, color 0.4s ease,
-                        border-color 0.4s ease, box-shadow 0.4s ease,
-                        fill 0.4s ease, stroke 0.4s ease !important;
-        }
-
-        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+        
         body {
             font-family: var(--font);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.5;
+            background-color: var(--bg);
+            color: var(--fg);
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
             overflow-x: hidden;
+            line-height: 1.47059;
+            letter-spacing: -0.011em;
         }
 
-        a { color: var(--accent); text-decoration: none; transition: color 0.2s ease; }
-        a:hover { color: var(--accent-hover); }
-        img { max-width: 100%; height: auto; display: block; }
+        a { text-decoration: none; color: inherit; transition: all 0.3s var(--ease); }
+        img { display: block; width: 100%; height: auto; }
 
-        .container {
-            max-width: var(--max-width);
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        /* ===== Animations ===== */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
-        }
-        .fade-in.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .fade-in-delay-1 { transition-delay: 0.12s; }
-        .fade-in-delay-2 { transition-delay: 0.24s; }
-        .fade-in-delay-3 { transition-delay: 0.36s; }
-
-        /* Staggered feature cards */
-        .features-grid .feature-card:nth-child(1) { transition-delay: 0s; }
-        .features-grid .feature-card:nth-child(2) { transition-delay: 0.06s; }
-        .features-grid .feature-card:nth-child(3) { transition-delay: 0.12s; }
-        .features-grid .feature-card:nth-child(4) { transition-delay: 0.18s; }
-        .features-grid .feature-card:nth-child(5) { transition-delay: 0.24s; }
-        .features-grid .feature-card:nth-child(6) { transition-delay: 0.3s; }
-        .features-grid .feature-card:nth-child(7) { transition-delay: 0.36s; }
-        .features-grid .feature-card:nth-child(8) { transition-delay: 0.42s; }
-        .features-grid .feature-card:nth-child(9) { transition-delay: 0.48s; }
-        .features-grid .feature-card:nth-child(10) { transition-delay: 0.54s; }
-        .features-grid .feature-card:nth-child(11) { transition-delay: 0.6s; }
-        .features-grid .feature-card:nth-child(12) { transition-delay: 0.66s; }
-
-        /* ===== Navigation ===== */
-        .nav {
+        /* ===== Advanced Nav ===== */
+        nav {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
+            top: 0; left: 0; right: 0;
+            height: 48px;
+            background: transparent;
+            z-index: 9999;
+            transition: all 0.5s var(--ease);
+        }
+
+        nav.scrolled {
             background: var(--nav-bg);
-            -webkit-backdrop-filter: var(--nav-blur);
-            backdrop-filter: var(--nav-blur);
-            border-bottom: 1px solid var(--border-color);
-            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border-bottom: 0.5px solid var(--border);
         }
-        .nav.scrolled { box-shadow: var(--shadow-sm); }
-        .nav-inner {
-            max-width: var(--max-width);
-            margin: 0 auto;
+
+        .nav-content {
+            max-width: var(--max-w);
+            margin: 0 auto; height: 100%;
+            display: flex; justify-content: space-between; align-items: center;
             padding: 0 24px;
-            height: 52px;
-            display: flex;
-            align-items: center;
-            gap: 24px;
         }
+
         .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            font-size: 16px;
-            color: var(--text-primary);
-            text-decoration: none;
-            letter-spacing: -0.01em;
+            font-size: 17px; font-weight: 600; letter-spacing: -0.022em;
+            display: flex; align-items: center; gap: 8px;
         }
-        .nav-brand img {
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
+        .nav-brand img { width: 22px; height: 22px; border-radius: 5px; }
+        
+        .nav-items {
+            display: flex; gap: 34px;
+            font-size: 12px; color: var(--gray); font-weight: 400;
         }
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-left: auto;
-        }
-        .nav-links a {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            transition: color 0.2s ease;
-        }
-        .nav-links a:hover { color: var(--text-primary); }
-        .nav-lang-btn {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 4px 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: 0.02em;
-        }
-        .nav-lang-btn:hover {
-            color: var(--text-primary);
-            border-color: rgba(0, 0, 0, 0.12);
-        }
-        html[data-theme="dark"] .nav-lang-btn:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-        }
-        .nav-github {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-primary);
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 5px 12px;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            letter-spacing: 0.02em;
-        }
-        .nav-github:hover {
-            box-shadow: var(--shadow-sm);
-            color: var(--text-primary);
-            border-color: rgba(0, 0, 0, 0.12);
-        }
-        html[data-theme="dark"] .nav-github:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-        }
-        .nav-github svg { width: 15px; height: 15px; fill: currentColor; }
-        .nav-theme-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.25s var(--ease);
-            color: var(--text-secondary);
-            padding: 0;
-        }
-        .nav-theme-btn:hover {
-            color: var(--text-primary);
-            border-color: rgba(0, 0, 0, 0.12);
-            transform: scale(1.05);
-        }
-        html[data-theme="dark"] .nav-theme-btn:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-        }
-        .nav-theme-btn svg {
-            width: 16px;
-            height: 16px;
-            transition: transform 0.5s var(--ease-spring), opacity 0.3s ease;
-        }
-        .nav-theme-btn:active svg { transform: rotate(30deg) scale(0.9); }
-        .nav-theme-btn .theme-icon-dark { display: none; }
-        html[data-theme="dark"] .nav-theme-btn .theme-icon-light { display: none; }
-        html[data-theme="dark"] .nav-theme-btn .theme-icon-dark { display: block; }
+        .nav-items a:hover { color: var(--fg); }
 
-        @media (max-width: 768px) {
-            .nav-links a:not(.nav-lang-btn):not(.nav-github) { display: none; }
-            .nav-inner { gap: 10px; }
+        .nav-right { display: flex; align-items: center; gap: 14px; }
+        
+        .icon-btn {
+            cursor: pointer; width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; color: var(--gray);
+            transition: all 0.2s;
         }
+        .icon-btn:hover { color: var(--fg); background: rgba(0,0,0,0.04); }
+        [data-theme="dark"] .icon-btn:hover { background: rgba(255,255,255,0.08); }
+        .icon-btn svg { width: 17px; height: 17px; stroke-width: 2.2; }
 
-        /* ===== Hero ===== */
+        .cta-pill { 
+            font-size: 12px; font-weight: 500;
+            background: var(--fg); color: var(--bg);
+            padding: 5px 12px; border-radius: 100px;
+        }
+        .cta-pill:hover { transform: scale(1.04); opacity: 0.9; }
+
+        /* ===== Hero Section ===== */
         .hero {
-            padding: 150px 0 100px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+            padding-top: 180px; padding-bottom: 120px;
+            text-align: center; max-width: var(--max-w);
+            margin: 0 auto; padding-left: 24px; padding-right: 24px;
         }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -40%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 800px;
-            height: 800px;
-            background: radial-gradient(circle, var(--hero-glow-1) 0%, var(--hero-glow-2) 40%, transparent 70%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        .hero > .container { position: relative; z-index: 1; }
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 100px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 28px;
-            box-shadow: var(--shadow-sm);
-        }
-        .hero-badge .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #34C759;
-            box-shadow: 0 0 8px rgba(52, 199, 89, 0.4);
-            animation: pulse-dot 2s infinite;
-        }
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+
         .hero h1 {
-            font-size: clamp(42px, 8vw, 76px);
-            font-weight: 700;
-            letter-spacing: -0.035em;
-            line-height: 1.06;
-            margin-bottom: 24px;
+            font-size: clamp(48px, 10vw, 88px);
+            font-weight: 700; letter-spacing: -0.04em; line-height: 1.05;
+            margin-bottom: 24px; text-wrap: balance;
+            background: linear-gradient(180deg, var(--fg) 40%, var(--gray) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .hero h1 .gradient {
-            background: linear-gradient(135deg, var(--accent) 0%, #5856D6 50%, #AF52DE 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+
+        .hero p {
+            font-size: clamp(20px, 2.5vw, 24px); color: var(--gray);
+            max-width: 680px; margin: 0 auto 56px;
+            letter-spacing: -0.015em; font-weight: 400;
         }
-        .hero-sub {
-            font-size: clamp(17px, 2.5vw, 20px);
-            color: var(--text-secondary);
-            max-width: 580px;
-            margin: 0 auto 44px;
-            line-height: 1.65;
-            letter-spacing: -0.01em;
+
+        .hero-links {
+            display: flex; gap: 40px; justify-content: center;
+            font-size: 19px; font-weight: 500; margin-bottom: 100px;
         }
-        .hero-actions {
-            display: flex;
-            justify-content: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 80px;
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 13px 26px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            transition: all 0.3s var(--ease);
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            letter-spacing: -0.01em;
-        }
-        .btn-primary {
-            background: var(--accent);
-            color: #fff;
-        }
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            color: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(10, 132, 255, 0.35);
-        }
-        .btn-primary:active { transform: translateY(0); }
-        .btn-secondary {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-        .btn-secondary:hover {
-            box-shadow: var(--shadow-md);
-            color: var(--text-primary);
-            transform: translateY(-2px);
-        }
-        .btn-secondary:active { transform: translateY(0); }
-        .btn svg { width: 17px; height: 17px; fill: currentColor; }
+        .hero-links a { color: var(--link); display: flex; align-items: center; gap: 4px; }
+        .hero-links a:hover { opacity: 0.7; }
+
         .hero-image {
-            max-width: 980px;
-            margin: 0 auto;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: var(--shadow-screenshot);
-            transition: transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
-        }
-        .hero-image:hover {
-            transform: translateY(-4px) scale(1.005);
-            box-shadow: var(--shadow-lg);
-        }
-        .hero-image img {
-            width: 100%;
-            display: block;
+            margin: 0 auto; border-radius: 24px;
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.18);
+            border: 0.5px solid var(--border); overflow: hidden;
+            transition: transform 1s var(--ease);
         }
 
-        /* ===== Features ===== */
-        .features {
-            padding: 128px 0;
-        }
-        .section-title {
-            text-align: center;
-            margin-bottom: 64px;
-        }
-        .section-title h2 {
-            font-size: clamp(28px, 4vw, 40px);
-            font-weight: 700;
-            letter-spacing: -0.025em;
-            margin-bottom: 14px;
-        }
-        .section-title p {
-            font-size: 17px;
-            color: var(--text-secondary);
-            max-width: 460px;
-            margin: 0 auto;
-            line-height: 1.55;
-        }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-        }
-        .feature-card {
-            padding: 28px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            transition: all 0.35s var(--ease);
-        }
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
-            border-color: var(--accent-glow);
-            background: var(--bg-card-hover);
-        }
-        .feature-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 11px;
-            background: var(--accent-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent);
-            margin-bottom: 18px;
-            transition: transform 0.3s var(--ease-spring), background 0.3s ease;
-        }
-        .feature-card:hover .feature-icon {
-            transform: scale(1.08);
-            background: var(--accent-glow);
-        }
-        .feature-icon svg {
-            width: 22px;
-            height: 22px;
-        }
-        .feature-card h3 {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            letter-spacing: -0.01em;
-        }
-        .feature-card p {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.6;
+        /* ===== Zig-zag Features ===== */
+        .feature-section {
+            padding: 120px 0; max-width: var(--max-w);
+            margin: 0 auto; padding-left: 24px; padding-right: 24px;
         }
 
-        @media (max-width: 1024px) {
-            .features-grid { grid-template-columns: repeat(2, 1fr); }
+        .feature-row {
+            display: flex; align-items: center; gap: 100px;
+            margin-bottom: 240px;
         }
-        @media (max-width: 640px) {
-            .features-grid { grid-template-columns: 1fr; }
+        .feature-row:last-child { margin-bottom: 0; }
+        .feature-row.reverse { flex-direction: row-reverse; }
+
+        .feature-text { flex: 0 0 38%; }
+        .feature-media { flex: 1; position: relative; }
+
+        .feature-text h2 {
+            font-size: 40px; font-weight: 700;
+            letter-spacing: -0.03em; margin-bottom: 20px; line-height: 1.1;
+        }
+        
+        .feature-text p {
+            font-size: 19px; color: var(--gray); font-weight: 400;
+            letter-spacing: -0.012em; line-height: 1.47;
         }
 
-        /* ===== Screenshots ===== */
-        .screenshots {
-            padding: 128px 0;
-            background: var(--bg-secondary);
+        .feature-media img {
+            border-radius: 18px;
+            box-shadow: 0 25px 60px -10px rgba(0,0,0,0.12);
+            border: 0.5px solid var(--border);
+            transition: all 1.2s var(--ease);
         }
-        .screenshots-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+        
+        .feature-row:hover .feature-media img {
+            transform: translateY(-12px) scale(1.015);
+            box-shadow: 0 40px 80px -15px rgba(0,0,0,0.18);
         }
-        .screenshot-item {
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: var(--shadow-screenshot);
-            transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease);
-            background: var(--bg-card);
-        }
-        .screenshot-item:hover {
-            transform: translateY(-6px) scale(1.01);
-            box-shadow: var(--shadow-lg);
-        }
-        .screenshot-item.full-width {
-            grid-column: 1 / -1;
-            max-width: 800px;
-            justify-self: center;
-            width: 100%;
-        }
-        .screenshot-item img {
-            width: 100%;
-            display: block;
-        }
-        .screenshot-caption {
-            padding: 14px 20px;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border-color);
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            text-align: center;
-            letter-spacing: 0.01em;
-        }
-
-        @media (max-width: 768px) {
-            .screenshots-grid { grid-template-columns: 1fr; }
-        }
-
-        /* ===== Download ===== */
-        .download {
-            padding: 128px 0 100px;
-            text-align: center;
-            position: relative;
-        }
-        .download::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 600px;
-            height: 400px;
-            background: radial-gradient(circle, var(--hero-glow-1) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .download > .container { position: relative; z-index: 1; }
-        .download-badge {
-            display: inline-block;
-            padding: 5px 14px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-tertiary);
-            margin-top: 24px;
-            letter-spacing: 0.02em;
-        }
-        .download-links {
-            margin-top: 16px;
-            font-size: 14px;
-            color: var(--text-tertiary);
-        }
-        .download-links a { font-weight: 500; }
 
         /* ===== Footer ===== */
-        .footer {
-            padding: 36px 0;
-            border-top: 1px solid var(--border-color);
-            text-align: center;
+        footer {
+            border-top: 0.5px solid var(--border);
+            padding: 80px 0 60px;
+            font-size: 12px; color: var(--gray);
         }
-        .footer-inner {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .footer p {
-            font-size: 12px;
-            color: var(--text-tertiary);
-        }
-        .footer a {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            transition: color 0.2s ease;
-        }
-        .footer a:hover { color: var(--text-secondary); }
-        .footer-sep {
-            width: 1px;
-            height: 12px;
-            background: var(--border-color);
+        .footer-content {
+            max-width: var(--max-w); margin: 0 auto;
+            padding: 0 24px; display: flex; justify-content: space-between;
         }
 
-        /* ===== i18n: hide zh by default ===== */
+        /* ===== Advanced Reveal ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px) scale(0.985);
+            transition: opacity 1.4s var(--ease), transform 1.2s var(--ease);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* i18n */
         [data-lang="zh"] { display: none; }
         body.zh [data-lang="en"] { display: none; }
-        body.zh [data-lang="zh"] { display: revert; }
+        body.zh [data-lang="zh"] { display: block; }
+
+        @media (max-width: 860px) {
+            .nav-items { display: none; }
+            .feature-row, .feature-row.reverse { flex-direction: column; gap: 40px; text-align: left; margin-bottom: 140px; }
+            .hero h1 { font-size: 48px; }
+        }
     </style>
 </head>
 <body>
 
-<!-- ===== Navigation ===== -->
-<nav class="nav" id="nav">
-    <div class="nav-inner">
-        <a href="#" class="nav-brand">
-            <img src="images/icon128.png" alt="Aura Tab" width="32" height="32">
-            <span>Aura Tab</span>
-        </a>
-        <div class="nav-links">
-            <a href="#features" data-lang="en">Features</a>
-            <a href="#features" data-lang="zh">功能特性</a>
-            <a href="#screenshots" data-lang="en">Screenshots</a>
-            <a href="#screenshots" data-lang="zh">截图展示</a>
-            <a href="#download" data-lang="en">Download</a>
-            <a href="#download" data-lang="zh">下载安装</a>
-            <button class="nav-lang-btn" id="langBtn" title="Switch Language">中文</button>
-            <button class="nav-theme-btn" id="themeBtn" title="Toggle theme">
-                <svg class="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.752 15.002A9.718 9.718 0 0112.478 3a9.72 9.72 0 00-4.478 18.274A9.717 9.717 0 0021.752 15.002z"/></svg>
-                <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-            </button>
-            <a href="https://github.com/nil-byte/aura-tab" target="_blank" rel="noopener noreferrer" class="nav-github">
-                <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-                <span>Star</span>
-            </a>
-        </div>
-    </div>
-</nav>
-
-<!-- ===== Hero ===== -->
-<section class="hero">
-    <div class="container">
-        <div class="fade-in">
-            <div class="hero-badge">
-                <span class="dot"></span>
-                <span data-lang="en">Open Source · MIT License</span>
-                <span data-lang="zh">开源 · MIT 许可证</span>
+    <nav id="navbar">
+        <div class="nav-content">
+            <div class="nav-brand">
+                <img src="images/icon128.png" alt="Aura Tab">
+                <span>Aura Tab</span>
             </div>
-        </div>
-        <h1 class="fade-in fade-in-delay-1">
-            <span data-lang="en">Your New Tab,<br><span class="gradient">Beautifully Reimagined</span></span>
-            <span data-lang="zh">全新标签页，<br><span class="gradient">美学重新定义</span></span>
-        </h1>
-        <p class="hero-sub fade-in fade-in-delay-2">
-            <span data-lang="en">A customizable New Tab page for Chrome/Edge with smart backgrounds, quick links management, and immersive photo viewing.</span>
-            <span data-lang="zh">为 Chrome/Edge 浏览器打造的精美新标签页，支持智能壁纸、快捷链接管理和沉浸式照片浏览。</span>
-        </p>
-        <div class="hero-actions fade-in fade-in-delay-3">
-            <a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                <span data-lang="en">Install from Chrome Web Store</span>
-                <span data-lang="zh">从 Chrome 应用商店安装</span>
-            </a>
-            <a href="https://github.com/nil-byte/aura-tab" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
-                <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-                <span data-lang="en">View on GitHub</span>
-                <span data-lang="zh">在 GitHub 上查看</span>
-            </a>
-        </div>
-        <div class="hero-image fade-in">
-            <img src="images/case1.jpg" alt="Aura Tab Preview" width="1440" height="726">
-        </div>
-    </div>
-</section>
-
-<!-- ===== Features ===== -->
-<section class="features" id="features">
-    <div class="container">
-        <div class="section-title fade-in">
-            <h2>
-                <span data-lang="en">Packed with Features</span>
-                <span data-lang="zh">功能丰富</span>
-            </h2>
-            <p>
-                <span data-lang="en">Everything you need for a beautiful and productive new tab experience.</span>
-                <span data-lang="zh">打造美观高效新标签页体验所需的一切。</span>
-            </p>
-        </div>
-        <div class="features-grid">
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 00-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 001 1h6a1 1 0 001-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 00-7-7z"/><path d="M9 21h6M10 17v4M14 17v4"/></svg></div>
-                <h3><span data-lang="en">Smart Backgrounds</span><span data-lang="zh">智能背景系统</span></h3>
-                <p><span data-lang="en">Auto-crop based on screen size with focal point detection and smart aspect ratio adaptation.</span><span data-lang="zh">根据屏幕尺寸自动裁剪，焦点检测，智能宽高比适配。</span></p>
+            <div class="nav-items">
+                <a href="#dock">Dock</a>
+                <a href="#launchpad" data-lang="en">Launchpad</a><a href="#launchpad" data-lang="zh">启动台</a>
+                <a href="#photos" data-lang="en">Photos</a><a href="#photos" data-lang="zh">照片</a>
+                <a href="#settings" data-lang="en">Settings</a><a href="#settings" data-lang="zh">设置</a>
             </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M2 13l5.5-4.5L11 12l4-5 7 7"/><circle cx="17" cy="8" r="1.5"/></svg></div>
-                <h3><span data-lang="en">Multiple Sources</span><span data-lang="zh">多源支持</span></h3>
-                <p><span data-lang="en">Support for local files, Unsplash, Pixabay, and Pexels with configurable rotation.</span><span data-lang="zh">本地文件、Unsplash、Pixabay、Pexels 多平台支持，可配置轮播。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>
-                <h3><span data-lang="en">Quick Links Manager</span><span data-lang="zh">快速链接管理器</span></h3>
-                <p><span data-lang="en">Folder support, drag-and-drop sorting, instant search, pagination, and pin to dock.</span><span data-lang="zh">文件夹支持、拖拽排序、即时搜索、分页、固定到 Dock。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
-                <h3><span data-lang="en">Bookmark Import</span><span data-lang="zh">书签导入</span></h3>
-                <p><span data-lang="en">One-click import from Chrome bookmarks with automatic deduplication.</span><span data-lang="zh">一键从 Chrome 书签导入，自动去重。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
-                <h3><span data-lang="en">Launchpad Mode</span><span data-lang="zh">启动台模式</span></h3>
-                <p><span data-lang="en">macOS-style application launcher with folder organization.</span><span data-lang="zh">macOS 风格的应用启动器，支持文件夹组织。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
-                <h3><span data-lang="en">Photo Viewer</span><span data-lang="zh">沉浸式照片查看器</span></h3>
-                <p><span data-lang="en">Fullscreen browsing with keyboard navigation and EXIF display.</span><span data-lang="zh">全屏浏览、键盘导航、EXIF 信息显示。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg></div>
-                <h3><span data-lang="en">Smooth Transitions</span><span data-lang="zh">平滑过渡动画</span></h3>
-                <p><span data-lang="en">Beautiful fade animations when switching backgrounds with configurable interval.</span><span data-lang="zh">切换背景时淡入淡出，可配置切换间隔。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
-                <h3><span data-lang="en">i18n Support</span><span data-lang="zh">国际化</span></h3>
-                <p><span data-lang="en">Full Chinese (Simplified/Traditional) and English localization.</span><span data-lang="zh">完整的中英文（简/繁）支持。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-                <h3><span data-lang="en">Performance First</span><span data-lang="zh">性能优先</span></h3>
-                <p><span data-lang="en">First Paint optimization, background caching with TTL, lazy loading.</span><span data-lang="zh">首屏优化、背景缓存、TTL 管理、懒加载。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                <h3><span data-lang="en">Privacy Focused</span><span data-lang="zh">隐私保护</span></h3>
-                <p><span data-lang="en">WebDAV backup for Nutstore, Synology NAS and more. No data collection.</span><span data-lang="zh">支持 WebDAV 备份（坚果云、群晖等），不收集任何数据。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M12 4h9M3 20h3M3 4h3M6 2v4M6 18v4"/><path d="M3 12h3M12 12h9M6 10v4"/></svg></div>
-                <h3><span data-lang="en">Toolbar Customization</span><span data-lang="zh">工具栏图标定制</span></h3>
-                <p><span data-lang="en">Upload and apply your own toolbar icons with instant preview.</span><span data-lang="zh">上传并应用自定义图标，实时预览。</span></p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
-                <h3><span data-lang="en">Flexible Settings</span><span data-lang="zh">灵活设置</span></h3>
-                <p><span data-lang="en">Background blur effects, clock styles, search engine customization and more.</span><span data-lang="zh">背景模糊效果、时钟样式、搜索引擎自定义等。</span></p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== Screenshots ===== -->
-<section class="screenshots" id="screenshots">
-    <div class="container">
-        <div class="section-title fade-in">
-            <h2>
-                <span data-lang="en">See It in Action</span>
-                <span data-lang="zh">截图展示</span>
-            </h2>
-            <p>
-                <span data-lang="en">Explore the macOS-inspired design and rich functionality.</span>
-                <span data-lang="zh">探索 macOS 风格设计与丰富功能。</span>
-            </p>
-        </div>
-        <div class="screenshots-grid">
-            <div class="screenshot-item fade-in">
-                <img src="images/case2.jpg" alt="Quick Links & Launchpad" loading="lazy" width="1920" height="968">
-                <div class="screenshot-caption">
-                    <span data-lang="en">Quick Links & Launchpad</span>
-                    <span data-lang="zh">快捷链接与启动台</span>
+            <div class="nav-right">
+                <div class="icon-btn" id="langBtn">CN</div>
+                <div class="icon-btn" id="themeBtn">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display:none;">
+                        <circle cx="12" cy="12" r="4.5"></circle>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
                 </div>
-            </div>
-            <div class="screenshot-item fade-in">
-                <img src="images/setting.jpg" alt="Settings Window" loading="lazy" width="1920" height="1038">
-                <div class="screenshot-caption">
-                    <span data-lang="en">Settings Window</span>
-                    <span data-lang="zh">设置窗口</span>
-                </div>
-            </div>
-            <div class="screenshot-item fade-in">
-                <img src="images/photo.jpg" alt="Photo Viewer" loading="lazy" width="1920" height="1038">
-                <div class="screenshot-caption">
-                    <span data-lang="en">Immersive Photo Viewer</span>
-                    <span data-lang="zh">沉浸式照片查看器</span>
-                </div>
-            </div>
-            <div class="screenshot-item fade-in">
-                <img src="images/case4.jpg" alt="More Features" loading="lazy" width="1920" height="968">
-                <div class="screenshot-caption">
-                    <span data-lang="en">Feature Details</span>
-                    <span data-lang="zh">功能细节展示</span>
-                </div>
-            </div>
-            <div class="screenshot-item full-width fade-in">
-                <img src="images/case3.jpg" alt="Feature Showcase" loading="lazy" width="1440" height="726">
-                <div class="screenshot-caption">
-                    <span data-lang="en">Feature Showcase</span>
-                    <span data-lang="zh">功能全景展示</span>
-                </div>
+                <a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank" class="cta-pill">
+                    <span data-lang="en">Download</span>
+                    <span data-lang="zh">下载</span>
+                </a>
             </div>
         </div>
-    </div>
-</section>
+    </nav>
 
-<!-- ===== Download ===== -->
-<section class="download" id="download">
-    <div class="container">
-        <div class="section-title fade-in">
-            <h2>
-                <span data-lang="en">Get Aura Tab</span>
-                <span data-lang="zh">获取 Aura Tab</span>
-            </h2>
-            <p>
-                <span data-lang="en">Free and open source. Install in seconds.</span>
-                <span data-lang="zh">免费开源，一键安装。</span>
-            </p>
-        </div>
-        <div class="hero-actions fade-in">
-            <a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                <span data-lang="en">Chrome Web Store</span>
-                <span data-lang="zh">Chrome 应用商店</span>
+    <!-- Hero -->
+    <section class="hero reveal">
+        <h1 data-lang="en">Your New Tab.<br>Reimagined.</h1>
+        <h1 data-lang="zh">全新标签页。<br>重新想象。</h1>
+        
+        <p data-lang="en">Minimalist, fluid, and native-feeling. Designed for those who appreciate pure macOS aesthetics.</p>
+        <p data-lang="zh">极简、顺滑、原生感。专为追求 macOS 原生美学的你而打造。</p>
+        
+        <div class="hero-links">
+            <a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank">
+                <span data-lang="en">Add to Chrome ›</span>
+                <span data-lang="zh">添加到 Chrome ›</span>
             </a>
-            <a href="https://github.com/nil-byte/aura-tab/releases" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
-                <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-                <span data-lang="en">GitHub Releases</span>
-                <span data-lang="zh">GitHub Releases</span>
-            </a>
+            <a href="https://github.com/nil-byte/aura-tab" target="_blank">GitHub ›</a>
         </div>
-        <div class="download-badge fade-in">v3.4.2</div>
-        <div class="download-links fade-in">
-            <span data-lang="en">Or install manually from </span>
-            <span data-lang="zh">或从 </span>
-            <a href="https://github.com/nil-byte/aura-tab/releases" target="_blank" rel="noopener noreferrer">
-                <span data-lang="en">Releases page</span>
-                <span data-lang="zh">Releases 页面</span>
-            </a>
-            <span data-lang="zh"> 手动安装</span>
+
+        <div class="hero-image">
+            <img src="images/desktop.png" alt="Aura Tab">
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- ===== Footer ===== -->
-<footer class="footer">
-    <div class="container">
-        <div class="footer-inner">
-            <p>© 2024-2026 Aura Tab</p>
-            <div class="footer-sep"></div>
-            <a href="https://github.com/nil-byte/aura-tab" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <div class="footer-sep"></div>
-            <a href="https://github.com/nil-byte/aura-tab/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
-            <div class="footer-sep"></div>
-            <a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank" rel="noopener noreferrer">Chrome Web Store</a>
+    <!-- Features -->
+    <section class="feature-section">
+        <!-- Dock -->
+        <div class="feature-row reveal" id="dock">
+            <div class="feature-text">
+                <h2 data-lang="en">Intelligent Dock.</h2>
+                <h2 data-lang="zh">灵动 Dock。</h2>
+                <p data-lang="en">Access favorite sites with fluid, macOS-style magnification. It feels just like home.</p>
+                <p data-lang="zh">经典的 macOS 放大动效，让每一次交互都顺滑自然。你的常用网站，触手可及。</p>
+            </div>
+            <div class="feature-media">
+                <img src="images/dock.png" alt="Dock Feature">
+            </div>
         </div>
-    </div>
-</footer>
 
-<script>
-    // ===== Theme toggle =====
-    const themeBtn = document.getElementById('themeBtn');
-    const htmlEl = document.documentElement;
-    const THEME_KEY = 'aura-tab-theme';
+        <!-- Launchpad -->
+        <div class="feature-row reverse reveal" id="launchpad">
+            <div class="feature-text">
+                <h2 data-lang="en">Tidy Launchpad.</h2>
+                <h2 data-lang="zh">整洁启动台。</h2>
+                <p data-lang="en">Organize bookmarks into folders. Keep your digital life clutter-free and elegant.</p>
+                <p data-lang="zh">像管理系统应用一样组织书签。用文件夹归类，还你一个清爽的数字空间。</p>
+            </div>
+            <div class="feature-media">
+                <img src="images/launchpad.png" alt="Launchpad Feature">
+            </div>
+        </div>
 
-    function getSystemTheme() {
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
+        <!-- Photos -->
+        <div class="feature-row reveal" id="photos">
+            <div class="feature-text">
+                <h2 data-lang="en">Immersive Photos.</h2>
+                <h2 data-lang="zh">沉浸式照片。</h2>
+                <p data-lang="en">View high-res wallpapers in full screen. Distraction-free, pure aesthetics.</p>
+                <p data-lang="zh">全屏欣赏高清壁纸。无干扰、纯净美学。支持 EXIF 信息，让每一帧都是享受。</p>
+            </div>
+            <div class="feature-media">
+                <img src="images/photo.jpg" alt="Photos Feature">
+            </div>
+        </div>
 
-    function applyTheme(theme, animate) {
-        if (animate) {
-            htmlEl.classList.add('theme-transition');
-            requestAnimationFrame(() => {
-                htmlEl.setAttribute('data-theme', theme);
-                setTimeout(() => htmlEl.classList.remove('theme-transition'), 400);
-            });
-        } else {
-            htmlEl.setAttribute('data-theme', theme);
-        }
-    }
+        <!-- Settings -->
+        <div class="feature-row reverse reveal" id="settings">
+            <div class="feature-text">
+                <h2 data-lang="en">Deep Customization.</h2>
+                <h2 data-lang="zh">深度定制。</h2>
+                <p data-lang="en">Blur, search engine, layout... Tune every detail to match your perfect workflow.</p>
+                <p data-lang="zh">毛玻璃强度、搜索引擎、布局偏好... 每一个细节都由你控制。定制属于你的纯净空间。</p>
+            </div>
+            <div class="feature-media">
+                <img src="images/setting.jpg" alt="Settings Feature">
+            </div>
+        </div>
+    </section>
 
-    // Initialize theme
-    const savedTheme = localStorage.getItem(THEME_KEY);
-    applyTheme(savedTheme || getSystemTheme(), false);
+    <footer>
+        <div class="footer-content">
+            <div>Copyright © 2026 Aura Tab</div>
+            <div>Designed for macOS Enthusiasts</div>
+        </div>
+    </footer>
 
-    // Listen for system theme changes (only when user hasn't manually set)
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (!localStorage.getItem(THEME_KEY)) {
-            applyTheme(e.matches ? 'dark' : 'light', true);
-        }
-    });
+    <script>
+        // Nav Scroll Logic
+        const nav = document.getElementById('navbar');
+        window.onscroll = () => {
+            if (window.scrollY > 50) nav.classList.add('scrolled');
+            else nav.classList.remove('scrolled');
+        };
 
-    themeBtn.addEventListener('click', () => {
-        const current = htmlEl.getAttribute('data-theme');
-        const next = current === 'dark' ? 'light' : 'dark';
-        localStorage.setItem(THEME_KEY, next);
-        applyTheme(next, true);
-    });
-
-    // ===== Intersection Observer for fade-in animations =====
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                observer.unobserve(entry.target);
+        // Theme Logic
+        const themeBtn = document.getElementById('themeBtn');
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+        const html = document.documentElement;
+        
+        function setTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            if (theme === 'dark') {
+                sunIcon.style.display = 'block'; moonIcon.style.display = 'none';
+            } else {
+                sunIcon.style.display = 'none'; moonIcon.style.display = 'block';
             }
-        });
-    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
-    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-    // ===== Navigation scroll effect =====
-    const nav = document.getElementById('nav');
-    let ticking = false;
-    window.addEventListener('scroll', () => {
-        if (!ticking) {
-            requestAnimationFrame(() => {
-                nav.classList.toggle('scrolled', window.scrollY > 10);
-                ticking = false;
-            });
-            ticking = true;
         }
-    }, { passive: true });
 
-    // ===== Language toggle =====
-    const langBtn = document.getElementById('langBtn');
-    let isZh = false;
+        themeBtn.onclick = () => {
+            const current = html.getAttribute('data-theme') || 'light';
+            setTheme(current === 'light' ? 'dark' : 'light');
+        };
 
-    // Auto-detect browser language
-    if (navigator.language.startsWith('zh')) {
-        isZh = true;
-        document.body.classList.add('zh');
-        langBtn.textContent = 'EN';
-    }
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) setTheme(savedTheme);
+        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) setTheme('dark');
 
-    langBtn.addEventListener('click', () => {
-        isZh = !isZh;
-        document.body.classList.toggle('zh', isZh);
-        langBtn.textContent = isZh ? 'EN' : '中文';
-    });
-</script>
+        // Lang Logic
+        const langBtn = document.getElementById('langBtn');
+        const body = document.body;
+        langBtn.onclick = () => {
+            const isZh = body.classList.toggle('zh');
+            langBtn.textContent = isZh ? 'EN' : 'CN';
+            localStorage.setItem('lang', isZh ? 'zh' : 'en');
+        };
+        if (localStorage.getItem('lang') === 'zh' || navigator.language.startsWith('zh')) {
+            body.classList.add('zh'); langBtn.textContent = 'EN';
+        } else {
+            langBtn.textContent = 'CN';
+        }
 
+        // Reveal Logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
 </body>
 </html>
