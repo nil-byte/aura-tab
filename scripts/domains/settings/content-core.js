@@ -289,6 +289,83 @@ export function registerAboutContent(window) {
                             controlHtml: '<kbd class="mac-kbd">Esc</kbd>'
                         }
                     ]
+                },
+                {
+                    type: 'section',
+                    rows: [
+                        {
+                            type: 'custom',
+                            html: `
+                                <div class="mac-about-links">
+                                    <a href="https://github.com/nil-byte/aura-tab"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="mac-about-link-btn">
+                                        <svg class="mac-about-link-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                                        </svg>
+                                        <span>${t('aboutLinkGitHub') || 'GitHub Repository'}</span>
+                                        <svg class="mac-about-link-arrow" viewBox="0 0 12 12" width="12" height="12">
+                                            <path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </a>
+                                    <a href="https://nil-byte.github.io/aura-tab/"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="mac-about-link-btn">
+                                        <svg class="mac-about-link-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                                            <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm5.292 5H11.1a13.2 13.2 0 0 0-1.163-3.213A6.034 6.034 0 0 1 13.292 5zM8 1.042c.558.707 1.04 1.584 1.388 2.584H6.612C6.96 2.626 7.442 1.749 8 1.042zM1.165 9A6.9 6.9 0 0 1 1 8c0-.34.058-.672.165-1h2.521A14 14 0 0 0 3.6 8c0 .342.03.678.086 1H1.165zm.543 1h2.191c.258 1.2.673 2.292 1.163 3.213A6.034 6.034 0 0 1 1.708 10zm2.191-4H1.708A6.034 6.034 0 0 1 5.062 2.787C4.572 3.708 4.157 4.8 3.899 6zM8 14.958c-.558-.707-1.04-1.584-1.388-2.584h2.776C9.04 13.374 8.558 14.251 8 14.958zM9.612 11H6.388A11.8 11.8 0 0 1 6.1 9h3.8c-.07.352-.17.69-.288 1zm.326 2.213c.49-.921.905-2.013 1.163-3.213h2.191a6.034 6.034 0 0 1-3.354 3.213zM12.314 9a14 14 0 0 0 .086-1 14 14 0 0 0-.086-1h2.521c.107.328.165.66.165 1s-.058.672-.165 1h-2.521z"/>
+                                        </svg>
+                                        <span>${t('aboutLinkHomepage') || 'Homepage'}</span>
+                                        <svg class="mac-about-link-arrow" viewBox="0 0 12 12" width="12" height="12">
+                                            <path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </a>
+                                </div>
+                                <style>
+                                    .mac-about-links {
+                                        display: flex;
+                                        flex-direction: column;
+                                        width: 100%;
+                                    }
+                                    .mac-about-link-btn {
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 10px;
+                                        padding: 8px 12px;
+                                        min-height: 40px;
+                                        text-decoration: none;
+                                        color: var(--mac-text-primary);
+                                        font-size: 14px;
+                                        font-weight: 400;
+                                        border-bottom: 0.5px solid var(--mac-divider-color);
+                                        transition: background 0.15s ease;
+                                        cursor: pointer;
+                                    }
+                                    .mac-about-link-btn:last-child {
+                                        border-bottom: none;
+                                    }
+                                    .mac-about-link-btn:hover {
+                                        background: rgba(0, 0, 0, 0.04);
+                                    }
+                                    [data-theme="dark"] .mac-about-link-btn:hover {
+                                        background: rgba(255, 255, 255, 0.06);
+                                    }
+                                    .mac-about-link-icon {
+                                        flex-shrink: 0;
+                                        color: var(--mac-accent-color);
+                                    }
+                                    .mac-about-link-btn span {
+                                        flex: 1;
+                                    }
+                                    .mac-about-link-arrow {
+                                        flex-shrink: 0;
+                                        color: var(--mac-text-tertiary);
+                                    }
+                                </style>
+                            `
+                        }
+                    ]
                 }
             ]
         });

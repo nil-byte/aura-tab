@@ -383,5 +383,7 @@
     "contextCreateFolder": "新建資料夾",
     "contextRemoveFromFolder": "從資料夾移出",
     "toastFolderCreated": "資料夾已建立",
-    "toastFolderDissolved": "已取消群組"
+    "toastFolderDissolved": "已取消群組",
+    "aboutLinkGitHub": "GitHub 開源倉庫",
+    "aboutLinkHomepage": "專案首頁"
 }

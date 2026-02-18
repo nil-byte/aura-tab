@@ -383,5 +383,7 @@
     "contextCreateFolder": "新建文件夹",
     "contextRemoveFromFolder": "从文件夹移出",
     "toastFolderCreated": "文件夹已创建",
-    "toastFolderDissolved": "已取消分组"
+    "toastFolderDissolved": "已取消分组",
+    "aboutLinkGitHub": "GitHub 开源仓库",
+    "aboutLinkHomepage": "项目主页"
 }

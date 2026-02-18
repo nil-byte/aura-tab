@@ -383,5 +383,7 @@
     "contextCreateFolder": "New Folder",
     "contextRemoveFromFolder": "Remove from Folder",
     "toastFolderCreated": "Folder created",
-    "toastFolderDissolved": "Folder ungrouped"
+    "toastFolderDissolved": "Folder ungrouped",
+    "aboutLinkGitHub": "GitHub Repository",
+    "aboutLinkHomepage": "Homepage"
 }

@@ -9,3 +9,4 @@ coverage/
 
 # Build artifacts
 *.zip
+.alma-snapshots
