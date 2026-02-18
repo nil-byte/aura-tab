@@ -7,8 +7,7 @@ import { DisposableComponent, DragStateMachine } from '../../platform/lifecycle.
 import {
     createItemElement as createQuicklinkItem,
     updateItemIcon as updateQuicklinkIcon,
-    updateItemTitle as updateQuicklinkTitle,
-    getTitleFromUrl
+    updateItemTitle as updateQuicklinkTitle
 } from './icon-renderer.js';
 import { createPiecewiseInterpolator, createSvelteSpring } from '../../shared/animation.js';
 const DEFAULTS = {

@@ -243,17 +243,19 @@ class ContextMenu {
         const currentIndex = items.indexOf(current);
 
         switch (e.key) {
-            case 'ArrowDown':
+            case 'ArrowDown': {
                 e.preventDefault();
                 const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
                 items[nextIndex]?.focus();
                 break;
+            }
 
-            case 'ArrowUp':
+            case 'ArrowUp': {
                 e.preventDefault();
                 const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
                 items[prevIndex]?.focus();
                 break;
+            }
 
             case 'Home':
                 e.preventDefault();

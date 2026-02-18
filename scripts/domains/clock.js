@@ -15,9 +15,7 @@
  */
 
 import {
-    DisposableComponent,
-    TimerManager,
-    EventListenerManager
+    DisposableComponent
 } from '../platform/lifecycle.js';
 import * as storageRepo from '../platform/storage-repo.js';
 

@@ -3,6 +3,11 @@ import { buildIconCacheKey } from '../shared/text.js';
 import { fetchIconBlobViaBackground } from './icon-fetch-bridge.js';
 import * as storageRepo from './storage-repo.js';
 
+/**
+ * Naming convention:
+ *   #field  — ES private class fields for encapsulated state
+ *   _method — internal helper methods (conventionally private)
+ */
 class IconCacheManager {
   static CONFIG = {
     DB_NAME: 'aura-tab-icon-cache',

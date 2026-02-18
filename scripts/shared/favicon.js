@@ -1,6 +1,6 @@
 import { iconCache } from '../platform/icon-cache.js';
 import { fetchIconBlobViaBackground } from '../platform/icon-fetch-bridge.js';
-import { buildIconCacheKey, normalizeIconCacheUrl } from './text.js';
+import { normalizeIconCacheUrl } from './text.js';
 
 export { buildIconCacheKey } from './text.js';
 

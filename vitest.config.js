@@ -16,9 +16,7 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
             include: [
-                'scripts/domains/quicklinks/launchpad.js',
-                'scripts/domains/quicklinks/store.js',
-                'scripts/platform/lifecycle.js'
+                'scripts/**/*.js'
             ],
             exclude: [
                 'scripts/libs/**',

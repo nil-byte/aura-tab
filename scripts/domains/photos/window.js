@@ -994,7 +994,7 @@ export class PhotosWindow extends MacWindowBase {
             };
             for (const fav of allFavorites) {
                 const provider = fav?.provider;
-                if (provider && counts.hasOwnProperty(provider)) {
+                if (provider && Object.hasOwn(counts, provider)) {
                     counts[provider]++;
                 }
             }

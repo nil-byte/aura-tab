@@ -736,7 +736,7 @@ export class BackupManager {
     }
     _sanitizeZipPathSegment(seg) {
         const s = String(seg ?? '');
-        const cleaned = s.replace(/[\/\\:\0]/g, '_').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const cleaned = s.replace(/[/\\:\0]/g, '_').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '_');
         return cleaned ? cleaned.slice(0, 128) : 'entry';
     }
     async _validateStagingIntegrity(db) {
