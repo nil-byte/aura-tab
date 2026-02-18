@@ -1,4 +1,22 @@
 {
+  "3.4.2": {
+    "en": [
+      "ESLint Integration: Added code linting with ES2022 configuration",
+      "Community Guidelines: Added CODE_OF_CONDUCT.md and SECURITY.md",
+      "Code Quality: Fixed ESLint warnings across codebase"
+    ],
+    "zh_CN": [
+      "ESLint 集成：添加 ES2022 配置的代码检查",
+      "社区规范：新增 CODE_OF_CONDUCT.md 和 SECURITY.md",
+      "代码质量：修复代码库中的 ESLint 警告"
+    ],
+    "zh_TW": [
+      "ESLint 整合：新增 ES2022 設定的程式碼檢查",
+      "社群規範：新增 CODE_OF_CONDUCT.md 和 SECURITY.md",
+      "程式碼品質：修復程式碼庫中的 ESLint 警告"
+    ],
+    "moreUrl": ""
+  },
   "3.4.1": {
     "en": [
       "WebDAV Password Toggle: Show/hide password visibility button",
