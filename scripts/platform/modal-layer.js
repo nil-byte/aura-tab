@@ -172,8 +172,24 @@ class ModalLayerManager {
         const dismissOnOutsideClick = options?.dismissOnOutsideClick !== false;
         const hitTestElement = options?.hitTestElement ?? element;
         const zIndexElement = options?.zIndexElement ?? element;
+        const existing = this.#modals.get(id);
+
         this.#modals.set(id, { level, hitTestElement, zIndexElement, onDismiss, dismissOnOutsideClick });
-        this.#assignZIndex(id);
+
+        if (!existing) {
+            this.#assignZIndex(id);
+            return;
+        }
+
+        if (existing.level !== level) {
+            this.#assignZIndex(id);
+            return;
+        }
+
+        const previousZIndex = existing.zIndexElement?.style?.zIndex;
+        if (zIndexElement && typeof previousZIndex === 'string') {
+            zIndexElement.style.zIndex = previousZIndex;
+        }
     }
 
     unregister(id) {
@@ -340,4 +356,3 @@ class ModalLayerManager {
 }
 
 export const modalLayer = new ModalLayerManager();
-

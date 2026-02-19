@@ -5394,6 +5394,18 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     align-items: center;
 }
 
+.mac-slider-fill {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: var(--mac-slider-track-height);
+    width: 0;
+    border-radius: calc(var(--mac-slider-track-height) / 2);
+    background: var(--mac-slider-fill-bg);
+    pointer-events: none;
+}
+
 .mac-slider-input {
     -webkit-appearance: none;
     appearance: none;
@@ -5403,6 +5415,8 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     cursor: pointer;
     margin: 0;
     --mac-slider-percent: 0%;
+    position: relative;
+    z-index: 1;
 }
 
 .mac-slider-input::-webkit-slider-runnable-track {

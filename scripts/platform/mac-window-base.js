@@ -26,6 +26,8 @@ export class MacWindowBase extends DisposableComponent {
 
         this._resizeController = null;
 
+        this._behaviorSettingsReady = Promise.resolve();
+
     }
 
     _getModalId() {
@@ -104,7 +106,7 @@ export class MacWindowBase extends DisposableComponent {
 
         this._titlebar = this._window.querySelector(this._getTitlebarSelector());
 
-        this._loadBehaviorSettings();
+        this._behaviorSettingsReady = this._loadBehaviorSettings();
 
         this._setupBehaviorSettingsListener();
 
@@ -137,17 +139,27 @@ export class MacWindowBase extends DisposableComponent {
                 this._dismissOnOutsideClick = changes[key].newValue === true;
 
                 if (this._isOpen && this._overlay) {
-                    modalLayer.register(
-                        modalId,
-                        modalLayer.constructor.LEVEL.OVERLAY,
-                        this._overlay,
-                        () => this.close(),
-                        { dismissOnOutsideClick: this._dismissOnOutsideClick }
-                    );
+                    this._registerModalLayer();
                 }
             });
         } catch {
         }
+    }
+
+    _registerModalLayer() {
+        if (!this._overlay || !this._window) return;
+
+        modalLayer.register(
+            this._getModalId(),
+            modalLayer.constructor.LEVEL.OVERLAY,
+            this._overlay,
+            () => this.close(),
+            {
+                dismissOnOutsideClick: this._dismissOnOutsideClick,
+                hitTestElement: this._window,
+                zIndexElement: this._overlay
+            }
+        );
     }
 
     _bindBaseEvents() {
@@ -228,13 +240,7 @@ export class MacWindowBase extends DisposableComponent {
         this._overlay.classList.add('visible');
         this._overlay.setAttribute('aria-hidden', 'false');
 
-        modalLayer.register(
-            this._getModalId(),
-            modalLayer.constructor.LEVEL.OVERLAY,
-            this._overlay,
-            () => this.close(),
-            { dismissOnOutsideClick: this._dismissOnOutsideClick }
-        );
+        this._registerModalLayer();
 
         this._onAfterOpen();
 
@@ -244,6 +250,14 @@ export class MacWindowBase extends DisposableComponent {
         });
 
         modalLayer.bringToFront(this._getModalId());
+
+        // Windows that are lazily created/opened can race storage I/O on first open.
+        // Re-register after settings load so outside-click behavior is always correct
+        // without changing the current stacking order.
+        void this._behaviorSettingsReady.then(() => {
+            if (!this._isOpen) return;
+            this._registerModalLayer();
+        });
     }
 
     minimize() {
@@ -301,4 +315,3 @@ export class MacWindowBase extends DisposableComponent {
         super.destroy();
     }
 }
-

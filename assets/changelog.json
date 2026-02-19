@@ -1,4 +1,22 @@
 {
+  "3.4.3": {
+    "en": [
+      "Fixed race condition: macOS window outside-click settings now load reliably on first open",
+      "Modal layer improvements: preserve z-index when re-registering modals",
+      "UI Polish: Added slider fill indicator for better visual feedback"
+    ],
+    "zh_CN": [
+      "修复竞态条件：macOS 窗口外部点击设置首次打开时可靠加载",
+      "模态层改进：重新注册模态时保持 z-index 层级",
+      "UI 优化：添加滑块填充指示器提升视觉反馈"
+    ],
+    "zh_TW": [
+      "修復競態條件：macOS 視窗外部點擊設定首次開啟時可靠載入",
+      "模態層改進：重新註冊模態時保持 z-index 層級",
+      "UI 優化：新增滑桿填充指示器提升視覺回饋"
+    ],
+    "moreUrl": ""
+  },
   "3.4.2": {
     "en": [
       "ESLint Integration: Added code linting with ES2022 configuration",
