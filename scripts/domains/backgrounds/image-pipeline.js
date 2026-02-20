@@ -6,6 +6,7 @@ import {
 import { t } from '../../platform/i18n.js';
 import { fetchWithTimeout, runWithTimeout } from '../../shared/net.js';
 import { toast } from '../../shared/toast.js';
+import { logWithDedup } from '../../shared/error-utils.js';
 import { getProvider } from './source-remote.js';
 import { getApplyOptions, getPrepareTimeoutMs } from './controller-actions.js';
 
@@ -968,6 +969,8 @@ export function getCropFallbackPosition() {
  *   save?: boolean,
  *   preload?: boolean,
  *   phase?: 'startup' | 'normal',
+ *   imageLoadTimeoutMs?: number,
+ *   previewLoadTimeoutMs?: number,
  *   afterApply?: ((prepared: object) => Promise<void> | void) | null
  * }} options
  */
@@ -980,6 +983,8 @@ export async function runBackgroundTransition(system, options = {}) {
         save = true,
         preload = false,
         phase = 'normal',
+        imageLoadTimeoutMs,
+        previewLoadTimeoutMs,
         afterApply = null
     } = options;
 
@@ -989,6 +994,12 @@ export async function runBackgroundTransition(system, options = {}) {
     const prepared = await system._prepareBackgroundForDisplay(background, { timeoutMs });
     const applyOptions = {
         ...getApplyOptions(system.settings, type),
+        ...(Number.isFinite(imageLoadTimeoutMs) && imageLoadTimeoutMs > 0
+            ? { imageLoadTimeoutMs: Math.floor(imageLoadTimeoutMs) }
+            : {}),
+        ...(Number.isFinite(previewLoadTimeoutMs) && previewLoadTimeoutMs > 0
+            ? { previewLoadTimeoutMs: Math.floor(previewLoadTimeoutMs) }
+            : {}),
         ...(phase === 'startup' ? { phase: 'startup' } : {})
     };
     await system._applyBackgroundInternal(prepared, applyOptions);
@@ -1026,6 +1037,12 @@ export const backgroundApplyMethods = {
         const fallbackUrl = background.urls.small || background.urls.full;
         const renderMode = options?.renderMode === 'single-stage' ? 'single-stage' : 'progressive';
         const phase = options?.phase === 'startup' ? 'startup' : 'normal';
+        const imageLoadTimeoutMs = Number.isFinite(options?.imageLoadTimeoutMs) && options.imageLoadTimeoutMs > 0
+            ? Math.floor(options.imageLoadTimeoutMs)
+            : (phase === 'startup' ? 6500 : 45000);
+        const previewLoadTimeoutMs = Number.isFinite(options?.previewLoadTimeoutMs) && options.previewLoadTimeoutMs > 0
+            ? Math.floor(options.previewLoadTimeoutMs)
+            : Math.min(imageLoadTimeoutMs, 5000);
 
         if (this.wrapper) {
             this.wrapper.dataset.phase = phase;
@@ -1063,15 +1080,18 @@ export const backgroundApplyMethods = {
                 try {
                     fallbackScope = `${baseScope}-f-${applyToken}`;
                     const fallbackBlobUrl = await getBlobUrl(fallbackUrl, fallbackScope);
-                    await preloadImage(fallbackBlobUrl, 5000);
+                    await preloadImage(fallbackBlobUrl, previewLoadTimeoutMs);
                     previewItem = mountLayer(fallbackBlobUrl, fallbackScope);
                 } catch (fallbackError) {
-                    console.warn('[Background] Preview load failed, waiting for primary...', fallbackError);
+                    logWithDedup('warn', '[Background] Preview load failed, waiting for primary...', fallbackError, {
+                        skipIfRecoverable: true,
+                        dedupeKey: 'background.preview-load-failed'
+                    });
                 }
             }
 
             primaryBlobUrl = await getBlobUrl(primaryUrl, primaryScope);
-            const img = await preloadImage(primaryBlobUrl);
+            const img = await preloadImage(primaryBlobUrl, imageLoadTimeoutMs);
 
             // Extract average color if missing.
             if (!background.color && img.complete) {
@@ -1081,11 +1101,12 @@ export const backgroundApplyMethods = {
             mountLayer(primaryBlobUrl, primaryScope);
 
         } catch (error) {
-            console.error('[Background] Failed to apply background:', error);
-
             // If preview is already visible, keep it and suppress the error.
             if (previewItem && this.mediaContainer && this.mediaContainer.contains(previewItem)) {
-                console.warn('[Background] Primary image failed, maintaining fallback preview.');
+                logWithDedup('warn', '[Background] Primary image failed, maintaining fallback preview.', error, {
+                    skipIfRecoverable: true,
+                    dedupeKey: 'background.primary-load-failed-with-preview'
+                });
                 if (primaryBlobUrl?.startsWith('blob:')) blobUrlManager.release(primaryBlobUrl, true);
                 return;
             }

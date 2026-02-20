@@ -1,4 +1,25 @@
 {
+  "3.4.4": {
+    "en": [
+      "Error Handling: Unified error utilities with deduplication and recoverable error detection",
+      "Background Loading: Suppress notifications for timeout/network errors during startup",
+      "Image Pipeline: Configurable load timeouts with graceful fallback to color background",
+      "Backup Restore: Improved icon cache compatibility with legacy backup formats"
+    ],
+    "zh_CN": [
+      "错误处理：新增统一错误处理工具，支持日志去重和可恢复错误检测",
+      "背景加载：启动时抑制超时/网络错误的通知弹窗",
+      "图片管道：支持自定义加载超时，失败时优雅降级到纯色背景",
+      "备份恢复：改进图标缓存兼容性，支持旧版备份格式"
+    ],
+    "zh_TW": [
+      "錯誤處理：新增統一錯誤處理工具，支援日誌去重和可恢復錯誤偵測",
+      "背景載入：啟動時抑制逾時/網路錯誤的通知彈窗",
+      "圖片管道：支援自訂載入逾時，失敗時優雅降級到純色背景",
+      "備份恢復：改進圖示快取相容性，支援舊版備份格式"
+    ],
+    "moreUrl": ""
+  },
   "3.4.3": {
     "en": [
       "Fixed race condition: macOS window outside-click settings now load reliably on first open",

@@ -3,6 +3,7 @@ import { modalLayer } from '../platform/modal-layer.js';
 import { DisposableComponent } from '../platform/lifecycle.js';
 import { launchpad } from './quicklinks/launchpad.js';
 import * as storageRepo from '../platform/storage-repo.js';
+import { isTimeoutError, logWithDedup } from '../shared/error-utils.js';
 
 export class LayoutManager extends DisposableComponent {
     constructor({ backgroundSystem } = {}) {
@@ -198,10 +199,7 @@ export class LayoutManager extends DisposableComponent {
 
         try {
             if (typeof this.backgroundSystem.whenReady === 'function') {
-                await Promise.race([
-                    this.backgroundSystem.whenReady(),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-                ]);
+                await this.backgroundSystem.whenReady(5000);
             }
 
             const currentBg = this.backgroundSystem.getCurrentBackground?.();
@@ -217,7 +215,12 @@ export class LayoutManager extends DisposableComponent {
                 this.photoInfo?.classList.add('hidden');
             }
         } catch (error) {
-            console.warn('[LayoutManager] Failed to update photo info:', error);
+            if (isTimeoutError(error)) {
+                return;
+            }
+            logWithDedup('warn', '[LayoutManager] Failed to update photo info:', error, {
+                dedupeKey: 'layout.photo-info.update'
+            });
         }
     }
 
@@ -459,4 +462,3 @@ export function initLayout({ backgroundSystem } = {}) {
     void manager.init();
     return manager;
 }
-

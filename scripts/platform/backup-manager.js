@@ -1,6 +1,7 @@
 import { strToU8, Zip, ZipDeflate, ZipPassThrough, Unzip, UnzipInflate } from '../libs/fflate.esm.js';
 import { idbCursorAll } from '../shared/storage.js';
 import { setStorageInChunks } from '../shared/storage.js';
+import { buildIconCacheKey, normalizeIconCacheUrl } from '../shared/text.js';
 import * as storageRepo from './storage-repo.js';
 const SCHEMA_VERSION = 1;
 const SCHEMA_NAME = 'aura-tab-webdav-backup';
@@ -125,11 +126,12 @@ export class BackupManager {
                 }
                 await this._smartRestoreStorage('sync', syncData);
                 await this._smartRestoreStorage('local', localData, ['webdavConfig']);
+                const iconCacheLookup = this._buildIconCacheRestoreLookup(syncData);
                 onProgress?.({ stage: 'restoreStorage', percent: 65 });
                 onProgress?.({ stage: 'restoreIconCache', percent: 65 });
                 await this._importIDBFromStaging('iconCache', stagingDb, 'idb/icon-cache', (p) => {
                     onProgress?.({ stage: 'restoreIconCache', percent: 65 + p * 0.05 });
-                });
+                }, { iconCacheLookup });
                 onProgress?.({ stage: 'restoreToolbarIcon', percent: 70 });
                 await this._importIDBFromStaging('toolbarIcon', stagingDb, 'idb/toolbar-icon', (p) => {
                     onProgress?.({ stage: 'restoreToolbarIcon', percent: 70 + p * 0.05 });
@@ -774,7 +776,7 @@ export class BackupManager {
         }
         return true;
     }
-    async _importIDBFromStaging(configKey, stagingDb, basePath, onProgress) {
+    async _importIDBFromStaging(configKey, stagingDb, basePath, onProgress, legacyCompatOptions = {}) {
         const config = IDB_CONFIGS[configKey];
         try {
             const indexData = await this._getStagingFile(stagingDb, `${basePath}/index.json`);
@@ -811,6 +813,8 @@ export class BackupManager {
                     onProgress?.(100);
                     return;
                 }
+                let skippedEntries = 0;
+                const skippedReasonCounts = new Map();
                 for (let i = 0; i < index.length; i++) {
                     const entry = { ...index[i] };
                     for (const blobField of config.blobFields) {
@@ -825,16 +829,42 @@ export class BackupManager {
                             }
                         }
                     }
-                    await new Promise((resolve, reject) => {
-                        const tx = db.transaction(config.storeName, 'readwrite');
-                        const store = tx.objectStore(config.storeName);
-                        const req = store.put(entry);
-                        req.onsuccess = () => resolve();
-                        req.onerror = () => reject(req.error);
+
+                    const entriesToImport = this._normalizeEntriesForImport(configKey, entry, {
+                        iconCacheLookup: legacyCompatOptions.iconCacheLookup
                     });
+                    for (const normalizedEntry of entriesToImport) {
+                        try {
+                            await new Promise((resolve, reject) => {
+                                const tx = db.transaction(config.storeName, 'readwrite');
+                                const store = tx.objectStore(config.storeName);
+                                const req = store.put(normalizedEntry);
+                                req.onsuccess = () => resolve();
+                                req.onerror = () => reject(req.error);
+                            });
+                        } catch (entryError) {
+                            if (config.required) {
+                                throw entryError;
+                            }
+                            const entryErrorMsg = entryError?.message || String(entryError);
+                            skippedEntries++;
+                            skippedReasonCounts.set(entryErrorMsg, (skippedReasonCounts.get(entryErrorMsg) || 0) + 1);
+                        }
+                    }
                     if (total > 0) {
                         onProgress?.(((i + 1) / total) * 100);
                     }
+                }
+                if (!config.required && skippedEntries > 0) {
+                    const reasonSummary = [...skippedReasonCounts.entries()]
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 3)
+                        .map(([reason, count]) => `${count}x ${reason}`)
+                        .join('; ');
+                    console.warn(
+                        `[BackupManager] _importIDBFromStaging ${configKey}: skipped ${skippedEntries}/${total} invalid entries` +
+                        (reasonSummary ? ` (${reasonSummary})` : '')
+                    );
                 }
             } finally {
                 db.close();
@@ -848,6 +878,207 @@ export class BackupManager {
             console.warn(`[BackupManager] _importIDBFromStaging ${configKey} error: ${errorMsg}`, error);
             onProgress?.(100);
         }
+    }
+
+    _normalizeEntriesForImport(configKey, entry, options = {}) {
+        if (!entry || typeof entry !== 'object') return [];
+        if (configKey === 'iconCache') {
+            return this._normalizeIconCacheEntriesForImport(entry, options.iconCacheLookup);
+        }
+        return [entry];
+    }
+
+    _normalizeIconCacheEntriesForImport(rawEntry, lookup) {
+        const blob = rawEntry.blob;
+        if (!(blob instanceof Blob) || blob.size <= 0) {
+            return [];
+        }
+
+        const sourceUrl = normalizeIconCacheUrl(rawEntry.sourceUrl || rawEntry.iconUrl || rawEntry.url || '');
+        const now = Date.now();
+        const cachedAt = Number.isFinite(rawEntry.cachedAt) && rawEntry.cachedAt > 0 ? rawEntry.cachedAt : now;
+        const lastAccessedAt = Number.isFinite(rawEntry.lastAccessedAt) && rawEntry.lastAccessedAt > 0
+            ? rawEntry.lastAccessedAt
+            : cachedAt;
+        const size = Number.isFinite(rawEntry.size) && rawEntry.size > 0 ? rawEntry.size : blob.size;
+
+        const candidateKeys = this._resolveIconCacheKeysForImport(rawEntry, lookup, sourceUrl);
+        if (candidateKeys.length === 0) {
+            return [];
+        }
+
+        return candidateKeys.map((cacheKey) => ({
+            cacheKey,
+            blob,
+            sourceUrl: sourceUrl || '',
+            cachedAt,
+            lastAccessedAt,
+            size
+        }));
+    }
+
+    _resolveIconCacheKeysForImport(rawEntry, lookup, sourceUrl = '') {
+        const keys = new Set();
+        const addKey = (value) => {
+            const s = typeof value === 'string' ? value.trim() : '';
+            if (!s) return;
+            keys.add(s);
+        };
+
+        const modernCacheKey = this._toModernIconCacheKey(rawEntry.cacheKey);
+        const modernIdKey = this._toModernIconCacheKey(rawEntry.id);
+        const hasModernKey = Boolean(modernCacheKey || modernIdKey);
+
+        addKey(rawEntry.cacheKey);
+        addKey(modernIdKey);
+
+        const pageUrl = normalizeIconCacheUrl(rawEntry.pageUrl || rawEntry.page || rawEntry.linkUrl || '');
+        if (pageUrl) {
+            addKey(buildIconCacheKey(pageUrl, rawEntry.customIconUrl || rawEntry.icon || sourceUrl || ''));
+            if (sourceUrl) {
+                addKey(buildIconCacheKey(pageUrl, sourceUrl));
+            }
+        }
+
+        if (lookup && lookup.byPageUrl && pageUrl) {
+            const byPage = lookup.byPageUrl.get(pageUrl);
+            if (byPage) addKey(byPage);
+        }
+
+        let matchedByIconUrl = false;
+        if (lookup && sourceUrl && lookup.byIconUrl) {
+            const byIcon = lookup.byIconUrl.get(sourceUrl);
+            if (byIcon) {
+                matchedByIconUrl = byIcon.size > 0;
+                for (const key of byIcon) addKey(key);
+            }
+        }
+
+        const hostname = this._normalizeHostname(
+            rawEntry.hostname ||
+            rawEntry.domain ||
+            rawEntry.host ||
+            rawEntry.id ||
+            pageUrl ||
+            sourceUrl
+        );
+
+        if (!hasModernKey && !matchedByIconUrl && lookup && hostname && lookup.byHostname) {
+            const byHost = lookup.byHostname.get(hostname);
+            if (byHost) {
+                for (const key of byHost) addKey(key);
+            }
+        }
+
+        return [...keys];
+    }
+
+    _toModernIconCacheKey(value) {
+        if (typeof value !== 'string') return '';
+        const trimmed = value.trim();
+        if (!trimmed) return '';
+        if (trimmed.startsWith('v2|p:')) {
+            return trimmed;
+        }
+        return '';
+    }
+
+    _normalizeHostname(value) {
+        if (!value || typeof value !== 'string') return '';
+        const trimmed = value.trim();
+        if (!trimmed) return '';
+
+        const stripWww = (hostname) => hostname.replace(/^www\./i, '').toLowerCase();
+        try {
+            const normalizedUrl = normalizeIconCacheUrl(trimmed);
+            if (normalizedUrl) {
+                const parsed = new URL(normalizedUrl);
+                return stripWww(parsed.hostname || '');
+            }
+        } catch {
+        }
+
+        const safe = trimmed
+            .replace(/^[a-z]+:\/\//i, '')
+            .split('/')[0]
+            .split(':')[0]
+            .trim();
+        if (!safe) return '';
+        return stripWww(safe);
+    }
+
+    _buildIconCacheRestoreLookup(syncData) {
+        const byHostname = new Map();
+        const byIconUrl = new Map();
+        const byPageUrl = new Map();
+
+        if (!syncData || typeof syncData !== 'object') {
+            return { byHostname, byIconUrl, byPageUrl };
+        }
+
+        const itemsById = new Map();
+        const addItem = (id, item) => {
+            if (typeof id !== 'string' || !id) return;
+            if (!item || typeof item !== 'object') return;
+            if (item.type === 'folder') return;
+            itemsById.set(id, item);
+        };
+
+        const quicklinkIds = Array.isArray(syncData.quicklinksItems)
+            ? syncData.quicklinksItems.filter((id) => typeof id === 'string' && id && id !== '__PAGE_BREAK__')
+            : [];
+
+        for (const id of quicklinkIds) {
+            const inlineEntry = syncData[id];
+            addItem(id, inlineEntry);
+        }
+
+        const activeSetId = typeof syncData.quicklinksActiveSet === 'string'
+            ? syncData.quicklinksActiveSet
+            : '';
+        if (activeSetId) {
+            const indexKey = `quicklinksChunkSet_${activeSetId}_index`;
+            const chunkKeys = Array.isArray(syncData[indexKey]) ? syncData[indexKey] : [];
+            for (const chunkKey of chunkKeys) {
+                if (typeof chunkKey !== 'string' || !chunkKey.startsWith(`quicklinksChunkSet_${activeSetId}_`)) {
+                    continue;
+                }
+                const chunk = syncData[chunkKey];
+                if (!chunk || typeof chunk !== 'object') continue;
+                for (const [id, item] of Object.entries(chunk)) {
+                    addItem(id, item);
+                }
+            }
+        }
+
+        for (const [id, value] of Object.entries(syncData)) {
+            if (!id.startsWith('qlink_')) continue;
+            addItem(id, value);
+        }
+
+        for (const item of itemsById.values()) {
+            const pageUrl = normalizeIconCacheUrl(item.url || '');
+            if (!pageUrl) continue;
+
+            const customIconUrl = normalizeIconCacheUrl(item.icon || '');
+            const modernKey = buildIconCacheKey(pageUrl, customIconUrl || '');
+            if (!modernKey) continue;
+
+            byPageUrl.set(pageUrl, modernKey);
+
+            const hostname = this._normalizeHostname(pageUrl);
+            if (hostname) {
+                if (!byHostname.has(hostname)) byHostname.set(hostname, new Set());
+                byHostname.get(hostname).add(modernKey);
+            }
+
+            if (customIconUrl) {
+                if (!byIconUrl.has(customIconUrl)) byIconUrl.set(customIconUrl, new Set());
+                byIconUrl.get(customIconUrl).add(modernKey);
+            }
+        }
+
+        return { byHostname, byIconUrl, byPageUrl };
     }
 }
 let _backupManagerInstance = null;

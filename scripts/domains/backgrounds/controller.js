@@ -5,6 +5,7 @@ import { onStorageChange } from '../../platform/storage-runtime.js';
 import * as storageRepo from '../../platform/storage-repo.js';
 import { createMachine } from '../../platform/ui-state-machine.js';
 import { runWithTimeout } from '../../shared/net.js';
+import { getErrorMessage, isRecoverableError, logWithDedup } from '../../shared/error-utils.js';
 import {
     applyBackgroundMethodsTo,
     runBackgroundTransition,
@@ -135,11 +136,14 @@ class BackgroundSystem {
                 });
                 shouldRefreshAfterInit = startupNeedRefresh;
             } catch (error) {
-                console.warn('[Background] Startup warm background apply failed, falling back to normal load:', error);
-                await this.loadBackground({ phase: 'startup' });
+                logWithDedup('warn', '[Background] Startup warm background apply failed, falling back to normal load:', error, {
+                    dedupeKey: 'background.startup.warm-failure',
+                    skipIfRecoverable: true
+                });
+                await this.loadBackground({ phase: 'startup', suppressRecoverableErrors: true });
             }
         } else {
-            await this.loadBackground({ phase: 'startup' });
+            await this.loadBackground({ phase: 'startup', suppressRecoverableErrors: true });
         }
 
         await localFilesInitPromise;
@@ -361,15 +365,24 @@ class BackgroundSystem {
 
     _normalizeLoadBackgroundOptions(forceOrOptions = false) {
         if (typeof forceOrOptions === 'boolean') {
-            return { force: forceOrOptions, phase: 'normal' };
+            return {
+                force: forceOrOptions,
+                phase: 'normal',
+                suppressRecoverableErrors: false
+            };
         }
         if (forceOrOptions && typeof forceOrOptions === 'object') {
             return {
                 force: Boolean(forceOrOptions.force),
-                phase: forceOrOptions.phase === 'startup' ? 'startup' : 'normal'
+                phase: forceOrOptions.phase === 'startup' ? 'startup' : 'normal',
+                suppressRecoverableErrors: Boolean(forceOrOptions.suppressRecoverableErrors)
             };
         }
-        return { force: false, phase: 'normal' };
+        return {
+            force: false,
+            phase: 'normal',
+            suppressRecoverableErrors: false
+        };
     }
 
     async loadBackground(forceOrOptions = false) {
@@ -377,7 +390,11 @@ class BackgroundSystem {
             return;
         }
 
-        const { force, phase } = this._normalizeLoadBackgroundOptions(forceOrOptions);
+        const {
+            force,
+            phase,
+            suppressRecoverableErrors
+        } = this._normalizeLoadBackgroundOptions(forceOrOptions);
 
         this._stateMachine.transition('loading', { force, phase });
         await this._loadMutex.acquire();
@@ -416,7 +433,9 @@ class BackgroundSystem {
                 case 'unsplash':
                 case 'pixabay':
                 case 'pexels':
-                    background = await this.getProviderBackground(this.settings.type);
+                    background = await this.getProviderBackground(this.settings.type, {
+                        suppressRecoverableErrors
+                    });
                     break;
                 default:
                     background = await this.getLocalFileBackground();
@@ -436,10 +455,22 @@ class BackgroundSystem {
             }
 
         } catch (error) {
-            console.error('[Background] Failed to load:', error);
-            showNotification(error.message || t('bgLoadFailed'), 'error');
+            logWithDedup('error', '[Background] Failed to load:', error, {
+                skipIfRecoverable: suppressRecoverableErrors
+            });
+
+            if (!(suppressRecoverableErrors && isRecoverableError(error))) {
+                showNotification(getErrorMessage(error, t('bgLoadFailed')), 'error');
+            }
             this._stateMachine.transition('error', { error });
-            await this.applyDefaultBackground();
+            try {
+                await this.applyDefaultBackground();
+            } catch (fallbackError) {
+                logWithDedup('error', '[Background] Default background fallback failed:', fallbackError, {
+                    skipIfRecoverable: suppressRecoverableErrors
+                });
+                this.applyColorBackground(this.settings.color || DEFAULT_SETTINGS.color);
+            }
         } finally {
             this._loadMutex.release();
         }
@@ -483,7 +514,7 @@ class BackgroundSystem {
         };
     }
 
-    async getProviderBackground(type) {
+    async getProviderBackground(type, { suppressRecoverableErrors = false } = {}) {
         const provider = getProvider(type);
         if (!provider) {
             throw new Error(t('bgUnknownProvider'));
@@ -498,8 +529,12 @@ class BackgroundSystem {
         try {
             return await provider.fetchRandom(apiKey);
         } catch (error) {
-            console.error(`[Background] ${type} fetch error:`, error);
-            showNotification(error.message, 'error');
+            logWithDedup('error', `[Background] ${type} fetch error:`, error, {
+                skipIfRecoverable: true
+            });
+            if (!(suppressRecoverableErrors && isRecoverableError(error))) {
+                showNotification(getErrorMessage(error, t('bgLoadFailed')), 'error');
+            }
             return this.getLocalFileBackground();
         }
     }
@@ -689,7 +724,11 @@ class BackgroundSystem {
             }
 
             if (areaName === 'local') {
-                this._handleLocalStorageChange(changes);
+                void this._handleLocalStorageChange(changes).catch((error) => {
+                    logWithDedup('error', '[Background] Failed to handle local storage change:', error, {
+                        skipIfRecoverable: true
+                    });
+                });
             }
         });
     }
@@ -764,8 +803,14 @@ class BackgroundSystem {
 
             if (this.settings.type === 'color') return;
 
-            const applyType = hydrated.file ? 'files' : this.settings.type;
-            await this._applyBackgroundInternal(hydrated, this._getApplyOptions(applyType));
+            try {
+                const applyType = hydrated.file ? 'files' : this.settings.type;
+                await this._applyBackgroundInternal(hydrated, this._getApplyOptions(applyType));
+            } catch (error) {
+                logWithDedup('warn', '[Background] Failed to apply synced background change:', error, {
+                    skipIfRecoverable: true
+                });
+            }
         }
 
         if (changes.lastBackgroundChange && !changes.currentBackground) {
