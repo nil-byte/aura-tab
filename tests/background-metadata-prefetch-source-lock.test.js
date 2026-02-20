@@ -15,6 +15,7 @@ describe('Background metadata prefetch source lock', () => {
         backgroundSystem.settings = {
             ...backgroundSystem.settings,
             type: 'unsplash',
+            frequency: 'day',
             apiKeys: {
                 ...backgroundSystem.settings.apiKeys,
                 unsplash: '1234567890abcdef',
@@ -52,5 +53,22 @@ describe('Background metadata prefetch source lock', () => {
         expect(provider?.name).toBe('Unsplash');
         expect(apiKey).toBe('1234567890abcdef');
         expect(count).toBe(2);
+    });
+
+    it('should skip metadata prefetch for tabs frequency on online sources', async () => {
+        const prefetchSpy = vi
+            .spyOn(backgroundSystem._metadataCache, 'prefetch')
+            .mockResolvedValue(undefined);
+
+        backgroundSystem.settings = {
+            ...backgroundSystem.settings,
+            frequency: 'tabs',
+            type: 'unsplash'
+        };
+
+        await backgroundSystem._refillMetadataCache();
+
+        expect(scheduledIdleTask).toBeNull();
+        expect(prefetchSpy).not.toHaveBeenCalled();
     });
 });

@@ -99,4 +99,30 @@ describe('background transition pipeline', () => {
             phase: 'startup'
         });
     });
+
+    it('should skip preload for online source when frequency is tabs', async () => {
+        const prepared = {
+            format: 'image',
+            id: 'u-tabs-1',
+            urls: { full: 'https://example.com/full-tabs.jpg', small: 'https://example.com/small-tabs.jpg' }
+        };
+
+        const system = {
+            settings: { type: 'unsplash', frequency: 'tabs', smartCropEnabled: true },
+            _prepareBackgroundForDisplay: vi.fn(async () => prepared),
+            _applyBackgroundInternal: vi.fn(async () => {}),
+            _saveBackgroundState: vi.fn(async () => {}),
+            preloadNextBackground: vi.fn()
+        };
+
+        await runBackgroundTransition(system, {
+            background: prepared,
+            type: 'unsplash',
+            updateTimestamp: true,
+            save: true,
+            preload: true
+        });
+
+        expect(system.preloadNextBackground).not.toHaveBeenCalled();
+    });
 });

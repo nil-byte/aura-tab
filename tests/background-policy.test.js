@@ -3,7 +3,8 @@ import {
     getApplyOptions,
     getPrepareTimeoutMs,
     isOnlineBackgroundType,
-    resolveRenderMode
+    resolveRenderMode,
+    shouldPreloadNextBackground
 } from '../scripts/domains/backgrounds/controller-actions.js';
 
 describe('background policy', () => {
@@ -32,5 +33,11 @@ describe('background policy', () => {
             renderMode: 'single-stage'
         });
     });
-});
 
+    it('should disable preload only for tabs frequency on online sources', () => {
+        expect(shouldPreloadNextBackground({ type: 'unsplash', frequency: 'tabs' }, 'unsplash')).toBe(false);
+        expect(shouldPreloadNextBackground({ type: 'pixabay', frequency: 'tabs' }, 'pixabay')).toBe(false);
+        expect(shouldPreloadNextBackground({ type: 'files', frequency: 'tabs' }, 'files')).toBe(true);
+        expect(shouldPreloadNextBackground({ type: 'unsplash', frequency: 'hour' }, 'unsplash')).toBe(true);
+    });
+});

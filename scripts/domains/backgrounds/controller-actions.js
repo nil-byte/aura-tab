@@ -27,6 +27,11 @@ export function getApplyOptions(settings, type = settings?.type) {
     };
 }
 
+export function shouldPreloadNextBackground(settings, type = settings?.type) {
+    if (!settings) return true;
+    return !(settings.frequency === 'tabs' && isOnlineBackgroundType(type));
+}
+
 export class Mutex {
     constructor() {
         this._locked = false;

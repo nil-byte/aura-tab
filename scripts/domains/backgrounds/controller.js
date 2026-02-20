@@ -67,6 +67,7 @@ class BackgroundSystem {
         this._unsubscribeRuntimeMessage = null;
         this._visibilityHandler = null;
         this._startupPhaseResetTimer = null;
+        this._pendingStartupRefreshOnVisible = false;
         this._runtimeOwner = `background.system.${this._instanceId}`;
         this._stateMachine = createMachine('idle', {
             idle: ['loading', 'error'],
@@ -157,16 +158,11 @@ class BackgroundSystem {
             this._readyResolve();
         }
 
-        if (shouldRefreshAfterInit && !document.hidden) {
-            const refreshInBackground = () => {
-                void this.refresh();
-            };
-            if (typeof requestIdleCallback === 'function') {
-                requestIdleCallback(() => {
-                    refreshInBackground();
-                }, { timeout: 1200 });
+        if (shouldRefreshAfterInit) {
+            if (document.hidden) {
+                this._pendingStartupRefreshOnVisible = true;
             } else {
-                setTimeout(refreshInBackground, 0);
+                this._scheduleStartupRefresh();
             }
         }
     }
@@ -634,6 +630,9 @@ class BackgroundSystem {
         const oldType = this.settings.type;
 
         this.settings = { ...this.settings, ...newSettings };
+        if (this.settings.type === 'color' || this.settings.frequency !== 'tabs') {
+            this._pendingStartupRefreshOnVisible = false;
+        }
         await this.saveSettings();
         this.applyFilters();
 
@@ -687,14 +686,51 @@ class BackgroundSystem {
     initVisibilityListener() {
         if (this._visibilityHandler) return;
         this._visibilityHandler = () => {
-            if (document.visibilityState === 'visible' && this.initialized) {
-                const needRefresh = needsBackgroundChange(this.settings.frequency, this.lastChange);
-                if (needRefresh && this.settings.type !== 'color') {
-                    void this.loadBackground();
-                }
+            if (document.visibilityState !== 'visible' || !this.initialized) {
+                return;
+            }
+
+            if (this._pendingStartupRefreshOnVisible) {
+                this._scheduleStartupRefresh();
+                return;
+            }
+
+            if (this._shouldAutoRefreshOnVisibility()) {
+                void this.loadBackground();
             }
         };
         document.addEventListener('visibilitychange', this._visibilityHandler);
+    }
+
+    _scheduleStartupRefresh() {
+        this._pendingStartupRefreshOnVisible = false;
+        const refreshInBackground = () => {
+            if (document.hidden || document.visibilityState !== 'visible') {
+                this._pendingStartupRefreshOnVisible = true;
+                return;
+            }
+            if (this.settings.frequency === 'tabs') {
+                void this.refresh();
+                return;
+            }
+            if (this._shouldAutoRefreshOnVisibility()) {
+                void this.loadBackground();
+            }
+        };
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(() => {
+                refreshInBackground();
+            }, { timeout: 1200 });
+        } else {
+            setTimeout(refreshInBackground, 0);
+        }
+    }
+
+    _shouldAutoRefreshOnVisibility() {
+        if (this.settings.type === 'color') return false;
+        if (this.settings.frequency === 'tabs') return false;
+        if (this.settings.frequency === 'never') return false;
+        return needsBackgroundChange(this.settings.frequency, this.lastChange);
     }
 
     initStorageListener() {
@@ -752,6 +788,9 @@ class BackgroundSystem {
             texture: { ...DEFAULT_SETTINGS.texture, ...(newValue.texture || {}) },
             apiKeys: { ...DEFAULT_SETTINGS.apiKeys, ...(newValue.apiKeys || {}) }
         };
+        if (this.settings.type === 'color' || this.settings.frequency !== 'tabs') {
+            this._pendingStartupRefreshOnVisible = false;
+        }
 
         const filtersChanged =
             oldFilters.blur !== this.settings.blur ||
@@ -896,6 +935,7 @@ class BackgroundSystem {
             clearTimeout(this._startupPhaseResetTimer);
             this._startupPhaseResetTimer = null;
         }
+        this._pendingStartupRefreshOnVisible = false;
 
         if (this._saveTimeout) {
             clearTimeout(this._saveTimeout);

@@ -1,4 +1,22 @@
 {
+  "3.4.5": {
+    "en": [
+      "Background Preload Optimization: Skip unnecessary preloads for tabs frequency on online sources",
+      "Startup Refresh Logic: Defer background refresh until tab becomes visible",
+      "Performance: Reduce network requests when using tabs-based background switching"
+    ],
+    "zh_CN": [
+      "背景预加载优化：针对标签页频率的在线图源禁用不必要的预加载",
+      "启动刷新逻辑：延迟背景刷新直到标签页可见",
+      "性能优化：减少基于标签页切换时的网络请求"
+    ],
+    "zh_TW": [
+      "背景預載入優化：針對分頁頻率的線上圖源禁用不必要的預載入",
+      "啟動重新整理邏輯：延遲背景重新整理直到分頁可見",
+      "效能優化：減少基於分頁切換時的網路請求"
+    ],
+    "moreUrl": ""
+  },
   "3.4.4": {
     "en": [
       "Error Handling: Unified error utilities with deduplication and recoverable error detection",

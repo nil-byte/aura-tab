@@ -8,7 +8,7 @@ import { fetchWithTimeout, runWithTimeout } from '../../shared/net.js';
 import { toast } from '../../shared/toast.js';
 import { logWithDedup } from '../../shared/error-utils.js';
 import { getProvider } from './source-remote.js';
-import { getApplyOptions, getPrepareTimeoutMs } from './controller-actions.js';
+import { getApplyOptions, getPrepareTimeoutMs, shouldPreloadNextBackground } from './controller-actions.js';
 
 const FIRST_PAINT_API_KEY = '__AURA_FIRST_PAINT__';
 const FIRST_PAINT_STORAGE_KEY = 'aura:firstPaintColor';
@@ -1018,7 +1018,7 @@ export async function runBackgroundTransition(system, options = {}) {
         await system._saveBackgroundState(prepared);
     }
 
-    if (preload) {
+    if (preload && shouldPreloadNextBackground(system.settings, type)) {
         system.preloadNextBackground();
     }
 
@@ -1289,6 +1289,10 @@ export const backgroundApplyMethods = {
 
     async preloadNextBackground() {
         if (this.settings.type === 'color') return;
+        if (!shouldPreloadNextBackground(this.settings, this.settings.type)) {
+            this.nextBackground = null;
+            return;
+        }
 
         try {
             if (this.nextBackground?.background?.urls) {
@@ -1349,6 +1353,7 @@ export const backgroundApplyMethods = {
     async _refillMetadataCache() {
         const source = this.settings.type;
         if (source === 'files' || source === 'color') return;
+        if (!shouldPreloadNextBackground(this.settings, source)) return;
 
         const provider = getProvider(source);
         const apiKey = this.settings.apiKeys[source];
