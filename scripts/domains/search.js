@@ -18,6 +18,7 @@ import {
 } from '../platform/lifecycle.js';
 import { t } from '../platform/i18n.js';
 import * as storageRepo from '../platform/storage-repo.js';
+import { SYNC_SETTINGS_DEFAULTS, getSyncSettings } from '../platform/settings-contract.js';
 
 const MODAL_ID = 'engine-switcher';
 
@@ -182,10 +183,10 @@ class Search extends DisposableComponent {
 
     async loadSavedPreferences() {
         try {
-            const settings = await storageRepo.sync.getMultiple({
-                preferredSearchEngine: 'default',
-                useDefaultEngine: true,
-                searchOpenInNewTab: false
+            const settings = await getSyncSettings({
+                preferredSearchEngine: SYNC_SETTINGS_DEFAULTS.preferredSearchEngine,
+                useDefaultEngine: SYNC_SETTINGS_DEFAULTS.useDefaultEngine,
+                searchOpenInNewTab: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab
             });
             this.useDefaultEngine = settings.useDefaultEngine;
             this.openInNewTab = settings.searchOpenInNewTab;

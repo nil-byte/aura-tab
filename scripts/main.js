@@ -20,7 +20,7 @@ import { runStorageBootstrap } from './platform/storage-runtime.js';
 import { libraryStore } from './domains/backgrounds/library-store.js';
 import { initChangelog } from './domains/changelog/index.js';
 import { onStorageChange } from './platform/storage-runtime.js';
-import * as storageRepo from './platform/storage-repo.js';
+import { getSyncSettings } from './platform/settings-contract.js';
 
 const FIRST_PAINT_API_KEY = '__AURA_FIRST_PAINT__';
 const FIRST_PAINT_DISARM_TIMEOUT_MS = 3000;
@@ -36,7 +36,7 @@ async function initTheme() {
     };
 
     try {
-        const { uiTheme } = await storageRepo.sync.getMultiple({ uiTheme: 'light' });
+        const { uiTheme } = await getSyncSettings({ uiTheme: undefined });
         apply(uiTheme);
     } catch (error) {
         console.warn('[Aura Tab] theme init failed:', error);

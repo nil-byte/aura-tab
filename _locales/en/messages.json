@@ -23,10 +23,6 @@
     "message": "Version",
     "description": "Changelog popover version label"
   },
-  "changelog_ignore_this_version": {
-    "message": "Don’t remind for this version",
-    "description": "Ignore current version button"
-  },
   "changelog_learn_more": {
     "message": "Learn more",
     "description": "Learn more button"

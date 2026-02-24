@@ -3,6 +3,7 @@ import { modalLayer } from '../platform/modal-layer.js';
 import { DisposableComponent } from '../platform/lifecycle.js';
 import { launchpad } from './quicklinks/launchpad.js';
 import * as storageRepo from '../platform/storage-repo.js';
+import { getSyncSettings } from '../platform/settings-contract.js';
 import { isTimeoutError, logWithDedup } from '../shared/error-utils.js';
 
 export class LayoutManager extends DisposableComponent {
@@ -66,7 +67,7 @@ export class LayoutManager extends DisposableComponent {
         });
 
         try {
-            const settings = await storageRepo.sync.getMultiple({ searchActive: false });
+            const settings = await getSyncSettings({ searchActive: undefined });
             if (settings.searchActive) {
                 this.toggleSearch(true, false, { focus: false });
             }
@@ -155,11 +156,11 @@ export class LayoutManager extends DisposableComponent {
     }
 
     async initAllVisibilitySettings() {
-        const settings = await storageRepo.sync.getMultiple({
-            showSearchBtn: true,
-            showSettingsBtn: true,
-            launchpadShowNames: true,
-            backgroundSettings: {}
+        const settings = await getSyncSettings({
+            showSearchBtn: undefined,
+            showSettingsBtn: undefined,
+            launchpadShowNames: undefined,
+            backgroundSettings: undefined
         });
 
         const bgSettings = settings.backgroundSettings || {};
@@ -380,8 +381,8 @@ export class LayoutManager extends DisposableComponent {
                     return;
                 }
 
-                const bgSettings = await storageRepo.sync.getMultiple({ backgroundSettings: {} });
-                const provider = bgSettings.backgroundSettings?.type || 'unsplash';
+                const bgSettings = await getSyncSettings({ backgroundSettings: undefined });
+                const provider = bgSettings.backgroundSettings?.type || 'files';
 
                 const thumbParamsByProvider = {
                     unsplash: '?w=300&q=70&auto=format',

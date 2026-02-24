@@ -75,29 +75,32 @@ describe('changelog', () => {
         expect(await changelog.getLastSeenVersion()).toBe('3.0');
     });
 
-    it('adds and checks ignored versions', async () => {
-        const changelog = await import('../scripts/domains/changelog/index.js');
-        await changelog.addIgnoreVersion('3.0');
-        expect(await changelog.getIgnoredVersions()).toContain('3.0');
-        expect(await changelog.isIgnored('3.0')).toBe(true);
-    });
-
-    it('close does not persist lastSeenVersion', async () => {
+    it('close should persist lastSeenVersion', async () => {
         const { changelog, view } = await initChangelog({
             payload: { '3.0': { en: ['a'] } }
         });
         const args = view.mount.mock.calls[0][0];
         await args.onClose();
-        expect(await changelog.getLastSeenVersion()).not.toBe('3.0');
+        expect(await changelog.getLastSeenVersion()).toBe('3.0');
     });
 
-    it('ignore persists lastSeenVersion', async () => {
-        const { changelog, view } = await initChangelog({
-            payload: { '3.0': { en: ['a'] } }
-        });
-        const args = view.mount.mock.calls[0][0];
-        await args.onIgnore('3.0');
-        expect(await changelog.getLastSeenVersion()).toBe('3.0');
+    it('should not mount when current version is already seen', async () => {
+        const changelog = await import('../scripts/domains/changelog/index.js');
+        await changelog.setLastSeenVersion('3.0');
+        const view = await import('../scripts/domains/changelog/view.js');
+        await initChangelog({ payload: { '3.0': { en: ['a'] } } });
+        expect(view.mount).not.toHaveBeenCalled();
+    });
+
+    it('runtime message should not remount seen version', async () => {
+        const listeners = [];
+        global.chrome.runtime.onMessage.addListener = vi.fn((fn) => listeners.push(fn));
+        const changelog = await import('../scripts/domains/changelog/index.js');
+        await changelog.setLastSeenVersion('3.0');
+
+        const { view } = await initChangelog({ payload: {} });
+        await listeners[0]({ type: 'showChangelog', version: '3.0' });
+        expect(view.mount).not.toHaveBeenCalled();
     });
 
     it('learn more opens mac settings', async () => {

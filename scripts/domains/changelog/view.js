@@ -7,7 +7,6 @@ const cls = {
   list: 'changelog-list',
   actions: 'changelog-actions',
   btnClose: 'changelog-btn-close',
-  btnIgnore: 'changelog-btn-ignore',
   btnMore: 'changelog-btn-more',
   hidden: 'changelog-hidden',
   open: 'changelog-open'
@@ -32,8 +31,6 @@ function ensureStyle() {
   .${cls.actions} button:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(10,132,255,.6)}
   .${cls.btnMore}{background:var(--accent,#0A84FF);color:#fff}
   .${cls.btnMore}:hover{box-shadow:0 6px 18px rgba(10,132,255,.35);transform:translateY(-1px)}
-  .${cls.btnIgnore}{background:transparent;color:inherit;border:1px solid rgba(255,255,255,.28)}
-  .${cls.btnIgnore}:hover{background:rgba(255,255,255,.08)}
   .${cls.btnClose}{background:transparent;color:inherit;border:1px solid rgba(255,255,255,.18)}
   .${cls.btnClose}:hover{background:rgba(255,255,255,.06)}
   `
@@ -60,20 +57,17 @@ function createRoot() {
     const btnMore = document.createElement('button')
     btnMore.className = cls.btnMore
     btnMore.dataset.i18n = 'changelog_learn_more'
-    const btnIgnore = document.createElement('button')
-    btnIgnore.className = cls.btnIgnore
-    btnIgnore.dataset.i18n = 'changelog_ignore_this_version'
     const btnClose = document.createElement('button')
     btnClose.className = cls.btnClose
     btnClose.dataset.i18n = 'changelog_close'
-    actions.append(btnMore, btnIgnore, btnClose)
+    actions.append(btnMore, btnClose)
     root.append(title, ver, ul, actions)
     document.body.appendChild(root)
   }
   return root
 }
 
-export function mount({ title, version, items, moreUrl, onClose, onIgnore, onMore }) {
+export function mount({ title, version, items, moreUrl, onClose, onMore }) {
   const root = createRoot()
   root.classList.remove(cls.open)
   const titleEl = root.querySelector(`.${cls.title}`)
@@ -96,15 +90,10 @@ export function mount({ title, version, items, moreUrl, onClose, onIgnore, onMor
 
   const btnMore = root.querySelector(`.${cls.btnMore}`)
   const btnClose = root.querySelector(`.${cls.btnClose}`)
-  const btnIgnore = root.querySelector(`.${cls.btnIgnore}`)
 
   btnMore.style.display = ''
   btnMore.onclick = () => {
     if (onMore) onMore(moreUrl)
-  }
-  btnIgnore.onclick = () => {
-    if (onIgnore) onIgnore(version)
-    hide()
   }
   btnClose.onclick = () => {
     if (onClose) onClose()

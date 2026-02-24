@@ -23,10 +23,6 @@
     "message": "版本",
     "description": "Changelog popover version label"
   },
-  "changelog_ignore_this_version": {
-    "message": "本版本不再提醒",
-    "description": "Ignore current version button"
-  },
   "changelog_learn_more": {
     "message": "了解更多",
     "description": "Learn more button"

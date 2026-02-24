@@ -13,6 +13,7 @@ import { MSG } from './scripts/platform/runtime-bus.js';
 import { onStorageChange } from './scripts/platform/storage-runtime.js';
 import * as storageRepo from './scripts/platform/storage-repo.js';
 import { restoreToolbarIcon } from './scripts/platform/toolbar-icon-service.js';
+import { createBackgroundSettingsDefaults } from './scripts/platform/settings-contract.js';
 
 const ALARM_NAME = MSG.REFRESH_BACKGROUND;
 const MAX_ICON_BYTES = 262144;
@@ -31,18 +32,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
             const backgroundSettings = await storageRepo.sync.get('backgroundSettings');
             if (!backgroundSettings) {
                 await storageRepo.sync.setMultiple({
-                    backgroundSettings: {
-                        type: 'files',
-                        frequency: 'never',
-                        fadein: 400,
-                        brightness: 100,
-                        blur: 0,
-                        overlay: 30,
-                        color: '#1a1a2e',
-                        texture: { type: 'none', opacity: 10, size: 30, color: '#ffffff' },
-                        showRefreshButton: true,
-                        apiKeys: { unsplash: '', pixabay: '', pexels: '' }
-                    }
+                    backgroundSettings: createBackgroundSettingsDefaults()
                 });
             }
         }

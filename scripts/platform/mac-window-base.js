@@ -3,6 +3,7 @@ import { DisposableComponent } from './lifecycle.js';
 import { modalLayer } from './modal-layer.js';
 import { WindowDragController, WindowResizeController } from './window-interaction.js';
 import * as storageRepo from './storage-repo.js';
+import { SYNC_SETTINGS_DEFAULTS } from './settings-contract.js';
 
 export class MacWindowBase extends DisposableComponent {
     constructor() {
@@ -121,8 +122,11 @@ export class MacWindowBase extends DisposableComponent {
     async _loadBehaviorSettings() {
         try {
             const key = this._getBehaviorSettingsKey();
-            const result = await storageRepo.sync.getMultiple({ [key]: false });
-            this._dismissOnOutsideClick = result[key] === true;
+            const fallback = Object.hasOwn(SYNC_SETTINGS_DEFAULTS, key)
+                ? SYNC_SETTINGS_DEFAULTS[key]
+                : false;
+            const value = await storageRepo.sync.get(key, fallback);
+            this._dismissOnOutsideClick = value === true;
         } catch {
         }
     }

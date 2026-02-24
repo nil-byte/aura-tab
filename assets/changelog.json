@@ -1,4 +1,25 @@
 {
+  "3.4.6": {
+    "en": [
+      "Settings Contract: Unified default values for sync settings to keep UI state and runtime behavior consistent",
+      "General Settings Fix: Resolved non-persistent toggle display mismatch for Settings/Search button visibility",
+      "Changelog Dialog Simplification: Removed 'Ignore this version'; Close now persists last seen version to prevent repeated prompts",
+      "Default Drift Fix: Install-time background defaults now reuse canonical defaults without altering existing user data"
+    ],
+    "zh_CN": [
+      "设置契约层：统一同步设置默认值，确保 UI 状态与运行时行为一致",
+      "通用设置修复：解决设置按钮/搜索按钮显示开关的 UI 与持久化状态不一致问题",
+      "更新日志弹窗收敛：移除“忽略此版本”，关闭按钮改为持久化已读版本，避免同版本反复弹出",
+      "默认值漂移修复：安装初始化背景配置改为复用统一默认值，不影响现有用户数据"
+    ],
+    "zh_TW": [
+      "設定契約層：統一同步設定預設值，確保 UI 狀態與執行期行為一致",
+      "通用設定修復：解決設定按鈕/搜尋按鈕顯示開關的 UI 與持久化狀態不一致問題",
+      "更新日誌彈窗收斂：移除「忽略此版本」，關閉按鈕改為持久化已讀版本，避免同版本重複彈出",
+      "預設值漂移修復：安裝初始化背景設定改為復用統一預設值，不影響既有使用者資料"
+    ],
+    "moreUrl": ""
+  },
   "3.4.5": {
     "en": [
       "Background Preload Optimization: Skip unnecessary preloads for tabs frequency on online sources",

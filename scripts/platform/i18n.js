@@ -1,4 +1,5 @@
 import * as storageRepo from './storage-repo.js';
+import { SYNC_SETTINGS_DEFAULTS, getSyncSettings } from './settings-contract.js';
 
 // User language preference cache (avoid frequent storage reads)
 let cachedLocale = null;
@@ -181,7 +182,7 @@ async function _loadLocaleDict(locale) {
  */
 export async function initLanguage() {
     try {
-        const { interfaceLanguage = 'auto' } = await storageRepo.sync.getMultiple({ interfaceLanguage: 'auto' });
+        const { interfaceLanguage = SYNC_SETTINGS_DEFAULTS.interfaceLanguage } = await getSyncSettings({ interfaceLanguage: undefined });
         cachedLocale = SUPPORTED_LOCALES.includes(interfaceLanguage) ? interfaceLanguage : 'auto';
     } catch (error) {
         console.error('[i18n] Failed to load language setting:', error);

@@ -18,12 +18,13 @@ import {
     DisposableComponent
 } from '../platform/lifecycle.js';
 import * as storageRepo from '../platform/storage-repo.js';
+import { SYNC_SETTINGS_DEFAULTS, getSyncSettings } from '../platform/settings-contract.js';
 
 // Default settings
 const DEFAULTS = {
-    clockFormat: '24',
-    dateFormat: 'en',
-    showSeconds: false
+    clockFormat: SYNC_SETTINGS_DEFAULTS.clockFormat,
+    dateFormat: SYNC_SETTINGS_DEFAULTS.dateFormat,
+    showSeconds: SYNC_SETTINGS_DEFAULTS.showSeconds
 };
 
 class Clock extends DisposableComponent {
@@ -91,7 +92,7 @@ class Clock extends DisposableComponent {
         }
 
         try {
-            this._cachedSettings = await storageRepo.sync.getMultiple(DEFAULTS);
+            this._cachedSettings = await getSyncSettings(DEFAULTS);
             this._settingsCacheTime = now;
         } catch {
             this._cachedSettings = { ...DEFAULTS };

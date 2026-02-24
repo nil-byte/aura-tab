@@ -6,8 +6,7 @@ import { runtimeBus } from '../../platform/runtime-bus.js'
 import { MSG } from '../../platform/runtime-bus.js'
 
 const KEYS = {
-  lastSeenVersion: 'changelog:lastSeenVersion',
-  ignoredVersions: 'changelog:ignoredVersions'
+  lastSeenVersion: 'changelog:lastSeenVersion'
 }
 
 async function getLocal(key, defaultValue) {
@@ -26,24 +25,11 @@ export async function setLastSeenVersion(version) {
   await setLocal(KEYS.lastSeenVersion, String(version || ''))
 }
 
-export async function getIgnoredVersions() {
-  const list = await getLocal(KEYS.ignoredVersions, [])
-  return Array.isArray(list) ? list : []
-}
-
-export async function addIgnoreVersion(version) {
+async function shouldShowVersion(version) {
   const v = String(version || '')
-  const list = await getIgnoredVersions()
-  if (!list.includes(v)) {
-    list.push(v)
-    await setLocal(KEYS.ignoredVersions, list)
-  }
-}
-
-export async function isIgnored(version) {
-  const v = String(version || '')
-  const list = await getIgnoredVersions()
-  return list.includes(v)
+  if (!v) return false
+  const lastSeen = await getLastSeenVersion()
+  return v !== lastSeen
 }
 
 const CHANGELOG_OWNER = 'feature.changelog'
@@ -70,20 +56,14 @@ export async function initChangelog() {
   const uiLang = getUiLang()
   const data = await loadChangelogData()
   const { items, moreUrl } = pickChangelogItems(data, version, uiLang)
-  const lastSeen = await getLastSeenVersion()
-  const ignored = await isIgnored(version)
-  if (!ignored && version && version !== lastSeen) {
+  const shouldShow = await shouldShowVersion(version)
+  if (shouldShow) {
     mount({
       title: chrome.i18n.getMessage('changelog_title') || "What's new",
       version,
       items,
       moreUrl,
       onClose: async () => {
-        // Close: don't persist ignore; optionally mark as viewed
-        // Keep empty so same version can still be prompted later
-      },
-      onIgnore: async v => {
-        await addIgnoreVersion(v)
         await setLastSeenVersion(version)
       },
       onMore: () => openChangelogTab()
@@ -111,8 +91,8 @@ export async function initChangelog() {
   runtimeUnsubscribe = runtimeBus.register(MSG.SHOW_CHANGELOG, async (msg) => {
     if (!msg || msg.type !== MSG.SHOW_CHANGELOG) return
     const v = String(msg.version || version || '')
-    const ignoredNow = await isIgnored(v)
-    if (ignoredNow || !v) return
+    const shouldShowNow = await shouldShowVersion(v)
+    if (!shouldShowNow) return
     const sel = pickChangelogItems(data, v, getUiLang())
     mount({
       title: chrome.i18n.getMessage('changelog_title') || "What's new",
@@ -120,10 +100,6 @@ export async function initChangelog() {
       items: sel.items,
       moreUrl: sel.moreUrl,
       onClose: async () => {
-        // Close: don't persist ignore
-      },
-      onIgnore: async vv => {
-        await addIgnoreVersion(vv)
         await setLastSeenVersion(v)
       },
       onMore: () => openChangelogTab()

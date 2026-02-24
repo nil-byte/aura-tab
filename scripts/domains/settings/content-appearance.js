@@ -2,7 +2,7 @@
 import { t } from '../../platform/i18n.js';
 import { backgroundSystem } from '../backgrounds/controller.js';
 import { toast } from '../../shared/toast.js';
-import * as storageRepo from '../../platform/storage-repo.js';
+import { SYNC_SETTINGS_DEFAULTS, createBackgroundSettingsDefaults, getSyncSettings } from '../../platform/settings-contract.js';
 import { patchBackgroundSettings, patchSyncSettings } from '../../platform/settings-repo.js';
 import { mountToolbarIconSection } from './content-icon.js';
 
@@ -30,6 +30,7 @@ function _ensureAppearanceGlobalListeners() {
 
 const API_KEY_MAX_LENGTH = 256;
 const ONLINE_SOURCES = ['unsplash', 'pixabay', 'pexels'];
+const BACKGROUND_APPEARANCE_DEFAULTS = createBackgroundSettingsDefaults();
 
 const API_LINKS = {
     unsplash: 'https://unsplash.com/developers',
@@ -668,22 +669,26 @@ function _updateSourceUI(container, source) {
 
 async function _loadAppearanceSettings(container) {
     try {
-        const { uiTheme = 'light' } = await storageRepo.sync.getMultiple({ uiTheme: 'light' });
+        const {
+            uiTheme = SYNC_SETTINGS_DEFAULTS.uiTheme,
+            backgroundSettings = BACKGROUND_APPEARANCE_DEFAULTS
+        } = await getSyncSettings({
+            uiTheme: undefined,
+            backgroundSettings: undefined
+        });
         const themeToggle = container.querySelector('#macThemeDark');
         if (themeToggle) themeToggle.checked = uiTheme === 'dark';
 
-        const { backgroundSettings = {} } = await storageRepo.sync.getMultiple({ backgroundSettings: {} });
-
         const bgSourceSelect = container.querySelector('#macBgSource');
-        const currentSource = backgroundSettings.type || 'files';
+        const currentSource = backgroundSettings.type || BACKGROUND_APPEARANCE_DEFAULTS.type;
         if (bgSourceSelect) {
             bgSourceSelect.value = currentSource;
             _updateSourceUI(container, currentSource);
         }
 
         const autoRefreshSelect = container.querySelector('#macAutoRefresh');
-        if (autoRefreshSelect && backgroundSettings.frequency) {
-            autoRefreshSelect.value = backgroundSettings.frequency;
+        if (autoRefreshSelect) {
+            autoRefreshSelect.value = backgroundSettings.frequency || BACKGROUND_APPEARANCE_DEFAULTS.frequency;
         }
 
         _loadApiKeys(container, backgroundSettings.apiKeys || {});
@@ -694,19 +699,18 @@ async function _loadAppearanceSettings(container) {
 
         const colorPicker = container.querySelector('#macBgColorPicker');
         const colorText = container.querySelector('#macBgColorText');
-        if (backgroundSettings.color) {
-            if (colorPicker) colorPicker.value = backgroundSettings.color;
-            if (colorText) colorText.value = backgroundSettings.color;
-        }
+        if (colorPicker) colorPicker.value = backgroundSettings.color || BACKGROUND_APPEARANCE_DEFAULTS.color;
+        if (colorText) colorText.value = backgroundSettings.color || BACKGROUND_APPEARANCE_DEFAULTS.color;
 
-        _loadSlider(container, 'macOverlaySlider', 'macOverlayValue', 'macOverlayFill', backgroundSettings.overlay ?? 30, '%', 80);
-        _loadSlider(container, 'macBlurSlider', 'macBlurValue', 'macBlurFill', backgroundSettings.blur ?? 0, 'px', 30);
-        _loadSlider(container, 'macBrightnessSlider', 'macBrightnessValue', 'macBrightnessFill', backgroundSettings.brightness ?? 100, '%', 150, 20);
+        _loadSlider(container, 'macOverlaySlider', 'macOverlayValue', 'macOverlayFill', backgroundSettings.overlay ?? BACKGROUND_APPEARANCE_DEFAULTS.overlay, '%', 80);
+        _loadSlider(container, 'macBlurSlider', 'macBlurValue', 'macBlurFill', backgroundSettings.blur ?? BACKGROUND_APPEARANCE_DEFAULTS.blur, 'px', 30);
+        _loadSlider(container, 'macBrightnessSlider', 'macBrightnessValue', 'macBrightnessFill', backgroundSettings.brightness ?? BACKGROUND_APPEARANCE_DEFAULTS.brightness, '%', 150, 20);
 
         const textureSelector = container.querySelector('#macTextureSelector');
-        if (textureSelector && backgroundSettings.texture?.type) {
+        if (textureSelector) {
+            const activeTexture = backgroundSettings.texture?.type || BACKGROUND_APPEARANCE_DEFAULTS.texture.type;
             textureSelector.querySelectorAll('.mac-texture-option').forEach(opt => {
-                opt.classList.toggle('active', opt.dataset.texture === backgroundSettings.texture.type);
+                opt.classList.toggle('active', opt.dataset.texture === activeTexture);
             });
         }
     } catch (error) {
@@ -750,4 +754,3 @@ function _loadSlider(container, sliderId, valueId, fillId, value, unit, max, min
         fillEl.style.width = `${percent}%`;
     }
 }
-

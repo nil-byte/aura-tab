@@ -1,9 +1,11 @@
 import { t, getLocale } from '../../platform/i18n.js';
 import { patchBackgroundSettings } from '../../platform/settings-repo.js';
+import { SYNC_SETTINGS_DEFAULTS, createBackgroundSettingsDefaults } from '../../platform/settings-contract.js';
 import { createSettingsBuilder } from './builder.js';
 import { normalizeLocaleForChangelog, loadChangelogData } from '../changelog/utils.js';
 
 const ONLINE_BACKGROUND_SOURCES = ['unsplash', 'pixabay', 'pexels'];
+const BACKGROUND_UI_DEFAULTS = createBackgroundSettingsDefaults();
 
 export function registerGeneralContent(window) {
     window.registerContentRenderer('general', (container) => {
@@ -46,6 +48,7 @@ export function registerGeneralContent(window) {
                             id: 'macShowSeconds',
                             labelKey: 'settingsClockShowSeconds',
                             storageKey: 'showSeconds',
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSeconds,
                             source: 'mac-settings.general.toggle'
                         }
                     ]
@@ -59,6 +62,7 @@ export function registerGeneralContent(window) {
                             id: 'macSearchOpenNewTab',
                             labelKey: 'settingsUiSearchNewTab',
                             storageKey: 'searchOpenInNewTab',
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab,
                             source: 'mac-settings.general.toggle'
                         }
                     ]
@@ -72,6 +76,7 @@ export function registerGeneralContent(window) {
                             id: 'macShowRefreshBtn',
                             labelKey: 'settingsUiShowRefreshBtn',
                             storageKey: 'backgroundSettings',
+                            defaultValue: BACKGROUND_UI_DEFAULTS.showRefreshButton,
                             read: ({ storage }) => storage?.sync?.backgroundSettings?.showRefreshButton,
                             write: (value) => patchBackgroundSettings({ showRefreshButton: value }, 'mac-settings.general.backgroundToggle')
                         },
@@ -80,6 +85,7 @@ export function registerGeneralContent(window) {
                             id: 'macShowSettingsBtn',
                             labelKey: 'settingsUiShowSettingsBtn',
                             storageKey: 'showSettingsBtn',
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSettingsBtn,
                             source: 'mac-settings.general.toggle'
                         },
                         {
@@ -87,6 +93,7 @@ export function registerGeneralContent(window) {
                             id: 'macShowSearchBtn',
                             labelKey: 'settingsUiShowSearchBtn',
                             storageKey: 'showSearchBtn',
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSearchBtn,
                             source: 'mac-settings.general.toggle'
                         },
                         {
@@ -95,6 +102,7 @@ export function registerGeneralContent(window) {
                             rowId: 'macPhotoInfoSetting',
                             labelKey: 'settingsUiShowPhotoInfo',
                             storageKey: 'backgroundSettings',
+                            defaultValue: BACKGROUND_UI_DEFAULTS.showPhotoInfo,
                             read: ({ storage }) => storage?.sync?.backgroundSettings?.showPhotoInfo,
                             write: (value) => patchBackgroundSettings({ showPhotoInfo: value }, 'mac-settings.general.backgroundToggle')
                         },
@@ -103,7 +111,7 @@ export function registerGeneralContent(window) {
                             id: 'macLaunchpadShowNames',
                             labelKey: 'settingsUiLaunchpadShowNames',
                             storageKey: 'launchpadShowNames',
-                            defaultValue: true,
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.launchpadShowNames,
                             source: 'mac-settings.general.toggle'
                         },
                         {
@@ -111,7 +119,7 @@ export function registerGeneralContent(window) {
                             id: 'macCloseSettingsOnOutsideClick',
                             labelKey: 'settingsUiCloseSettingsOnOutsideClick',
                             storageKey: 'macSettingsDismissOnOutsideClick',
-                            defaultValue: false,
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.macSettingsDismissOnOutsideClick,
                             toInput: (value) => value === true,
                             fromInput: (value) => value === true,
                             source: 'mac-settings.general.toggle'
@@ -123,7 +131,7 @@ export function registerGeneralContent(window) {
                 const photoInfoRow = builder.getById('macPhotoInfoSetting');
                 if (!photoInfoRow) return;
 
-                const source = storage?.sync?.backgroundSettings?.type;
+                const source = storage?.sync?.backgroundSettings?.type || BACKGROUND_UI_DEFAULTS.type;
                 photoInfoRow.style.display = ONLINE_BACKGROUND_SOURCES.includes(source) ? 'flex' : 'none';
             }
         });
