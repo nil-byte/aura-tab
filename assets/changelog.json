@@ -1,4 +1,25 @@
 {
+  "3.4.7": {
+    "en": [
+      "Background Sources: Added Bing with market-aware daily refresh and no API key requirement",
+      "Shortcut Manager: Added configurable keyboard shortcuts for Focus Search and Open Launchpad",
+      "Bookmark Import Safety: Added sync quota precheck and clearer failure states to avoid partial data writes",
+      "Photos Gallery: Added Bing category and improved remote thumbnail/favorites ordering behavior"
+    ],
+    "zh_CN": [
+      "背景图源：新增 Bing，按市场区域每日刷新且无需 API Key",
+      "快捷键管理：新增“聚焦搜索”和“打开启动台”的可配置快捷键",
+      "书签导入安全性：新增同步配额预检与更清晰失败状态，避免部分数据写入",
+      "图库改进：新增 Bing 分类并优化远程缩略图与收藏排序行为"
+    ],
+    "zh_TW": [
+      "背景圖源：新增 Bing，依市場區域每日重新整理且不需 API Key",
+      "快捷鍵管理：新增「聚焦搜尋」與「開啟啟動台」可設定快捷鍵",
+      "書籤匯入安全性：新增同步配額預檢與更清晰失敗狀態，避免部分資料寫入",
+      "圖庫改進：新增 Bing 分類並優化遠端縮圖與收藏排序行為"
+    ],
+    "moreUrl": ""
+  },
   "3.4.6": {
     "en": [
       "Settings Contract: Unified default values for sync settings to keep UI state and runtime behavior consistent",
