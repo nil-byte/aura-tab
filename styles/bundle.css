@@ -209,6 +209,10 @@
     --glass-tier-3-border-hover: rgba(255, 255, 255, 0.16);
     --glass-tier-3-border-focus: rgba(255, 255, 255, 0.20);
     --glass-tier-3-blur: var(--blur-lg);
+    --launchpad-search-bg-rest: var(--glass-tier-3-bg-hover);
+    --launchpad-search-bg-focus: var(--glass-tier-3-bg-focus);
+    --launchpad-search-border-rest: var(--glass-tier-3-border);
+    --launchpad-search-border-focus: var(--glass-tier-3-border-focus);
 
     --glass-tier-4-bg: rgba(255, 255, 255, 0.10);
     --glass-tier-4-bg-hover: rgba(255, 255, 255, 0.14);
@@ -2125,10 +2129,10 @@ html[data-first-paint='disarming'] #background-media .background-image {
     height: 44px;
     padding: 0 var(--space-4) 0 44px;
 
-    background: var(--glass-tier-3-bg-hover);
+    background: var(--launchpad-search-bg-rest);
     -webkit-backdrop-filter: var(--glass-filter-launchpad-search);
     backdrop-filter: var(--glass-filter-launchpad-search);
-    border: 1px solid var(--glass-tier-3-border);
+    border: 1px solid var(--launchpad-search-border-rest);
     border-radius: var(--radius-xl);
     color: var(--text-primary);
     font-size: var(--text-base);
@@ -2146,9 +2150,15 @@ html[data-first-paint='disarming'] #background-media .background-image {
 }
 
 .launchpad-search-input:focus {
-    background: var(--glass-tier-3-bg-focus);
-    border-color: var(--glass-tier-3-border-focus);
+    background: var(--launchpad-search-bg-focus);
+    border-color: var(--launchpad-search-border-focus);
     box-shadow: var(--shadow-elevation-2);
+}
+
+.launchpad-overlay.active:not(.settled) .launchpad-search-input,
+.launchpad-overlay.active:not(.settled) .launchpad-search-input:focus {
+    background: var(--launchpad-search-bg-rest);
+    border-color: var(--launchpad-search-border-rest);
 }
 
 .launchpad-search-icon {
@@ -5497,6 +5507,12 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 
 [data-theme="dark"] .mac-select-input {
     color-scheme: dark;
+}
+
+[data-theme="dark"] .mac-select-input option,
+[data-theme="dark"] .bookmark-option select option {
+    color: #f5f5f7;
+    background-color: #1c1c1e;
 }
 
 .mac-select-input:hover {

@@ -100,12 +100,53 @@ export async function idbCursorEach(db, storeName, onValue, getCursor) {
     });
 }
 
-export async function setStorageInChunks(area, data, maxKeys = 80) {
+function estimatePayloadBytes(payload) {
+    try {
+        return new Blob([JSON.stringify(payload)]).size;
+    } catch {
+        return JSON.stringify(payload).length * 2;
+    }
+}
+
+export async function setStorageInChunks(area, data, maxKeysOrOptions = 80) {
     const api = area === 'local' ? chrome.storage.local : chrome.storage.sync;
     const entries = Object.entries(data);
+    if (entries.length === 0) return;
 
-    for (let i = 0; i < entries.length; i += maxKeys) {
-        const chunk = Object.fromEntries(entries.slice(i, i + maxKeys));
-        await api.set(chunk);
+    const isSync = area !== 'local';
+    const options = (typeof maxKeysOrOptions === 'number')
+        ? { maxKeys: maxKeysOrOptions }
+        : (maxKeysOrOptions && typeof maxKeysOrOptions === 'object' ? maxKeysOrOptions : {});
+
+    const maxKeys = Number.isFinite(options.maxKeys) && options.maxKeys > 0 ? Math.floor(options.maxKeys) : 80;
+    const maxBytes = Number.isFinite(options.maxBytes) && options.maxBytes > 0
+        ? Math.floor(options.maxBytes)
+        : (isSync ? 16 * 1024 : Number.POSITIVE_INFINITY);
+
+    let batch = {};
+    let keyCount = 0;
+
+    const flush = async () => {
+        if (keyCount === 0) return;
+        await api.set(batch);
+        batch = {};
+        keyCount = 0;
+    };
+
+    for (const [key, value] of entries) {
+        const candidate = { ...batch, [key]: value };
+        const candidateBytes = estimatePayloadBytes(candidate);
+        const exceedKeys = keyCount >= maxKeys;
+        const exceedBytes = candidateBytes > maxBytes;
+
+        if (keyCount > 0 && (exceedKeys || exceedBytes)) {
+            await flush();
+        }
+        batch[key] = value;
+        keyCount += 1;
+    }
+
+    if (keyCount > 0) {
+        await flush();
     }
 }

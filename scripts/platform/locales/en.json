@@ -129,6 +129,8 @@
     "importFailed": "{count} bookmarks failed to import",
     "importError": "Import Error",
     "bookmarkImportSuccess": "Imported {count} bookmarks",
+    "bookmarkImportPartialWarning": "Imported {success} bookmarks, {failed} failed",
+    "bookmarkImportQuotaExceeded": "Import failed: sync storage quota exceeded",
     "totalBookmarks": "Total Bookmarks",
     "folders": "Folders",
     "maxImport": "Max per Import",

@@ -133,6 +133,10 @@ export function dedupeStoreEntries(entries, pageBreak) {
 const SETTINGS_ITEM_ID = '__SYSTEM_SETTINGS__';
 const PHOTOS_ITEM_ID = '__SYSTEM_PHOTOS__';
 const SYSTEM_ITEM_IDS = new Set([SETTINGS_ITEM_ID, PHOTOS_ITEM_ID]);
+const STORE_ERROR_CODES = Object.freeze({
+    SYNC_QUOTA_EXCEEDED: 'SYNC_QUOTA_EXCEEDED',
+    UNKNOWN_ERROR: 'UNKNOWN_ERROR'
+});
 const CONFIG = {
     LINK_PREFIX: 'qlink_',
     STORAGE_VERSION: 6,
@@ -164,7 +168,8 @@ const CONFIG = {
     CHUNK_MAX_BYTES: 7600,
     FOLDER_PREFIX: 'qfolder_',
     MAX_FOLDER_CHILDREN: 24,
-    MAX_FOLDER_TITLE_LENGTH: 50
+    MAX_FOLDER_TITLE_LENGTH: 50,
+    SYNC_QUOTA_BYTES_FALLBACK: 102400
 };
 const ALLOWED_URL_PROTOCOLS = new Set([
     'http:', 'https:', 'chrome:', 'chrome-extension:', 'edge:', 'about:'
@@ -239,9 +244,22 @@ class Store {
         this._assertNotDestroyed();
         const locks = globalThis.navigator?.locks;
         if (locks?.request) {
+            let taskFailed = false;
+            let taskError = null;
             try {
-                return await locks.request('aura-tab:store', { mode: 'exclusive' }, () => task());
+                return await locks.request('aura-tab:store', { mode: 'exclusive' }, async () => {
+                    try {
+                        return await task();
+                    } catch (error) {
+                        taskFailed = true;
+                        taskError = error;
+                        throw error;
+                    }
+                });
             } catch (error) {
+                if (taskFailed) {
+                    throw taskError || error;
+                }
                 console.warn('[Store] Web Locks unavailable, falling back:', error);
                 return task();
             }
@@ -559,6 +577,116 @@ class Store {
             message.includes('timeout')
         );
     }
+    _getSyncQuotaBytes() {
+        const quota = Number(globalThis.chrome?.storage?.sync?.QUOTA_BYTES);
+        if (Number.isFinite(quota) && quota > 0) {
+            return quota;
+        }
+        return CONFIG.SYNC_QUOTA_BYTES_FALLBACK;
+    }
+    _normalizeCommitItemsAndDock(next) {
+        const normalizedTyped = this._normalizeItems(next.items);
+        const normalizedStructure = this._normalizeItemsStructure(normalizedTyped);
+        const deduped = this._dedupeStoreEntriesPreserveOrder(normalizedStructure);
+        let withSystem = this._normalizeItemsStructure(deduped);
+        for (const sysId of SYSTEM_ITEM_IDS) {
+            if (!withSystem.includes(sysId)) {
+                withSystem = [sysId, ...withSystem];
+            }
+        }
+        return {
+            nextItems: this._normalizeItemsStructure(this._dedupeStoreEntriesPreserveOrder(withSystem)),
+            nextDockPins: this._dedupeIdsPreserveOrder(next.dockPins)
+        };
+    }
+    async _precheckBulkAddSyncQuota({ itemsToSet, apply }) {
+        if (!itemsToSet || typeof itemsToSet !== 'object' || Object.keys(itemsToSet).length === 0) {
+            return { ok: true };
+        }
+        if (typeof apply !== 'function') {
+            return { ok: true };
+        }
+        try {
+            const quotaBytes = this._getSyncQuotaBytes();
+            if (!Number.isFinite(quotaBytes) || quotaBytes <= 0) {
+                return { ok: true };
+            }
+            const currentAll = await storageRepo.sync.getAll();
+            const currentBytes = this._estimateSize(currentAll);
+            if (currentBytes >= quotaBytes) {
+                return {
+                    ok: false,
+                    errorCode: STORE_ERROR_CODES.SYNC_QUOTA_EXCEEDED,
+                    errorMessage: `sync quota exceeded (${currentBytes}/${quotaBytes})`
+                };
+            }
+            const base = await storageRepo.sync.getMultiple({
+                quicklinksItems: [],
+                quicklinksDockPins: [],
+                quicklinksTags: []
+            });
+            const chunkSnapshot = await this._readChunkedItemsMap();
+            const next = apply({
+                items: this._normalizeItems(base.quicklinksItems),
+                dockPins: this._normalizeDockPins(base.quicklinksDockPins),
+                tags: this._normalizeTagLibrary(base.quicklinksTags),
+                itemsById: chunkSnapshot?.itemsById ?? null
+            });
+            const { nextItems, nextDockPins } = this._normalizeCommitItemsAndDock(next);
+            const itemsMap = new Map(chunkSnapshot?.itemsById || []);
+            for (const [id, value] of Object.entries(itemsToSet)) {
+                if (!id || !value || typeof value !== 'object') continue;
+                itemsMap.set(id, value);
+            }
+            const probeSetId = `quota_probe_${Date.now().toString(36)}`;
+            const packed = this._packItemMapToChunks(itemsMap, probeSetId);
+            const stagedChunkData = {
+                [packed.indexKey]: packed.chunkKeys,
+                ...packed.chunksByKey
+            };
+            const updates = {
+                storageVersion: CONFIG.STORAGE_VERSION,
+                quicklinksItems: nextItems,
+                quicklinksDockPins: nextDockPins,
+                [CONFIG.STORAGE_REVISION_KEY]: 'quota_probe_revision',
+                [CONFIG.ACTIVE_SET_KEY]: probeSetId
+            };
+            const cleanupKeys = [];
+            if (chunkSnapshot?.indexKey && chunkSnapshot.indexKey !== packed.indexKey) {
+                cleanupKeys.push(chunkSnapshot.indexKey, ...(chunkSnapshot.chunkKeys || []));
+            }
+            const obsoleteKeys = await this._collectObsoleteStorageKeys(probeSetId, cleanupKeys);
+            const projected = {
+                ...currentAll,
+                ...stagedChunkData,
+                ...updates
+            };
+            for (const key of obsoleteKeys) {
+                delete projected[key];
+            }
+            const projectedBytes = this._estimateSize(projected);
+            if (projectedBytes > quotaBytes) {
+                return {
+                    ok: false,
+                    errorCode: STORE_ERROR_CODES.SYNC_QUOTA_EXCEEDED,
+                    errorMessage: `sync quota exceeded (${projectedBytes}/${quotaBytes})`
+                };
+            }
+            return { ok: true };
+        } catch (error) {
+            console.warn('[Store] Sync quota precheck skipped due to error:', error);
+            return { ok: true };
+        }
+    }
+    _resolveBulkAddError(error) {
+        const message = error?.message || String(error || '');
+        const normalized = String(message).toLowerCase();
+        const isQuota = normalized.includes('quota') || normalized.includes('quota_bytes');
+        return {
+            errorCode: isQuota ? STORE_ERROR_CODES.SYNC_QUOTA_EXCEEDED : STORE_ERROR_CODES.UNKNOWN_ERROR,
+            errorMessage: message || 'bulk add failed'
+        };
+    }
     async _collectObsoleteStorageKeys(activeSetId, extraKeys = []) {
         const all = await storageRepo.sync.getAll();
         const obsolete = new Set(extraKeys.filter(Boolean));
@@ -742,17 +870,7 @@ class Store {
                 tags: baseTags,
                 itemsById: chunkSnapshot?.itemsById ?? null
             });
-            const normalizedTyped = this._normalizeItems(next.items);
-            const normalizedStructure = this._normalizeItemsStructure(normalizedTyped);
-            const deduped = this._dedupeStoreEntriesPreserveOrder(normalizedStructure);
-            let withSystem = this._normalizeItemsStructure(deduped);
-            for (const sysId of SYSTEM_ITEM_IDS) {
-                if (!withSystem.includes(sysId)) {
-                    withSystem = [sysId, ...withSystem];
-                }
-            }
-            const nextItems = this._normalizeItemsStructure(this._dedupeStoreEntriesPreserveOrder(withSystem));
-            const nextDockPins = this._dedupeIdsPreserveOrder(next.dockPins);
+            const { nextItems, nextDockPins } = this._normalizeCommitItemsAndDock(next);
             const nextTags = this._normalizeTagLibrary(next?.tags ?? baseTags);
             const tagsChanged = !this._arraysEqual(baseTags, nextTags);
             const revision = this._generateStorageRevision();
@@ -1608,7 +1726,7 @@ class Store {
     async bulkAddItems(pagesData) {
         this._assertNotDestroyed();
         if (!Array.isArray(pagesData) || pagesData.length === 0) {
-            return { success: 0, failed: 0, items: [] };
+            return { status: 'success', success: 0, failed: 0, items: [] };
         }
         const allItems = [];
         const itemsToSet = {};
@@ -1634,54 +1752,74 @@ class Store {
             }
         }
         if (allItems.length === 0) {
-            return { success: 0, failed: 0, items: [] };
+            return { status: 'success', success: 0, failed: 0, items: [] };
+        }
+        const orderedGroups = Array.from(pageItemsMap.entries())
+            .sort((a, b) => a[0] - b[0])
+            .map(([, itemIds]) => itemIds)
+            .filter(group => Array.isArray(group) && group.length > 0);
+        const applyBulkItems = ({ items, dockPins }) => {
+            const nextItems = Array.isArray(items) ? items.slice() : [];
+            if (orderedGroups.length === 0) {
+                return { items: nextItems, dockPins };
+            }
+            const hasTrailingBreak = nextItems.length > 0 && nextItems[nextItems.length - 1] === CONFIG.PAGE_BREAK;
+            if (nextItems.length > 0 && !hasTrailingBreak) {
+                nextItems.push(CONFIG.PAGE_BREAK);
+            }
+            for (let i = 0; i < orderedGroups.length; i++) {
+                nextItems.push(...orderedGroups[i]);
+                if (i < orderedGroups.length - 1) {
+                    if (nextItems[nextItems.length - 1] !== CONFIG.PAGE_BREAK) {
+                        nextItems.push(CONFIG.PAGE_BREAK);
+                    }
+                }
+            }
+            const normalized = [];
+            for (const entry of nextItems) {
+                if (entry === CONFIG.PAGE_BREAK) {
+                    if (normalized.length === 0) continue;
+                    if (normalized[normalized.length - 1] === CONFIG.PAGE_BREAK) continue;
+                }
+                normalized.push(entry);
+            }
+            while (normalized.length > 0 && normalized[normalized.length - 1] === CONFIG.PAGE_BREAK) {
+                normalized.pop();
+            }
+            return { items: normalized, dockPins };
+        };
+        const quotaCheck = await this._precheckBulkAddSyncQuota({ itemsToSet, apply: applyBulkItems });
+        if (!quotaCheck.ok) {
+            return {
+                status: 'failed',
+                success: 0,
+                failed: allItems.length,
+                items: [],
+                errorCode: quotaCheck.errorCode,
+                errorMessage: quotaCheck.errorMessage
+            };
         }
         try {
             const committed = await this._enqueueWrite(async () => {
                 return this._commit({
                     itemsToSet,
-                    apply: ({ items, dockPins }) => {
-                        const nextItems = Array.isArray(items) ? items.slice() : [];
-                        const orderedGroups = Array.from(pageItemsMap.entries())
-                            .sort((a, b) => a[0] - b[0])
-                            .map(([, itemIds]) => itemIds)
-                            .filter(group => Array.isArray(group) && group.length > 0);
-                        if (orderedGroups.length === 0) {
-                            return { items: nextItems, dockPins };
-                        }
-                        const hasTrailingBreak = nextItems.length > 0 && nextItems[nextItems.length - 1] === CONFIG.PAGE_BREAK;
-                        if (nextItems.length > 0 && !hasTrailingBreak) {
-                            nextItems.push(CONFIG.PAGE_BREAK);
-                        }
-                        for (let i = 0; i < orderedGroups.length; i++) {
-                            nextItems.push(...orderedGroups[i]);
-                            if (i < orderedGroups.length - 1) {
-                                if (nextItems[nextItems.length - 1] !== CONFIG.PAGE_BREAK) {
-                                    nextItems.push(CONFIG.PAGE_BREAK);
-                                }
-                            }
-                        }
-                        const normalized = [];
-                        for (const entry of nextItems) {
-                            if (entry === CONFIG.PAGE_BREAK) {
-                                if (normalized.length === 0) continue;
-                                if (normalized[normalized.length - 1] === CONFIG.PAGE_BREAK) continue;
-                            }
-                            normalized.push(entry);
-                        }
-                        while (normalized.length > 0 && normalized[normalized.length - 1] === CONFIG.PAGE_BREAK) {
-                            normalized.pop();
-                        }
-                        return { items: normalized, dockPins };
-                    }
+                    apply: applyBulkItems
                 });
             });
             await this._applyCommittedStateToMemory(committed);
             this._notify('itemsBulkAdded', { items: allItems, count: allItems.length });
-            return { success: allItems.length, failed: 0, items: allItems };
+            return { status: 'success', success: allItems.length, failed: 0, items: allItems };
         } catch (error) {
             console.error('[Store] bulkAddItems failed:', error);
-            return { success: 0, failed: allItems.length, items: [] };
+            const detail = this._resolveBulkAddError(error);
+            return {
+                status: 'failed',
+                success: 0,
+                failed: allItems.length,
+                items: [],
+                errorCode: detail.errorCode,
+                errorMessage: detail.errorMessage
+            };
         }
     }
     async updateItem(id, updates) {

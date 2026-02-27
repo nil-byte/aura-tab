@@ -129,6 +129,8 @@
     "importFailed": "{count} 個書籤匯入失敗",
     "importError": "匯入出錯",
     "bookmarkImportSuccess": "成功匯入 {count} 個書籤",
+    "bookmarkImportPartialWarning": "成功匯入 {success} 個書籤，{failed} 個失敗",
+    "bookmarkImportQuotaExceeded": "匯入失敗：同步儲存空間已達上限",
     "totalBookmarks": "書籤總數",
     "folders": "資料夾",
     "maxImport": "單次最大匯入",

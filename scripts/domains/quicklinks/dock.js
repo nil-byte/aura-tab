@@ -9,10 +9,16 @@ import {
     updateItemIcon as updateQuicklinkIcon,
     updateItemTitle as updateQuicklinkTitle
 } from './icon-renderer.js';
-import { createPiecewiseInterpolator, createSvelteSpring } from '../../shared/animation.js';
+import { createSvelteSpring } from '../../shared/animation.js';
 const DEFAULTS = {
     MAGNIFIER: {
-        maxScale: 1.35
+        maxScale: 1.35,
+        influenceRatioFallback: 6,
+        curveGamma: 2.2,
+        separatorWeight: 0.35,
+        leaveDelayMs: 48,
+        zIndexBase: 1000,
+        zIndexScale: 100
     },
     SORTABLE: {
         animationMs: 200,
@@ -63,6 +69,7 @@ class Dock extends DisposableComponent {
         this._magnifierWidthInterpolator = null;
         this._magnifierParams = null;
         this._magnifierLocked = false;
+        this._magnifierAnchorCenters = new Map();
         this._dragStyleBackup = null;
         this._unsubscribeStore = null;
         this._deferredRenderPending = false;
@@ -82,6 +89,7 @@ class Dock extends DisposableComponent {
         this._addDisposable(() => this._dragState?.destroy());
         this._applySettings();
         this._render();
+        this._scheduleMagnifierAnchorRefresh();
         this._bindEvents();
         this._initSortable();
         this._setupMagnifier();
@@ -209,6 +217,7 @@ class Dock extends DisposableComponent {
             this._incrementalRender(changes, dockItems);
         }
         this._renderedState = newState;
+        this._scheduleMagnifierAnchorRefresh();
     }
     _computeChanges(newState, dockItems) {
         const oldIds = [...this._renderedState.keys()];
@@ -329,15 +338,36 @@ class Dock extends DisposableComponent {
                 },
                 onStart: (evt) => {
                     this._magnifierLocked = false;
+                    this._magnifierCleanupAfterSettle = false;
+                    this._timers.clearTimeout('magnifierLeaveDelay');
                     this._dragState?.startDrag();
                     this.list?.classList.add('in-drag');
                     document.body.classList.add('app-dragging');
+                    this._refreshMagnifierAnchorCenters();
                     this._freezeDragAnchorStyles(evt);
                     const item = evt?.item;
                     if (item) {
                         item.style.willChange = 'transform, filter';
                         item.querySelector('.quicklink-icon')?.style.setProperty('will-change', 'transform, filter');
                     }
+                },
+                onMove: (evt, originalEvent) => {
+                    if (this.isDestroyed || !this.container || this._magnifierLocked) return;
+                    if (this.container.classList.contains('magnify-off')) return;
+                    const sourceEvent = originalEvent || evt?.originalEvent;
+                    const moveX = sourceEvent
+                        ? (sourceEvent.clientX ?? sourceEvent.touches?.[0]?.clientX ?? sourceEvent.changedTouches?.[0]?.clientX)
+                        : null;
+                    if (!Number.isFinite(moveX)) return;
+                    this._timers.clearTimeout('magnifierLeaveDelay');
+                    this._magnifierCleanupAfterSettle = false;
+                    this._hoverX = moveX;
+                    if (!this.container.classList.contains('magnifying')) {
+                        this.container.classList.add('magnifying');
+                    }
+                    this._timers.requestAnimationFrame('magnifierMeasure', () => {
+                        this._updateMagnifierTargets();
+                    });
                 },
                 onEnd: (evt) => {
                     this._dragState?.endDrag();
@@ -346,11 +376,14 @@ class Dock extends DisposableComponent {
                     const orig = evt?.originalEvent;
                     const endX = orig ? (orig.clientX ?? orig.touches?.[0]?.clientX ?? orig.changedTouches?.[0]?.clientX) : null;
                     if (Number.isFinite(endX)) {
+                        this._timers.clearTimeout('magnifierLeaveDelay');
+                        this._magnifierCleanupAfterSettle = false;
                         this._hoverX = endX;
                     }
                     this._syncOrderFromDom();
                     this._restoreFallbackDragStyles(evt);
                     this._cleanupAfterDragEnd(evt);
+                    this._scheduleMagnifierAnchorRefresh();
                     const item = evt?.item;
                     if (item) {
                         item.style.willChange = '';
@@ -472,11 +505,16 @@ class Dock extends DisposableComponent {
     _setupMagnifier() {
         if (!this.container || this._magnifierBound || this.isDestroyed) return;
         this._magnifierBound = true;
+        const cancelPendingLeave = () => {
+            this._timers.clearTimeout('magnifierLeaveDelay');
+        };
         const handlePointerMove = (e) => {
             if (this.isDestroyed) return;
             if (this.container?.classList.contains('magnify-off')) return;
             const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX;
             if (!Number.isFinite(clientX)) return;
+            cancelPendingLeave();
+            this._magnifierCleanupAfterSettle = false;
             this._hoverX = clientX;
             if (this.container && !this.container.classList.contains('magnifying')) {
                 this.container.classList.add('magnifying');
@@ -485,18 +523,33 @@ class Dock extends DisposableComponent {
                 this._updateMagnifierTargets();
             });
         };
+        this._events.add(this.container, 'mouseenter', () => {
+            if (this.isDestroyed || this.container?.classList.contains('magnify-off')) return;
+            cancelPendingLeave();
+            this._magnifierCleanupAfterSettle = false;
+            this._scheduleMagnifierAnchorRefresh();
+        });
         this._events.add(this.container, 'mousemove', handlePointerMove);
         this._events.add(this.container, 'touchmove', handlePointerMove, { passive: true });
         this._events.add(this.container, 'touchstart', handlePointerMove, { passive: true });
         const handlePointerLeave = () => {
             if (this.isDestroyed || this._magnifierLocked) return;
-            this._hoverX = null;
-            this._magnifierCleanupAfterSettle = true;
-            this._updateMagnifierTargets();
+            if (this._dragState?.isDragging) return;
+            cancelPendingLeave();
+            this._timers.setTimeout('magnifierLeaveDelay', () => {
+                if (this.isDestroyed || this._magnifierLocked) return;
+                if (this._dragState?.isDragging) return;
+                this._hoverX = null;
+                this._magnifierCleanupAfterSettle = true;
+                this._updateMagnifierTargets();
+            }, DEFAULTS.MAGNIFIER.leaveDelayMs);
         };
         this._events.add(this.container, 'mouseleave', handlePointerLeave);
         this._events.add(this.container, 'touchend', handlePointerLeave, { passive: true });
         this._events.add(this.container, 'touchcancel', handlePointerLeave, { passive: true });
+        this._events.add(window, 'resize', () => {
+            this._scheduleMagnifierAnchorRefresh();
+        }, { passive: true });
     }
     _updateMagnifierTargets() {
         if (this.isDestroyed || !this.container) return;
@@ -511,26 +564,41 @@ class Dock extends DisposableComponent {
         const baseFontSize = readPx(style, '--ql-font-size', 12);
         const baseWidth = baseIconSize * 1.2;
         const baseRadiusRatio = baseIconSize > 0 ? (baseRadius / baseIconSize) : 0.22;
+        const influenceDistance = readPx(
+            style,
+            '--ql-magnify-influence',
+            baseWidth * DEFAULTS.MAGNIFIER.influenceRatioFallback
+        );
         const cssMaxScale = readNumber(style, '--ql-magnify-scale-max', DEFAULTS.MAGNIFIER.maxScale);
         const maxScale = Math.min(2.5, Math.max(1, cssMaxScale));
         if (maxScale <= 1.001) {
             this._magnifierCleanupAfterSettle = true;
+        } else if (this._hoverX !== null) {
+            this._magnifierCleanupAfterSettle = false;
         }
         this._magnifierParams = { baseIconSize, baseFontSize, baseWidth, baseRadiusRatio, maxScale };
-        this._magnifierWidthInterpolator = this._createMacOsWidthInterpolator(baseWidth, maxScale);
+        this._magnifierWidthInterpolator = this._createMacOsWidthInterpolator(baseWidth, maxScale, influenceDistance);
         const hoverX = this._hoverX;
         for (const el of elements) {
             if (!el.isConnected) continue;
             const spring = this._getOrCreateMagnifierSpring(el, baseWidth);
-            const targetWidth = hoverX === null
+            const anchorX = this._getMagnifierAnchorCenter(el);
+            const rawTargetWidth = hoverX === null
                 ? baseWidth
-                : this._magnifierWidthInterpolator(hoverX - this._centerX(el));
+                : this._magnifierWidthInterpolator(hoverX - anchorX);
+            const weight = this._getMagnifierWeight(el);
+            const targetWidth = baseWidth + ((rawTargetWidth - baseWidth) * weight);
             spring.setTarget(targetWidth);
         }
         const currentSet = new Set(elements);
         for (const [el] of this._magnifierSprings) {
             if (!currentSet.has(el)) {
                 this._magnifierSprings.delete(el);
+            }
+        }
+        for (const [el] of this._magnifierAnchorCenters) {
+            if (!currentSet.has(el)) {
+                this._magnifierAnchorCenters.delete(el);
             }
         }
         this._startMagnifierAnimationLoop();
@@ -569,21 +637,68 @@ class Dock extends DisposableComponent {
         const rect = el.getBoundingClientRect();
         return rect.left + rect.width / 2;
     }
-    _createMacOsWidthInterpolator(baseWidth, maxScale) {
-        const distanceLimit = baseWidth * 6;
-        const d0 = -distanceLimit;
-        const d1 = -distanceLimit / 1.25;
-        const d2 = -distanceLimit / 2;
-        const d3 = 0;
-        const d4 = distanceLimit / 2;
-        const d5 = distanceLimit / 1.25;
-        const d6 = distanceLimit;
-        const distanceInput = [d0, d1, d2, d3, d4, d5, d6];
-        const baseMultipliers = [1, 1.1, 1.414, 2, 1.414, 1.1, 1];
-        const scaleFactor = maxScale - 1;
-        const multipliers = baseMultipliers.map((m) => 1 + (m - 1) * scaleFactor);
-        const widthOutput = multipliers.map((m) => baseWidth * m);
-        return createPiecewiseInterpolator(distanceInput, widthOutput, { clamp: true });
+    _scheduleMagnifierAnchorRefresh() {
+        if (this.isDestroyed || !this.container) return;
+        this._timers.requestAnimationFrame('magnifierAnchorRefresh', () => {
+            this._refreshMagnifierAnchorCenters();
+        });
+    }
+    _refreshMagnifierAnchorCenters(elements = null) {
+        if (this.isDestroyed) return;
+        const targets = Array.isArray(elements)
+            ? elements
+            : this._collectMagnifierElements();
+        const nextAnchors = new Map();
+        for (const el of targets) {
+            if (!(el instanceof HTMLElement) || !el.isConnected) continue;
+            nextAnchors.set(el, this._centerX(el));
+        }
+        this._magnifierAnchorCenters = nextAnchors;
+    }
+    _getMagnifierAnchorCenter(el) {
+        if (!(el instanceof HTMLElement)) return 0;
+        if (this._isDynamicMagnifierAnchor(el)) {
+            const measuredNow = this._centerX(el);
+            this._magnifierAnchorCenters.set(el, measuredNow);
+            return measuredNow;
+        }
+        const cached = this._magnifierAnchorCenters.get(el);
+        if (typeof cached === 'number') {
+            return cached;
+        }
+        const measured = this._centerX(el);
+        this._magnifierAnchorCenters.set(el, measured);
+        return measured;
+    }
+    _isDynamicMagnifierAnchor(el) {
+        if (!(el instanceof HTMLElement)) return false;
+        return el.classList.contains('sortable-fallback');
+    }
+    _getMagnifierWeight(el) {
+        if (el?.classList?.contains('dock-separator')) {
+            return DEFAULTS.MAGNIFIER.separatorWeight;
+        }
+        return 1;
+    }
+    _createMacOsWidthInterpolator(baseWidth, maxScale, influenceDistance) {
+        const safeBaseWidth = Number.isFinite(baseWidth) && baseWidth > 0 ? baseWidth : 1;
+        const safeMaxScale = Math.min(2.5, Math.max(1, Number.isFinite(maxScale) ? maxScale : 1));
+        const radius = Number.isFinite(influenceDistance) && influenceDistance > 0
+            ? influenceDistance
+            : safeBaseWidth * DEFAULTS.MAGNIFIER.influenceRatioFallback;
+        const amplitude = Math.max(0, safeBaseWidth * (safeMaxScale - 1));
+        const gamma = DEFAULTS.MAGNIFIER.curveGamma;
+        return (distanceFromAnchor) => {
+            if (amplitude <= 0) return safeBaseWidth;
+            const distance = Math.abs(distanceFromAnchor);
+            if (!Number.isFinite(distance) || distance >= radius) {
+                return safeBaseWidth;
+            }
+            const normalized = distance / radius;
+            const cosine = Math.cos((Math.PI / 2) * normalized);
+            const gain = Math.pow(Math.max(0, cosine), gamma);
+            return safeBaseWidth + (amplitude * gain);
+        };
     }
     _getOrCreateMagnifierSpring(el, baseWidth) {
         let spring = this._magnifierSprings.get(el);
@@ -621,7 +736,12 @@ class Dock extends DisposableComponent {
             el.style.setProperty('--ql-icon-size', `${iconSize.toFixed(3)}px`);
             el.style.setProperty('--ql-icon-radius', `${radius.toFixed(3)}px`);
             el.style.setProperty('--ql-font-size', `${fontSize.toFixed(3)}px`);
-            el.style.zIndex = scale > 1.01 ? '2' : '';
+            if (scale > 1.001) {
+                const zIndex = DEFAULTS.MAGNIFIER.zIndexBase + Math.round(scale * DEFAULTS.MAGNIFIER.zIndexScale);
+                el.style.zIndex = `${zIndex}`;
+            } else {
+                el.style.zIndex = '';
+            }
         }
         if (!allSettled) {
             this._timers.requestAnimationFrame('magnifierAnim', (t) => this._tickMagnifier(t));
@@ -647,6 +767,8 @@ class Dock extends DisposableComponent {
         this._timers.cancelAnimationFrame('magnifierAnim');
         this._timers.cancelAnimationFrame('magnifierMeasure');
         this._timers.cancelAnimationFrame('magnifierAfterDrag');
+        this._timers.cancelAnimationFrame('magnifierAnchorRefresh');
+        this._timers.clearTimeout('magnifierLeaveDelay');
         const style = getComputedStyle(this.container);
         const baseIconSize = readPx(style, '--ql-icon-size', 48);
         const baseWidth = baseIconSize * 1.2;
@@ -787,4 +909,3 @@ class Dock extends DisposableComponent {
     }
 }
 export const dock = new Dock();
-

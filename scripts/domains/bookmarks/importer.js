@@ -121,7 +121,7 @@ class BookmarkImporter {
         }
 
         if (totalItems === 0) {
-            return { success: 0, failed: 0, pages: 0 };
+            return { status: 'success', success: 0, failed: 0, pages: 0 };
         }
 
         this._notifyProgress(0, totalItems);
@@ -142,19 +142,29 @@ class BookmarkImporter {
         try {
             const result = await store.bulkAddItems(pagesData);
 
-            this._notifyProgress(result.success, totalItems);
+            const success = Number(result?.success) || 0;
+            const failed = Number(result?.failed) || 0;
+            const status = result?.status || (failed > 0 && success === 0 ? 'failed' : 'success');
+
+            this._notifyProgress(success, totalItems);
 
             return {
-                success: result.success,
-                failed: result.failed,
-                pages: limitedPages.length
+                status,
+                success,
+                failed,
+                pages: status === 'failed' ? 0 : limitedPages.length,
+                errorCode: result?.errorCode,
+                errorMessage: result?.errorMessage
             };
         } catch (error) {
             console.error('[BookmarkImporter] Bulk import failed:', error);
             return {
+                status: 'failed',
                 success: 0,
                 failed: totalItems,
-                pages: 0
+                pages: 0,
+                errorCode: 'UNKNOWN_ERROR',
+                errorMessage: error?.message || String(error)
             };
         }
     }
@@ -322,4 +332,3 @@ class BookmarkImporter {
 export const bookmarkImporter = new BookmarkImporter();
 
 export { CONFIG as BOOKMARK_IMPORT_CONFIG };
-

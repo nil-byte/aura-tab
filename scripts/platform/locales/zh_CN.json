@@ -129,6 +129,8 @@
     "importFailed": "{count} 个书签导入失败",
     "importError": "导入出错",
     "bookmarkImportSuccess": "成功导入 {count} 个书签",
+    "bookmarkImportPartialWarning": "成功导入 {success} 个书签，{failed} 个失败",
+    "bookmarkImportQuotaExceeded": "导入失败：同步存储空间已达上限",
     "totalBookmarks": "书签总数",
     "folders": "文件夹",
     "maxImport": "单次最大导入",

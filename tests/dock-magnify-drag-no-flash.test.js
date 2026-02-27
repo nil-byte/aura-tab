@@ -61,7 +61,9 @@ function mountDockDom() {
     document.body.innerHTML = `
         <div id="quicklinksContainer">
             <button id="launchpadBtn"></button>
+            <div class="dock-separator"></div>
             <ul id="quicklinksList"></ul>
+            <div class="dock-separator"></div>
             <div class="quicklinks-add-wrapper"><button id="quicklinksAddBtn"></button></div>
         </div>
     `;
@@ -212,6 +214,119 @@ describe('Dock magnify drag end', () => {
         expect(document.body.classList.contains('app-dragging')).toBe(false);
         expect(dragged.style.getPropertyValue('transform')).toBe('translateX(10px)');
         expect(dragged.style.getPropertyValue('transition')).toBe('transform 150ms ease');
+
+        dock.destroy?.();
+    });
+
+    it('should refresh magnifier anchors on mouseenter before first hover frame', async () => {
+        const { dock } = await freshDockWithMocks({ magnifyScale: 50 });
+        dock.init();
+
+        const refreshSpy = vi.spyOn(dock, '_scheduleMagnifierAnchorRefresh');
+        refreshSpy.mockClear();
+
+        dock.container.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+        expect(refreshSpy).toHaveBeenCalledTimes(1);
+
+        dock.destroy?.();
+    });
+
+    it('should delay leave cleanup and cancel delayed reset when pointer re-enters quickly', async () => {
+        vi.useFakeTimers();
+        try {
+            const { dock } = await freshDockWithMocks({ magnifyScale: 50 });
+            dock.init();
+
+            dock.container.dispatchEvent(new MouseEvent('mousemove', { clientX: 120, bubbles: true }));
+            expect(dock._hoverX).toBe(120);
+
+            dock.container.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+            expect(dock._hoverX).toBe(120);
+
+            vi.advanceTimersByTime(30);
+            expect(dock._hoverX).toBe(120);
+
+            dock.container.dispatchEvent(new MouseEvent('mousemove', { clientX: 148, bubbles: true }));
+            vi.advanceTimersByTime(100);
+            expect(dock._hoverX).toBe(148);
+
+            dock.destroy?.();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('should clear stale cleanup flag on pointer move to prevent hover flicker', async () => {
+        const { dock } = await freshDockWithMocks({ magnifyScale: 50 });
+        dock.init();
+
+        dock._magnifierCleanupAfterSettle = true;
+        dock.container.dispatchEvent(new MouseEvent('mousemove', { clientX: 166, bubbles: true }));
+
+        expect(dock._magnifierCleanupAfterSettle).toBe(false);
+        expect(dock._hoverX).toBe(166);
+
+        dock.destroy?.();
+    });
+
+    it('should update hoverX continuously from sortable onMove during drag', async () => {
+        const { dock, getCapturedConfig } = await freshDockWithMocks({ magnifyScale: 50 });
+        dock.init();
+
+        for (let i = 0; i < 10 && !getCapturedConfig(); i++) {
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((r) => setTimeout(r, 0));
+        }
+        const cfg = getCapturedConfig();
+        expect(cfg).toBeTruthy();
+        expect(typeof cfg.onMove).toBe('function');
+
+        const dragged = document.createElement('li');
+        dragged.className = 'quicklink-item';
+        dragged.dataset.id = 'id-1';
+        document.getElementById('quicklinksList')?.appendChild(dragged);
+
+        cfg.onStart({ item: dragged });
+        cfg.onMove({}, { clientX: 231 });
+        expect(dock._hoverX).toBe(231);
+        expect(dock._magnifierCleanupAfterSettle).toBe(false);
+
+        cfg.onEnd({ item: dragged, originalEvent: { clientX: 231 } });
+        dock.destroy?.();
+    });
+
+    it('should re-measure anchor center for sortable fallback while dragging', async () => {
+        const { dock } = await freshDockWithMocks({ magnifyScale: 50 });
+        dock.init();
+
+        const fallback = document.createElement('li');
+        fallback.className = 'quicklink-item sortable-fallback';
+        document.body.appendChild(fallback);
+        dock._dragState?.startDrag();
+
+        let calls = 0;
+        fallback.getBoundingClientRect = () => {
+            calls += 1;
+            return {
+                left: 100 + (calls * 12),
+                width: 60,
+                top: 0,
+                right: 160 + (calls * 12),
+                bottom: 60,
+                height: 60,
+                x: 100 + (calls * 12),
+                y: 0,
+                toJSON() {
+                    return {};
+                }
+            };
+        };
+
+        const first = dock._getMagnifierAnchorCenter(fallback);
+        const second = dock._getMagnifierAnchorCenter(fallback);
+
+        expect(calls).toBe(2);
+        expect(second).not.toBe(first);
 
         dock.destroy?.();
     });

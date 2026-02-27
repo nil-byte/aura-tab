@@ -57,6 +57,28 @@ describe('Store low-level defensive branches', () => {
         store.destroy?.();
     });
 
+    it('should rethrow task error instead of masking it as Web Locks unavailable', async () => {
+        globalThis.navigator.locks = {
+            request: vi.fn(async (name, options, callback) => callback())
+        };
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const store = await freshStore();
+        await store.init();
+
+        await expect(
+            store._withCrossTabLock(async () => {
+                throw new Error('task failed');
+            })
+        ).rejects.toThrow('task failed');
+
+        expect(
+            warnSpy.mock.calls.some(([msg]) => String(msg).includes('Web Locks unavailable'))
+        ).toBe(false);
+
+        warnSpy.mockRestore();
+        store.destroy?.();
+    });
+
     it('should generate a storage revision without crypto.randomUUID', async () => {
         // Remove randomUUID so Store uses the Date.now/Math.random fallback.
         globalThis.crypto.randomUUID = undefined;

@@ -503,13 +503,48 @@ class BookmarkImportUI {
                 skipped: skippedCount
             };
 
+            const hardFailed = finalResult.status === 'failed'
+                || (finalResult.success === 0 && finalResult.failed > 0);
+
+            if (hardFailed) {
+                const message = this._resolveImportFailureMessage(finalResult);
+                this._showError(message);
+                toast(message, { type: 'error' });
+                return;
+            }
+
             this._showDoneState(finalResult);
 
-            toast(t('bookmarkImportSuccess', { count: result.success }) || `Imported ${result.success} bookmarks`, { type: 'success' });
+            if (finalResult.failed > 0) {
+                toast(
+                    t('bookmarkImportPartialWarning', {
+                        success: finalResult.success,
+                        failed: finalResult.failed
+                    }) || `Imported ${finalResult.success} bookmarks, ${finalResult.failed} failed`,
+                    { type: 'warning' }
+                );
+                return;
+            }
+
+            toast(
+                t('bookmarkImportSuccess', { count: finalResult.success }) || `Imported ${finalResult.success} bookmarks`,
+                { type: 'success' }
+            );
         } catch (error) {
             console.error('[BookmarkImportUI] Import failed:', error);
             this._showError(error.message || 'Import failed');
         }
+    }
+
+    _resolveImportFailureMessage(result) {
+        if (result?.errorCode === 'SYNC_QUOTA_EXCEEDED') {
+            return t('bookmarkImportQuotaExceeded')
+                || 'Import failed: sync storage quota exceeded';
+        }
+        if (result?.errorMessage) {
+            return result.errorMessage;
+        }
+        return t('importError') || 'Import failed';
     }
 
     async _runValidation() {
@@ -601,4 +636,3 @@ class BookmarkImportUI {
 }
 
 export const bookmarkImportUI = new BookmarkImportUI();
-
