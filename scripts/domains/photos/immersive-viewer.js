@@ -274,6 +274,7 @@ export class ImmersiveViewer {
             case 'unsplash':
             case 'pixabay':
             case 'pexels':
+            case 'bing':
                 this._currentImageList = await this._host._getFavoriteItems(this._host._currentCategory);
                 break;
             default:
@@ -962,4 +963,3 @@ export class ImmersiveViewer {
         }
     }
 }
-

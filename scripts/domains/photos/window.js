@@ -5,6 +5,37 @@ import { assetsStore, ASSETS_CONFIG } from '../backgrounds/assets-store.js';
 import { ICONS } from './icons.js';
 import { favoriteToWallpaperItem, libraryRemoteToWallpaperItem } from './mappers.js';
 import { ImmersiveViewer } from './immersive-viewer.js';
+
+const REMOTE_PROVIDER_CATEGORIES = ['unsplash', 'pixabay', 'pexels', 'bing'];
+const REMOTE_PROVIDER_CATEGORY_SET = new Set(REMOTE_PROVIDER_CATEGORIES);
+const REMOTE_PROVIDER_META = {
+    unsplash: { icon: 'camera', label: 'Unsplash' },
+    pixabay: { icon: 'image', label: 'Pixabay' },
+    pexels: { icon: 'pexels', label: 'Pexels' },
+    bing: { icon: 'bing', label: 'Bing', i18nKey: 'photosBing' }
+};
+
+function createRemoteProviderCounts() {
+    return REMOTE_PROVIDER_CATEGORIES.reduce((counts, provider) => {
+        counts[provider] = 0;
+        return counts;
+    }, {});
+}
+
+function renderRemoteProviderMenuItemsHtml() {
+    return REMOTE_PROVIDER_CATEGORIES.map((provider) => {
+        const meta = REMOTE_PROVIDER_META[provider];
+        const labelAttrs = meta?.i18nKey ? ` data-i18n="${meta.i18nKey}"` : '';
+        const icon = ICONS[meta?.icon] || ICONS.image;
+        return `
+                    <button class="mac-menu-item" data-category="${provider}" role="tab">
+                        <span class="mac-menu-item-icon">${icon}</span>
+                        <span class="mac-menu-item-label"${labelAttrs}>${meta?.label || provider}</span>
+                        <span class="mac-menu-item-count" id="count-${provider}"></span>
+                    </button>`;
+    }).join('');
+}
+
 export class PhotosWindow extends MacWindowBase {
     constructor() {
         super();
@@ -27,7 +58,7 @@ export class PhotosWindow extends MacWindowBase {
         this._thumbLoadedCache = new Set(); // Loaded thumbnail cache
         this._categoryCache = new Map();
         this._categoryCacheExpiry = 30000; // Cache expiration 30 seconds
-        this._lastKnownCounts = { all: 0, favorites: 0, local: 0, unsplash: 0, pixabay: 0, pexels: 0 };
+        this._lastKnownCounts = { all: 0, favorites: 0, local: 0, ...createRemoteProviderCounts() };
         this._init();
     }
     _getModalId() {
@@ -397,6 +428,7 @@ export class PhotosWindow extends MacWindowBase {
             this._pendingExternalRefresh = true;
             return;
         }
+        this._invalidateCategoryCache(['favorites', 'all', ...REMOTE_PROVIDER_CATEGORIES]);
         void this._refreshAfterStateChange({ context: 'external' });
     }
     _renderWindow() {
@@ -407,6 +439,7 @@ export class PhotosWindow extends MacWindowBase {
             console.error(`[PhotosWindow] Cannot render: window element missing (${this._getWindowId()})`);
             return;
         }
+        const remoteProviderMenuHtml = renderRemoteProviderMenuItemsHtml();
         this._window.innerHTML = `
             <!-- Title Bar (Absolute Position, Over Sidebar) -->
             <div class="mac-titlebar photos-titlebar" id="photosTitlebar">
@@ -435,21 +468,7 @@ export class PhotosWindow extends MacWindowBase {
                         <span class="mac-menu-item-count" id="count-local"></span>
                     </button>
                     <div class="mac-menu-divider"></div>
-                    <button class="mac-menu-item" data-category="unsplash" role="tab">
-                        <span class="mac-menu-item-icon">${ICONS.camera}</span>
-                        <span class="mac-menu-item-label">Unsplash</span>
-                        <span class="mac-menu-item-count" id="count-unsplash"></span>
-                    </button>
-                    <button class="mac-menu-item" data-category="pixabay" role="tab">
-                        <span class="mac-menu-item-icon">${ICONS.image}</span>
-                        <span class="mac-menu-item-label">Pixabay</span>
-                        <span class="mac-menu-item-count" id="count-pixabay"></span>
-                    </button>
-                    <button class="mac-menu-item" data-category="pexels" role="tab">
-                        <span class="mac-menu-item-icon">${ICONS.pexels}</span>
-                        <span class="mac-menu-item-label">Pexels</span>
-                        <span class="mac-menu-item-count" id="count-pexels"></span>
-                    </button>
+                    ${remoteProviderMenuHtml}
                 </nav>
                 <!-- Storage Stats (Apple Minimalist Style) -->
                 <div class="photos-storage-stats" id="photosStorageStats">
@@ -641,7 +660,8 @@ export class PhotosWindow extends MacWindowBase {
             const i18nMap = {
                 'all': 'photosAll',
                 'favorites': 'photosFavorites',
-                'local': 'photosLocal'
+                'local': 'photosLocal',
+                'bing': 'photosBing'
             };
             const titleMap = {
                 'all': t('photosAll') || 'All',
@@ -649,7 +669,8 @@ export class PhotosWindow extends MacWindowBase {
                 'local': t('photosLocal') || 'Local',
                 'unsplash': 'Unsplash',
                 'pixabay': 'Pixabay',
-                'pexels': 'Pexels'
+                'pexels': 'Pexels',
+                'bing': t('photosBing') || 'Bing'
             };
             const i18nKey = i18nMap[category];
             if (i18nKey) {
@@ -699,10 +720,10 @@ export class PhotosWindow extends MacWindowBase {
                     case 'local':
                         items = await this._getLocalItems();
                         break;
-                    case 'unsplash':
-                    case 'pixabay':
-                    case 'pexels':
-                        items = await this._getFavoriteItems(category);
+                    default:
+                        if (this._isRemoteProviderCategory(category)) {
+                            items = await this._getFavoriteItems(category);
+                        }
                         break;
                 }
                 this._categoryCache.set(cacheKey, { items, timestamp: now });
@@ -751,21 +772,21 @@ export class PhotosWindow extends MacWindowBase {
                 case 'local':
                     freshItems = await this._getLocalItems();
                     break;
-                case 'unsplash':
-                case 'pixabay':
-                case 'pexels':
-                    freshItems = await this._getFavoriteItems(category);
+                default:
+                    if (this._isRemoteProviderCategory(category)) {
+                        freshItems = await this._getFavoriteItems(category);
+                    }
                     break;
             }
             this._categoryCache.set(category, { items: freshItems, timestamp: Date.now() });
             if (this._currentCategory !== category) return;
-            const currentCards = this._photosBody?.querySelectorAll('.photos-card') || [];
-            const currentIds = new Set(Array.from(currentCards).map(c => c.dataset.wallpaperId));
-            const freshIds = new Set(freshItems.map(item => item.id));
-            if (currentIds.size === freshIds.size &&
-                [...currentIds].every(id => freshIds.has(id))) {
+            const currentIds = Array.from(this._photosBody?.querySelectorAll('.photos-card') || [])
+                .map(card => String(card?.dataset?.wallpaperId || ''));
+            const freshIds = freshItems.map(item => String(item?.id || ''));
+            if (currentIds.length === freshIds.length && currentIds.every((id, index) => id === freshIds[index])) {
                 return;
             }
+            this._invalidateCategoryCache([category, 'favorites', 'all', ...REMOTE_PROVIDER_CATEGORIES]);
             this._scheduleCountRefresh();
         } catch {
         }
@@ -824,6 +845,7 @@ export class PhotosWindow extends MacWindowBase {
             case 'unsplash':
             case 'pixabay':
             case 'pexels':
+            case 'bing':
                 icon.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path></svg>';
                 title.dataset.i18n = 'photosNoFavorites';
                 title.textContent = t('photosNoFavorites') || 'No favorites yet';
@@ -863,6 +885,20 @@ export class PhotosWindow extends MacWindowBase {
             buildUrlWithParams: (url, params) => this._buildUrlWithParams(url, params)
         });
     }
+    _isRemoteProviderCategory(category) {
+        return REMOTE_PROVIDER_CATEGORY_SET.has(category);
+    }
+    _sortLibraryFavoritesByRecent(libItems = []) {
+        const toTimestamp = (item) => {
+            const ts = Date.parse(String(item?.favoritedAt || ''));
+            return Number.isFinite(ts) ? ts : Number.NEGATIVE_INFINITY;
+        };
+        return [...libItems].sort((a, b) => {
+            const delta = toTimestamp(b) - toTimestamp(a);
+            if (delta !== 0) return delta;
+            return String(a?.id || '').localeCompare(String(b?.id || ''));
+        });
+    }
     _maybeInsertLibraryCard(libItem) {
         if (!libItem?.id) return;
         if (!this._photosBody) return;
@@ -871,9 +907,7 @@ export class PhotosWindow extends MacWindowBase {
         const shouldShowInCategory =
             category === 'favorites' ||
             category === 'all' ||
-            (category === 'unsplash' && provider === 'unsplash') ||
-            (category === 'pixabay' && provider === 'pixabay') ||
-            (category === 'pexels' && provider === 'pexels');
+            (this._isRemoteProviderCategory(category) && provider === category);
         if (!shouldShowInCategory) return;
         const alreadyExists = this._getCardElementsById(libItem.id).some(card => card?.dataset?.source !== 'local');
         if (alreadyExists) return;
@@ -902,26 +936,26 @@ export class PhotosWindow extends MacWindowBase {
         try {
             const { libraryStore } = await import('../backgrounds/library-store.js');
             await libraryStore.init();
-            const libItems = libraryStore.getAll({ provider: provider || undefined });
-            const remotes = libItems.filter((it) => it.kind === 'remote');
-            const remoteCards = remotes.map((it) => this._libraryRemoteToWallpaperItem(it));
-            if (provider) {
-                return remoteCards;
-            }
-            const localFavoriteIds = new Set(
-                libItems
-                    .filter((it) => it.kind === 'local')
-                    .map((it) => it.localFileId || it.id)
-                    .filter(Boolean)
+            const libItems = this._sortLibraryFavoritesByRecent(
+                libraryStore.getAll({ provider: provider || undefined })
             );
-            let localCards = [];
-            if (localFavoriteIds.size > 0) {
+            const remotes = libItems.filter((it) => it.kind === 'remote');
+            if (provider) {
+                return remotes.map((it) => this._libraryRemoteToWallpaperItem(it));
+            }
+            const localFavoriteIds = libItems
+                .filter((it) => it.kind === 'local')
+                .map((it) => it.localFileId || it.id)
+                .filter(Boolean);
+            const localIdSet = new Set(localFavoriteIds);
+            const localCardsById = new Map();
+            if (localIdSet.size > 0) {
                 const { localFilesManager } = await import('../backgrounds/source-local.js');
                 await localFilesManager.init();
                 const files = await localFilesManager.getAllFiles('photos-window', true, { includeFull: false, includeSmall: true });
-                localCards = files
-                    .filter((f) => localFavoriteIds.has(f.id))
-                    .map((file) => ({
+                for (const file of files) {
+                    if (!localIdSet.has(file.id)) continue;
+                    localCardsById.set(file.id, {
                         id: file.id,
                         name: 'Local Image',
                         thumbnail: file.urls.small,
@@ -931,12 +965,22 @@ export class PhotosWindow extends MacWindowBase {
                         kind: 'local',
                         localFileId: file.id,
                         isFavorited: true
-                    }));
+                    });
+                }
             }
-            if (remoteCards.length || localCards.length) {
-                return [...remoteCards, ...localCards];
+            const orderedCards = [];
+            for (const libItem of libItems) {
+                if (libItem.kind === 'remote') {
+                    orderedCards.push(this._libraryRemoteToWallpaperItem(libItem));
+                    continue;
+                }
+                if (libItem.kind === 'local') {
+                    const localId = libItem.localFileId || libItem.id;
+                    const localCard = localCardsById.get(localId);
+                    if (localCard) orderedCards.push(localCard);
+                }
             }
-            return [];
+            return orderedCards;
         } catch (error) {
             console.warn('[PhotosWindow] Failed to load favorites:', error);
             return [];
@@ -988,9 +1032,7 @@ export class PhotosWindow extends MacWindowBase {
                 all: 0,
                 favorites: allFavorites.length,
                 local: localIds.length,
-                unsplash: 0,
-                pixabay: 0,
-                pexels: 0
+                ...createRemoteProviderCounts()
             };
             for (const fav of allFavorites) {
                 const provider = fav?.provider;
@@ -1018,9 +1060,9 @@ export class PhotosWindow extends MacWindowBase {
             this._updateCountDisplay('count-all', counts.all);
             this._updateCountDisplay('count-favorites', counts.favorites);
             this._updateCountDisplay('count-local', counts.local);
-            this._updateCountDisplay('count-unsplash', counts.unsplash);
-            this._updateCountDisplay('count-pixabay', counts.pixabay);
-            this._updateCountDisplay('count-pexels', counts.pexels);
+            for (const provider of REMOTE_PROVIDER_CATEGORIES) {
+                this._updateCountDisplay(`count-${provider}`, counts[provider]);
+            }
         } catch (error) {
             console.warn('[PhotosWindow] Failed to update counts:', error);
         }
@@ -1048,9 +1090,7 @@ export class PhotosWindow extends MacWindowBase {
         }
         const shouldRemoveOnUnfavorite =
             this._currentCategory === 'favorites' ||
-            this._currentCategory === 'unsplash' ||
-            this._currentCategory === 'pixabay' ||
-            this._currentCategory === 'pexels' ||
+            this._isRemoteProviderCategory(this._currentCategory) ||
             this._currentCategory === 'all';
         if (shouldRemoveOnUnfavorite && !isFavorited) {
             for (const card of cards) {
@@ -1058,7 +1098,9 @@ export class PhotosWindow extends MacWindowBase {
                 this._animateCardRemoval(card);
             }
         }
-        this._invalidateCategoryCache(isFavorited ? null : ['favorites', 'all', this._currentCategory]);
+        this._invalidateCategoryCache(
+            isFavorited ? null : ['favorites', 'all', ...REMOTE_PROVIDER_CATEGORIES, this._currentCategory]
+        );
     }
     _animateCardRemoval(card) {
         if (!card) return;
@@ -1676,4 +1718,3 @@ export const photosWindow = {
         getPhotosWindow().toggle();
     }
 };
-

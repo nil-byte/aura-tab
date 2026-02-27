@@ -29,7 +29,8 @@ function _ensureAppearanceGlobalListeners() {
 }
 
 const API_KEY_MAX_LENGTH = 256;
-const ONLINE_SOURCES = ['unsplash', 'pixabay', 'pexels'];
+const API_KEY_SOURCES = ['unsplash', 'pixabay', 'pexels'];
+const ONLINE_SOURCES = [...API_KEY_SOURCES, 'bing'];
 const BACKGROUND_APPEARANCE_DEFAULTS = createBackgroundSettingsDefaults();
 
 const API_LINKS = {
@@ -75,6 +76,7 @@ export function registerAppearanceContent(window) {
                                     <option value="unsplash">Unsplash</option>
                                     <option value="pixabay">Pixabay</option>
                                     <option value="pexels">Pexels</option>
+                                    <option value="bing" data-i18n="settingsBgSourceBing"></option>
                                     <option value="color" data-i18n="settingsBgSourceColor"></option>
                                 </select>
                                 <span class="mac-select-arrow">
@@ -335,7 +337,10 @@ function _bindAppearanceEvents(container) {
     if (bgSourceSelect) {
         bgSourceSelect.addEventListener('change', async (e) => {
             const source = e.target.value;
-            await patchBackgroundSettings({ type: source }, 'mac-settings.appearance.source');
+            const patch = source === 'bing'
+                ? { type: source, frequency: 'day' }
+                : { type: source };
+            await patchBackgroundSettings(patch, 'mac-settings.appearance.source');
             _updateSourceUI(container, source);
         });
     }
@@ -642,6 +647,8 @@ function _updateSourceUI(container, source) {
     const isOnlineSource = ONLINE_SOURCES.includes(source);
     const isLocalSource = source === 'files';
     const isColorSource = source === 'color';
+    const isBingSource = source === 'bing';
+    const requiresApiKey = API_KEY_SOURCES.includes(source);
 
     const localFilesSection = container.querySelector('#macLocalFilesSection');
     if (localFilesSection) {
@@ -650,7 +657,7 @@ function _updateSourceUI(container, source) {
 
     const apiKeySection = container.querySelector('#macApiKeySection');
     if (apiKeySection) {
-        apiKeySection.classList.toggle('hidden', !isOnlineSource);
+        apiKeySection.classList.toggle('hidden', !isOnlineSource || !requiresApiKey);
     }
 
     const unsplashRow = container.querySelector('#macUnsplashApiRow');
@@ -660,6 +667,14 @@ function _updateSourceUI(container, source) {
     if (unsplashRow) unsplashRow.classList.toggle('hidden', source !== 'unsplash');
     if (pixabayRow) pixabayRow.classList.toggle('hidden', source !== 'pixabay');
     if (pexelsRow) pexelsRow.classList.toggle('hidden', source !== 'pexels');
+
+    const autoRefreshSelect = container.querySelector('#macAutoRefresh');
+    if (autoRefreshSelect) {
+        if (isBingSource) {
+            autoRefreshSelect.value = 'day';
+        }
+        autoRefreshSelect.disabled = isBingSource;
+    }
 
     const colorSection = container.querySelector('#macColorSection');
     if (colorSection) {
@@ -687,8 +702,15 @@ async function _loadAppearanceSettings(container) {
         }
 
         const autoRefreshSelect = container.querySelector('#macAutoRefresh');
+        const effectiveFrequency = currentSource === 'bing'
+            ? 'day'
+            : (backgroundSettings.frequency || BACKGROUND_APPEARANCE_DEFAULTS.frequency);
         if (autoRefreshSelect) {
-            autoRefreshSelect.value = backgroundSettings.frequency || BACKGROUND_APPEARANCE_DEFAULTS.frequency;
+            autoRefreshSelect.value = effectiveFrequency;
+        }
+
+        if (currentSource === 'bing' && backgroundSettings.frequency !== 'day') {
+            await patchBackgroundSettings({ frequency: 'day' }, 'mac-settings.appearance.bingDaily');
         }
 
         _loadApiKeys(container, backgroundSettings.apiKeys || {});

@@ -2,6 +2,27 @@
  * Photos item mapping helpers (pure).
  */
 
+function appendThumbParams(baseUrl, thumbParams) {
+    if (!baseUrl || typeof baseUrl !== 'string') return baseUrl;
+    if (!thumbParams || typeof thumbParams !== 'string') return baseUrl;
+
+    const cleaned = thumbParams.trim().replace(/^[?&]/, '');
+    if (!cleaned) return baseUrl;
+
+    try {
+        const url = new URL(baseUrl);
+        const params = new URLSearchParams(cleaned);
+        for (const [key, value] of params.entries()) {
+            if (!url.searchParams.has(key)) {
+                url.searchParams.set(key, value);
+            }
+        }
+        return url.toString();
+    } catch {
+        return baseUrl;
+    }
+}
+
 /**
  * @param {object} fav
  * @param {{ isAppendableRemoteUrl: (url: string) => boolean, buildUrlWithParams: (url: string, params: Record<string, string | number>) => string }} helpers
@@ -31,8 +52,8 @@ export function favoriteToWallpaperItem(fav, helpers) {
                 q: 60,
                 fm: 'webp'
             });
-        } else if (typeof urls.thumbParams === 'string' && urls.thumbParams.trim() && urls.raw) {
-            thumbnail = urls.raw + urls.thumbParams;
+        } else if (!urls.thumb && !urls.small && typeof urls.thumbParams === 'string' && urls.thumbParams.trim() && urls.raw) {
+            thumbnail = appendThumbParams(urls.raw, urls.thumbParams);
         }
     }
 
@@ -57,14 +78,22 @@ export function libraryRemoteToWallpaperItem(lib, helpers) {
     const remote = lib?.remote || {};
     const rawUrl = typeof remote.rawUrl === 'string' ? remote.rawUrl : '';
     const downloadUrl = typeof remote.downloadUrl === 'string' ? remote.downloadUrl : '';
+    const smallUrl = typeof remote.smallUrl === 'string' ? remote.smallUrl : '';
     const thumbParams = typeof remote.thumbParams === 'string' ? remote.thumbParams : '';
+    const provider = String(lib?.provider || '');
+    const defaultThumbParams = provider === 'unsplash'
+        ? '?w=300&q=70&auto=format'
+        : provider === 'pexels'
+            ? '?auto=compress&cs=tinysrgb&fit=max&w=600&q=85&fm=webp'
+            : '';
 
     const fav = {
         id: lib.id,
-        provider: lib.provider,
+        provider,
         urls: {
             raw: downloadUrl || rawUrl,
-            thumbParams: thumbParams || '?w=300&q=70&auto=format'
+            small: smallUrl,
+            thumbParams: thumbParams || defaultThumbParams
         },
         downloadUrl: downloadUrl || rawUrl,
         username: lib.username || '',

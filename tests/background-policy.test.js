@@ -12,6 +12,7 @@ describe('background policy', () => {
         expect(isOnlineBackgroundType('unsplash')).toBe(true);
         expect(isOnlineBackgroundType('pixabay')).toBe(true);
         expect(isOnlineBackgroundType('pexels')).toBe(true);
+        expect(isOnlineBackgroundType('bing')).toBe(true);
         expect(isOnlineBackgroundType('files')).toBe(false);
     });
 
@@ -37,6 +38,7 @@ describe('background policy', () => {
     it('should disable preload only for tabs frequency on online sources', () => {
         expect(shouldPreloadNextBackground({ type: 'unsplash', frequency: 'tabs' }, 'unsplash')).toBe(false);
         expect(shouldPreloadNextBackground({ type: 'pixabay', frequency: 'tabs' }, 'pixabay')).toBe(false);
+        expect(shouldPreloadNextBackground({ type: 'bing', frequency: 'tabs' }, 'bing')).toBe(false);
         expect(shouldPreloadNextBackground({ type: 'files', frequency: 'tabs' }, 'files')).toBe(true);
         expect(shouldPreloadNextBackground({ type: 'unsplash', frequency: 'hour' }, 'unsplash')).toBe(true);
     });

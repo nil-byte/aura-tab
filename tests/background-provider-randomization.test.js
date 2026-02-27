@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { unsplashProvider, pixabayProvider, pexelsProvider } from '../scripts/domains/backgrounds/source-remote.js';
+import { unsplashProvider, pixabayProvider, pexelsProvider, bingProvider } from '../scripts/domains/backgrounds/source-remote.js';
 
 describe('Background provider randomization strategy', () => {
     let originalFetch;
@@ -221,5 +221,62 @@ describe('Background provider randomization strategy', () => {
         expect(secondUrl.pathname).toBe('/v1/search');
         expect(secondUrl.searchParams.get('query')).toBe('city');
         expect(secondUrl.searchParams.get('page')).toBe('1');
+    });
+
+    it('bing provider should fetch daily image without api key', async () => {
+        const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+            images: [
+                {
+                    startdate: '20260227',
+                    url: '/th?id=OHR.TestImage_EN-US0000000000_1920x1080.jpg&rf=LaDigue_1920x1080.jpg&pid=hp',
+                    urlbase: '/th?id=OHR.TestImage_EN-US0000000000'
+                }
+            ]
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+        global.fetch = fetchMock;
+
+        const result = await bingProvider.fetchRandom();
+        const requestUrl = new URL(String(fetchMock.mock.calls[0][0]));
+
+        expect(requestUrl.hostname).toBe('www.bing.com');
+        expect(requestUrl.pathname).toBe('/HPImageArchive.aspx');
+        expect(requestUrl.searchParams.get('format')).toBe('js');
+        expect(requestUrl.searchParams.get('idx')).toBe('0');
+        expect(requestUrl.searchParams.get('n')).toBe('1');
+        expect(requestUrl.searchParams.get('mkt')).toBeTruthy();
+        expect(result.id).toContain('bing-20260227');
+        expect(result.urls.full).toContain('_UHD.jpg');
+        expect(result.urls.small).toContain('_1366x768.jpg');
+        expect(result.urls.full).toContain('&rf=LaDigue_UHD.jpg&pid=hp');
+        expect(result.urls.full).not.toContain('.jpg?rf=');
+        expect(result.urls.small).toContain('&rf=LaDigue_1366x768.jpg&pid=hp');
+        expect(result.urls.small).not.toContain('.jpg?rf=');
+    });
+
+    it('bing provider should honor UI locale market', async () => {
+        const originalGetUILanguage = chrome.i18n.getUILanguage;
+        chrome.i18n.getUILanguage = vi.fn(() => 'zh-CN');
+
+        const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+            images: [
+                {
+                    startdate: '20260227',
+                    url: '/th?id=OHR.TestImage_ZH-CN0000000000_1920x1080.jpg&rf=LaDigue_1920x1080.jpg&pid=hp',
+                    urlbase: '/th?id=OHR.TestImage_ZH-CN0000000000'
+                }
+            ]
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+        try {
+            global.fetch = fetchMock;
+            const result = await bingProvider.fetchRandom();
+            const requestUrl = new URL(String(fetchMock.mock.calls[0][0]));
+
+            expect(requestUrl.searchParams.get('mkt')).toBe('zh-CN');
+            expect(result.id).toContain('-zh-cn');
+        } finally {
+            chrome.i18n.getUILanguage = originalGetUILanguage;
+        }
     });
 });

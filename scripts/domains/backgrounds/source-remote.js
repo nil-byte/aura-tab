@@ -15,6 +15,8 @@ const PIXABAY_PER_PAGE = 200;
 const PIXABAY_MAX_RESULTS_PER_QUERY = 500; // Pixabay docs: API returns at most 500 results per query
 const PIXABAY_RANDOM_PAGE_MAX = Math.max(1, Math.ceil(PIXABAY_MAX_RESULTS_PER_QUERY / PIXABAY_PER_PAGE));
 const PEXELS_RANDOM_PAGE_MAX = 25;
+const BING_ENDPOINT = 'https://www.bing.com/HPImageArchive.aspx';
+const BING_DEFAULT_MARKET = 'en-US';
 
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -24,6 +26,36 @@ function normalizeQuery(query) {
     if (typeof query !== 'string') return '';
     const trimmed = query.trim();
     return trimmed.length > 0 ? trimmed : '';
+}
+
+function normalizeLocaleToMarket(locale) {
+    if (typeof locale !== 'string') return '';
+    const normalized = locale.trim().replace(/_/g, '-');
+    if (!normalized) return '';
+
+    const parts = normalized.split('-').filter(Boolean);
+    const language = String(parts[0] || '').toLowerCase();
+    if (!/^[a-z]{2,3}$/.test(language)) return '';
+
+    const region = parts.find((part, index) => index > 0 && /^[a-z]{2}$/i.test(part));
+    if (!region) return '';
+
+    return `${language}-${region.toUpperCase()}`;
+}
+
+function resolveBingMarket() {
+    const uiLanguage = (typeof chrome !== 'undefined' && typeof chrome.i18n?.getUILanguage === 'function')
+        ? chrome.i18n.getUILanguage()
+        : '';
+    const navigatorLanguage = (typeof navigator !== 'undefined' && typeof navigator.language === 'string')
+        ? navigator.language
+        : '';
+
+    return (
+        normalizeLocaleToMarket(uiLanguage) ||
+        normalizeLocaleToMarket(navigatorLanguage) ||
+        BING_DEFAULT_MARKET
+    );
 }
 
 function appendImageParams(baseUrl, params) {
@@ -205,6 +237,7 @@ function buildPexelsUrls(photo) {
 
 export const unsplashProvider = {
     name: 'Unsplash',
+    requiresApiKey: true,
 
     async fetchRandom(apiKey, query) {
         validateApiKey(apiKey, 'Unsplash');
@@ -256,6 +289,7 @@ export const unsplashProvider = {
 
 export const pixabayProvider = {
     name: 'Pixabay',
+    requiresApiKey: true,
 
     async fetchRandom(apiKey, query) {
         validateApiKey(apiKey, 'Pixabay');
@@ -361,6 +395,7 @@ async function fetchPexelsSearchPhotos(apiKey, query, page, perPage) {
 
 export const pexelsProvider = {
     name: 'Pexels',
+    requiresApiKey: true,
 
     async fetchRandom(apiKey, query) {
         validateApiKey(apiKey, 'Pexels');
@@ -403,11 +438,70 @@ export const pexelsProvider = {
     }
 };
 
+function buildBingUrls(image) {
+    const urlPath = typeof image?.url === 'string' ? image.url : '';
+    const urlBase = typeof image?.urlbase === 'string' ? image.urlbase : '';
+
+    if (urlBase) {
+        const queryJoiner = urlBase.includes('?') ? '&' : '?';
+        return {
+            full: `https://www.bing.com${urlBase}_UHD.jpg${queryJoiner}rf=LaDigue_UHD.jpg&pid=hp`,
+            small: `https://www.bing.com${urlBase}_1366x768.jpg${queryJoiner}rf=LaDigue_1366x768.jpg&pid=hp`
+        };
+    }
+
+    const full = urlPath ? `https://www.bing.com${urlPath}` : '';
+    return { full, small: full };
+}
+
+export const bingProvider = {
+    name: 'Bing',
+    requiresApiKey: false,
+
+    async fetchRandom() {
+        const market = resolveBingMarket();
+        const params = new URLSearchParams({
+            format: 'js',
+            idx: '0',
+            n: '1',
+            mkt: market
+        });
+
+        const response = await fetchWithProviderRetry(`${BING_ENDPOINT}?${params}`);
+        if (!response.ok) {
+            throw new Error(t('bgApiRequestFailed', { source: 'Bing', status: response.status }));
+        }
+
+        const data = await response.json();
+        const image = Array.isArray(data?.images) ? data.images[0] : null;
+        if (!image) {
+            throw new Error(t('bgNoResults'));
+        }
+
+        const urls = buildBingUrls(image);
+        if (!urls.full || !urls.small) {
+            throw new Error(t('bgApiDataError', { source: 'Bing' }));
+        }
+
+        const startDate = String(image.startdate || '').trim();
+        return {
+            format: 'image',
+            id: `bing-${startDate || Date.now()}-${market.toLowerCase()}`,
+            urls,
+            downloadUrl: urls.full,
+            username: image.copyright || 'Bing',
+            page: 'https://www.bing.com',
+            color: image?.dominantColor || undefined
+        };
+    }
+};
+
 export function getProvider(type) {
     switch (type) {
         case 'unsplash': return unsplashProvider;
         case 'pixabay': return pixabayProvider;
         case 'pexels': return pexelsProvider;
+        case 'bing': return bingProvider;
         default: return null;
     }
 }

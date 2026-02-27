@@ -76,6 +76,18 @@
     height: 16px;
 }
 
+.photos-content-body {
+    /*
+      Use block flow for the scroll viewport to avoid flex-item shrink rounding
+      that can make the last grid row unreachable at max scroll.
+    */
+    display: block;
+    box-sizing: border-box;
+    --photos-scroll-bottom-safe-gap: calc(var(--space-2) + 6px);
+    padding-bottom: var(--photos-scroll-bottom-safe-gap);
+    scroll-padding-bottom: var(--photos-scroll-bottom-safe-gap);
+}
+
 /* ========== Photos Gallery Grid ========== */
 
 .photos-gallery {
@@ -85,8 +97,11 @@
     grid-auto-rows: min-content;
     align-content: start;
     gap: var(--space-4);
-    flex: 1;
-    min-height: 0;
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 100%;
+    padding-bottom: 6px;
+    box-sizing: border-box;
 }
 
 /* ========== Photos Card ========== */

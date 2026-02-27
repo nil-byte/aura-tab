@@ -1,5 +1,6 @@
 import * as storageRepo from './storage-repo.js';
 import { DEFAULT_SETTINGS as BACKGROUND_DEFAULT_SETTINGS } from '../domains/backgrounds/defaults.js';
+import { SHORTCUT_DEFAULTS, SHORTCUT_SETTING_KEYS } from './shortcut-manager.js';
 
 function isPlainObject(value) {
     return value && typeof value === 'object' && !Array.isArray(value);
@@ -41,6 +42,8 @@ export const SYNC_SETTINGS_DEFAULTS = Object.freeze({
     showSettingsBtn: true,
     showSearchBtn: true,
     launchpadShowNames: true,
+    [SHORTCUT_SETTING_KEYS.focusSearch]: SHORTCUT_DEFAULTS[SHORTCUT_SETTING_KEYS.focusSearch],
+    [SHORTCUT_SETTING_KEYS.openLaunchpad]: SHORTCUT_DEFAULTS[SHORTCUT_SETTING_KEYS.openLaunchpad],
     macSettingsDismissOnOutsideClick: false,
     uiTheme: 'light',
     interfaceLanguage: 'auto',

@@ -9,6 +9,7 @@ import { toast } from '../../shared/toast.js';
 import { logWithDedup } from '../../shared/error-utils.js';
 import { getProvider } from './source-remote.js';
 import { getApplyOptions, getPrepareTimeoutMs, shouldPreloadNextBackground } from './controller-actions.js';
+import { shouldRefreshBackground } from './refresh-policy.js';
 
 const FIRST_PAINT_API_KEY = '__AURA_FIRST_PAINT__';
 const FIRST_PAINT_STORAGE_KEY = 'aura:firstPaintColor';
@@ -21,6 +22,10 @@ const CACHE_INDEX_STORAGE_KEY = 'aura:bgCacheIndex:v1';
 const CACHE_INDEX_VERSION = 1;
 
 let _firstPaintSnapshotChain = Promise.resolve();
+
+function canFetchFromProvider(provider, apiKey) {
+    return Boolean(provider) && (provider.requiresApiKey === false || Boolean(apiKey));
+}
 
 function sanitizeStyleValue(value, fallback) {
     if (typeof value !== 'string') return fallback;
@@ -639,19 +644,8 @@ export async function fetchAndCacheObjectUrl(url, scope = 'cache') {
 
 // ============ Time and Frequency ============
 
-export function needsBackgroundChange(frequency, lastChange) {
-    if (frequency === 'tabs') return true;
-    if (frequency === 'never') return false;
-    if (!lastChange) return true;
-    const last = new Date(lastChange).getTime();
-    if (isNaN(last)) return true;
-    const now = Date.now();
-    const diff = now - last;
-    switch (frequency) {
-        case 'hour': return diff >= 60 * 60 * 1000;
-        case 'day': return diff >= 24 * 60 * 60 * 1000;
-        default: return false;
-    }
+export function needsBackgroundChange(frequency, lastChange, type = '') {
+    return shouldRefreshBackground(type, frequency, lastChange);
 }
 
 
@@ -1315,7 +1309,7 @@ export const backgroundApplyMethods = {
                 if (!nextBg) {
                     const provider = getProvider(this.settings.type);
                     const apiKey = this.settings.apiKeys[this.settings.type];
-                    if (provider && apiKey) {
+                    if (canFetchFromProvider(provider, apiKey)) {
                         nextBg = await provider.fetchRandom(apiKey);
                     }
                 }
@@ -1358,7 +1352,7 @@ export const backgroundApplyMethods = {
         const provider = getProvider(source);
         const apiKey = this.settings.apiKeys[source];
 
-        if (provider && apiKey && this._metadataCache.size(source) < 3) {
+        if (canFetchFromProvider(provider, apiKey) && this._metadataCache.size(source) < 3) {
             const prefetchInIdle = () => {
                 this._metadataCache.prefetch(source, provider, apiKey, 2).catch(() => { });
             };

@@ -146,11 +146,11 @@ export async function patchBackgroundSettings(patch, source = 'unknown') {
 /**
  * @param {object} patch
  * @param {string} [source]
- * @returns {Promise<object>}
+ * @returns {Promise<{ ok: boolean, updates: object }>}
  */
 export async function patchSyncSettings(patch, source = 'unknown') {
     if (!isPlainObject(patch) || Object.keys(patch).length === 0) {
-        return {};
+        return { ok: true, updates: {} };
     }
 
     const keys = Object.keys(patch);
@@ -175,12 +175,12 @@ export async function patchSyncSettings(patch, source = 'unknown') {
     try {
         await storageRepo.sync.setMultiple(updates);
         markSynced(source);
+        return { ok: true, updates };
     } catch (error) {
         markError(source, error);
         console.error('[settings-repo] patchSyncSettings write failed:', { source, error });
+        return { ok: false, updates };
     }
-
-    return updates;
 }
 
 /**

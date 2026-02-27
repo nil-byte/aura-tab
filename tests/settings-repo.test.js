@@ -83,9 +83,11 @@ describe('settings-repo', () => {
         } = await import('../scripts/platform/settings-repo.js');
 
         markSettingsPanelClosed('test-reset');
-        await patchSyncSettings({ showSeconds: true }, 'test');
+        const result = await patchSyncSettings({ showSeconds: true }, 'test');
 
         expect(settingsUiState.value).toBe('error');
+        expect(result.ok).toBe(false);
+        expect(result.updates).toEqual({ showSeconds: true });
         chrome.storage.sync.set = originalSet;
     });
 
@@ -96,9 +98,14 @@ describe('settings-repo', () => {
         }, 'sync');
 
         const { patchSyncSettings } = await import('../scripts/platform/settings-repo.js');
-        await patchSyncSettings({ showSeconds: true, uiTheme: 'dark' }, 'test');
+        const result = await patchSyncSettings({ showSeconds: true, uiTheme: 'dark' }, 'test');
 
         expect(chrome.storage.sync.set).toHaveBeenCalledWith({
+            showSeconds: true,
+            uiTheme: 'dark'
+        });
+        expect(result.ok).toBe(true);
+        expect(result.updates).toEqual({
             showSeconds: true,
             uiTheme: 'dark'
         });

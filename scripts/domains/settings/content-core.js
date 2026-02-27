@@ -1,11 +1,28 @@
 import { t, getLocale } from '../../platform/i18n.js';
-import { patchBackgroundSettings } from '../../platform/settings-repo.js';
-import { SYNC_SETTINGS_DEFAULTS, createBackgroundSettingsDefaults } from '../../platform/settings-contract.js';
+import { patchBackgroundSettings, patchSyncSettings } from '../../platform/settings-repo.js';
+import { getSyncSettings, SYNC_SETTINGS_DEFAULTS, createBackgroundSettingsDefaults } from '../../platform/settings-contract.js';
+import { toast } from '../../shared/toast.js';
+import {
+    SHORTCUT_ACTIONS,
+    SHORTCUT_SETTING_KEYS,
+    formatShortcutForDisplay,
+    normalizeShortcutFromEvent,
+    resolveShortcutSettings
+} from '../../platform/shortcut-manager.js';
 import { createSettingsBuilder } from './builder.js';
 import { normalizeLocaleForChangelog, loadChangelogData } from '../changelog/utils.js';
 
-const ONLINE_BACKGROUND_SOURCES = ['unsplash', 'pixabay', 'pexels'];
+const ONLINE_BACKGROUND_SOURCES = ['unsplash', 'pixabay', 'pexels', 'bing'];
 const BACKGROUND_UI_DEFAULTS = createBackgroundSettingsDefaults();
+const SHORTCUT_EDITABLE_ACTIONS = Object.freeze([
+    SHORTCUT_ACTIONS.focusSearch,
+    SHORTCUT_ACTIONS.openLaunchpad
+]);
+
+const SHORTCUT_ACTION_TO_SETTING_KEY = Object.freeze({
+    [SHORTCUT_ACTIONS.focusSearch]: SHORTCUT_SETTING_KEYS.focusSearch,
+    [SHORTCUT_ACTIONS.openLaunchpad]: SHORTCUT_SETTING_KEYS.openLaunchpad
+});
 
 export function registerGeneralContent(window) {
     window.registerContentRenderer('general', (container) => {
@@ -223,6 +240,11 @@ export function registerAboutContent(window) {
                     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
                 }
 
+                .mac-shortcut-btn.recording {
+                    border-color: var(--mac-accent-color);
+                    box-shadow: 0 0 0 2px var(--mac-accent-color);
+                }
+
                 .mac-about-footer {
                     margin-top: auto;
                     padding-top: 16px;
@@ -276,13 +298,23 @@ export function registerAboutContent(window) {
                             type: 'custom',
                             labelKey: 'shortcutFocusSearch',
                             label: 'Focus Search',
-                            controlHtml: '<kbd class="mac-kbd">⌘/Ctrl</kbd> + <kbd class="mac-kbd">K</kbd>'
+                            controlHtml: `
+                                <button type="button"
+                                        class="mac-button mac-button--small mac-shortcut-btn"
+                                        data-shortcut-action="${SHORTCUT_ACTIONS.focusSearch}">
+                                </button>
+                            `
                         },
                         {
                             type: 'custom',
                             labelKey: 'shortcutOpenLaunchpad',
                             label: 'Open Launchpad',
-                            controlHtml: '<kbd class="mac-kbd">⌘/Ctrl</kbd> + <kbd class="mac-kbd">.</kbd>'
+                            controlHtml: `
+                                <button type="button"
+                                        class="mac-button mac-button--small mac-shortcut-btn"
+                                        data-shortcut-action="${SHORTCUT_ACTIONS.openLaunchpad}">
+                                </button>
+                            `
                         },
                         {
                             type: 'custom',
@@ -312,7 +344,7 @@ export function registerAboutContent(window) {
                                         <svg class="mac-about-link-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
                                             <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
                                         </svg>
-                                        <span>${t('aboutLinkGitHub') || 'GitHub Repository'}</span>
+                                        <span>${t('aboutLinkGitHub') || 'GitHub'}</span>
                                         <svg class="mac-about-link-arrow" viewBox="0 0 12 12" width="12" height="12">
                                             <path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
@@ -324,7 +356,7 @@ export function registerAboutContent(window) {
                                         <svg class="mac-about-link-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
                                             <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm5.292 5H11.1a13.2 13.2 0 0 0-1.163-3.213A6.034 6.034 0 0 1 13.292 5zM8 1.042c.558.707 1.04 1.584 1.388 2.584H6.612C6.96 2.626 7.442 1.749 8 1.042zM1.165 9A6.9 6.9 0 0 1 1 8c0-.34.058-.672.165-1h2.521A14 14 0 0 0 3.6 8c0 .342.03.678.086 1H1.165zm.543 1h2.191c.258 1.2.673 2.292 1.163 3.213A6.034 6.034 0 0 1 1.708 10zm2.191-4H1.708A6.034 6.034 0 0 1 5.062 2.787C4.572 3.708 4.157 4.8 3.899 6zM8 14.958c-.558-.707-1.04-1.584-1.388-2.584h2.776C9.04 13.374 8.558 14.251 8 14.958zM9.612 11H6.388A11.8 11.8 0 0 1 6.1 9h3.8c-.07.352-.17.69-.288 1zm.326 2.213c.49-.921.905-2.013 1.163-3.213h2.191a6.034 6.034 0 0 1-3.354 3.213zM12.314 9a14 14 0 0 0 .086-1 14 14 0 0 0-.086-1h2.521c.107.328.165.66.165 1s-.058.672-.165 1h-2.521z"/>
                                         </svg>
-                                        <span>${t('aboutLinkHomepage') || 'Homepage'}</span>
+                                        <span>${t('aboutLinkHomepage') || 'Home'}</span>
                                         <svg class="mac-about-link-arrow" viewBox="0 0 12 12" width="12" height="12">
                                             <path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
@@ -361,7 +393,7 @@ export function registerAboutContent(window) {
                                     }
                                     .mac-about-link-icon {
                                         flex-shrink: 0;
-                                        color: var(--mac-accent-color);
+                                        color: var(--mac-text-secondary);
                                     }
                                     .mac-about-link-btn span {
                                         flex: 1;
@@ -378,7 +410,131 @@ export function registerAboutContent(window) {
             ]
         });
 
-        void builder.init();
+        void builder.init()
+            .then(() => _initShortcutEditors(sectionHost))
+            .catch((error) => {
+                console.error('[MacSettings] Failed to initialize about shortcuts:', error);
+            });
+    });
+}
+
+function _buildShortcutSettingsRequest() {
+    return {
+        [SHORTCUT_SETTING_KEYS.focusSearch]: undefined,
+        [SHORTCUT_SETTING_KEYS.openLaunchpad]: undefined
+    };
+}
+
+function _renderShortcutButtons(container, shortcuts) {
+    if (!container) return;
+    const buttons = container.querySelectorAll('.mac-shortcut-btn[data-shortcut-action]');
+    buttons.forEach((button) => {
+        const action = button.dataset.shortcutAction;
+        const shortcut = shortcuts[action];
+        button.textContent = formatShortcutForDisplay(shortcut);
+    });
+}
+
+function _validateShortcutConflict(action, normalizedShortcut, shortcuts) {
+    for (const candidate of SHORTCUT_EDITABLE_ACTIONS) {
+        if (candidate === action) continue;
+        if (shortcuts[candidate] === normalizedShortcut) {
+            return false;
+        }
+    }
+    return true;
+}
+
+async function _initShortcutEditors(container) {
+    if (!container) return;
+
+    const stored = await getSyncSettings(_buildShortcutSettingsRequest());
+    const base = resolveShortcutSettings(stored);
+    const shortcuts = {
+        [SHORTCUT_ACTIONS.focusSearch]: base.focusSearch,
+        [SHORTCUT_ACTIONS.openLaunchpad]: base.openLaunchpad
+    };
+
+    _renderShortcutButtons(container, shortcuts);
+
+    let recordingAction = '';
+
+    const stopRecording = () => {
+        recordingAction = '';
+        container.querySelectorAll('.mac-shortcut-btn').forEach((btn) => {
+            btn.classList.remove('recording');
+        });
+        _renderShortcutButtons(container, shortcuts);
+    };
+
+    container.querySelectorAll('.mac-shortcut-btn[data-shortcut-action]').forEach((button) => {
+        const action = button.dataset.shortcutAction;
+        if (!SHORTCUT_EDITABLE_ACTIONS.includes(action)) return;
+
+        button.addEventListener('click', () => {
+            if (recordingAction === action) {
+                stopRecording();
+                return;
+            }
+            recordingAction = action;
+            container.querySelectorAll('.mac-shortcut-btn').forEach((btn) => {
+                btn.classList.toggle('recording', btn === button);
+            });
+            button.textContent = t('shortcutPressKeys');
+            button.focus();
+        });
+
+        button.addEventListener('blur', () => {
+            if (recordingAction === action) {
+                stopRecording();
+            }
+        });
+
+        button.addEventListener('keydown', async (event) => {
+            if (recordingAction !== action) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (event.key === 'Escape') {
+                stopRecording();
+                return;
+            }
+
+            const normalizedShortcut = normalizeShortcutFromEvent(event);
+            if (!normalizedShortcut) {
+                return;
+            }
+
+            if (!_validateShortcutConflict(action, normalizedShortcut, shortcuts)) {
+                toast(t('shortcutConflict'));
+                return;
+            }
+
+            const key = SHORTCUT_ACTION_TO_SETTING_KEY[action];
+            if (!key) {
+                stopRecording();
+                return;
+            }
+
+            try {
+                const result = await patchSyncSettings(
+                    { [key]: normalizedShortcut },
+                    'mac-settings.about.shortcuts'
+                );
+                if (!result?.ok) {
+                    toast(t('shortcutSaveFailed'));
+                    return;
+                }
+                shortcuts[action] = normalizedShortcut;
+                toast(t('shortcutSaved'));
+            } catch (error) {
+                console.error('[MacSettings] Failed to save shortcut:', error);
+                toast(t('shortcutSaveFailed'));
+            } finally {
+                stopRecording();
+            }
+        });
     });
 }
 

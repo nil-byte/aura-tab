@@ -135,6 +135,7 @@ const PHOTOS_ITEM_ID = '__SYSTEM_PHOTOS__';
 const SYSTEM_ITEM_IDS = new Set([SETTINGS_ITEM_ID, PHOTOS_ITEM_ID]);
 const STORE_ERROR_CODES = Object.freeze({
     SYNC_QUOTA_EXCEEDED: 'SYNC_QUOTA_EXCEEDED',
+    SYNC_QUOTA_PRECHECK_FAILED: 'SYNC_QUOTA_PRECHECK_FAILED',
     UNKNOWN_ERROR: 'UNKNOWN_ERROR'
 });
 const CONFIG = {
@@ -674,8 +675,12 @@ class Store {
             }
             return { ok: true };
         } catch (error) {
-            console.warn('[Store] Sync quota precheck skipped due to error:', error);
-            return { ok: true };
+            console.warn('[Store] Sync quota precheck failed, import blocked:', error);
+            return {
+                ok: false,
+                errorCode: STORE_ERROR_CODES.SYNC_QUOTA_PRECHECK_FAILED,
+                errorMessage: 'sync quota precheck failed'
+            };
         }
     }
     _resolveBulkAddError(error) {

@@ -14,6 +14,7 @@ import { onStorageChange } from './scripts/platform/storage-runtime.js';
 import * as storageRepo from './scripts/platform/storage-repo.js';
 import { restoreToolbarIcon } from './scripts/platform/toolbar-icon-service.js';
 import { createBackgroundSettingsDefaults } from './scripts/platform/settings-contract.js';
+import { resolveEffectiveFrequency } from './scripts/domains/backgrounds/refresh-policy.js';
 
 const ALARM_NAME = MSG.REFRESH_BACKGROUND;
 const MAX_ICON_BYTES = 262144;
@@ -75,9 +76,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     try {
         const backgroundSettings = await storageRepo.sync.get('backgroundSettings', null);
         const backgroundType = backgroundSettings?.type || 'files';
+        const effectiveFrequency = resolveEffectiveFrequency(
+            backgroundType,
+            backgroundSettings?.frequency || 'never'
+        );
 
         // Local images and solid colors do not need timed refresh
         if (backgroundType === 'files' || backgroundType === 'color') {
+            return;
+        }
+        if (effectiveFrequency === 'never' || effectiveFrequency === 'tabs') {
             return;
         }
 
@@ -249,13 +257,15 @@ async function syncAutoRefresh() {
 }
 
 async function applyAutoRefresh(interval, backgroundType) {
+    const effectiveInterval = resolveEffectiveFrequency(backgroundType, interval);
+
     // First clear existing timers
     await chrome.alarms.clear(ALARM_NAME);
 
     // These cases do not need background timers
     if (
-        interval === 'never' ||
-        interval === 'tabs' ||
+        effectiveInterval === 'never' ||
+        effectiveInterval === 'tabs' ||
         backgroundType === 'files' ||
         backgroundType === 'color'
     ) {
@@ -263,7 +273,7 @@ async function applyAutoRefresh(interval, backgroundType) {
     }
 
     let periodInMinutes;
-    switch (interval) {
+    switch (effectiveInterval) {
         case 'hour':
             periodInMinutes = 60;
             break;

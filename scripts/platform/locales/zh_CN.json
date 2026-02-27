@@ -131,6 +131,7 @@
     "bookmarkImportSuccess": "成功导入 {count} 个书签",
     "bookmarkImportPartialWarning": "成功导入 {success} 个书签，{failed} 个失败",
     "bookmarkImportQuotaExceeded": "导入失败：同步存储空间已达上限",
+    "bookmarkImportPrecheckFailed": "导入失败：无法完成存储配额检查，请稍后重试或减少导入数量",
     "totalBookmarks": "书签总数",
     "folders": "文件夹",
     "maxImport": "单次最大导入",
@@ -171,6 +172,7 @@
     "settingsBgSection": "背景图片设置",
     "settingsBgSource": "图片来源",
     "settingsBgSourceLocal": "使用本地",
+    "settingsBgSourceBing": "Bing 每日壁纸",
     "settingsBgSourceColor": "纯色背景",
     "settingsBgApiKey": "API Key",
     "settingsBgApiKeyGet": "获取API Key",
@@ -283,6 +285,10 @@
     "macSettingsAllRightsReserved": "保留所有权利。",
     "shortcutFocusSearch": "聚焦搜索",
     "shortcutOpenLaunchpad": "打开启动台",
+    "shortcutPressKeys": "请按下快捷键...",
+    "shortcutConflict": "快捷键冲突，请使用不同组合",
+    "shortcutSaved": "快捷键已保存",
+    "shortcutSaveFailed": "快捷键保存失败",
     "ariaMinimize": "最小化",
     "ariaExpand": "展开",
     "macSettingsTheme": "主题",
@@ -306,6 +312,7 @@
     "photosFavorites": "收藏",
     "photosLocalUploads": "本地上传",
     "photosLocal": "本地上传",
+    "photosBing": "Bing",
     "photosNoFavorites": "还没有收藏的图片",
     "photosNoFavoritesHint": "点击新标签页右上角的心形按钮收藏喜欢的壁纸",
     "photosFavorited": "已收藏",
@@ -385,6 +392,6 @@
     "contextRemoveFromFolder": "从文件夹移出",
     "toastFolderCreated": "文件夹已创建",
     "toastFolderDissolved": "已取消分组",
-    "aboutLinkGitHub": "GitHub 开源仓库",
-    "aboutLinkHomepage": "项目主页"
+    "aboutLinkGitHub": "GitHub",
+    "aboutLinkHomepage": "主页"
 }

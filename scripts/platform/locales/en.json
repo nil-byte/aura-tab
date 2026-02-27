@@ -131,6 +131,7 @@
     "bookmarkImportSuccess": "Imported {count} bookmarks",
     "bookmarkImportPartialWarning": "Imported {success} bookmarks, {failed} failed",
     "bookmarkImportQuotaExceeded": "Import failed: sync storage quota exceeded",
+    "bookmarkImportPrecheckFailed": "Import failed: unable to complete storage quota precheck, please try again later or import fewer items",
     "totalBookmarks": "Total Bookmarks",
     "folders": "Folders",
     "maxImport": "Max per Import",
@@ -171,6 +172,7 @@
     "settingsBgSection": "Background Settings",
     "settingsBgSource": "Image Source",
     "settingsBgSourceLocal": "Local Files",
+    "settingsBgSourceBing": "Bing Daily",
     "settingsBgSourceColor": "Solid Color",
     "settingsBgApiKey": "API Key",
     "settingsBgApiKeyGet": "Get API Key",
@@ -283,6 +285,10 @@
     "macSettingsAllRightsReserved": "All rights reserved.",
     "shortcutFocusSearch": "Focus Search",
     "shortcutOpenLaunchpad": "Open Launchpad",
+    "shortcutPressKeys": "Press shortcut...",
+    "shortcutConflict": "Shortcut conflict: choose a different key combination",
+    "shortcutSaved": "Shortcut saved",
+    "shortcutSaveFailed": "Failed to save shortcut",
     "ariaMinimize": "Minimize",
     "ariaExpand": "Expand",
     "macSettingsTheme": "Theme",
@@ -306,6 +312,7 @@
     "photosFavorites": "Favorites",
     "photosLocalUploads": "Local",
     "photosLocal": "Local",
+    "photosBing": "Bing",
     "photosNoFavorites": "No favorites yet",
     "photosNoFavoritesHint": "Click the heart button in the top-right corner to favorite wallpapers",
     "photosFavorited": "Added to favorites",
@@ -385,6 +392,6 @@
     "contextRemoveFromFolder": "Remove from Folder",
     "toastFolderCreated": "Folder created",
     "toastFolderDissolved": "Folder ungrouped",
-    "aboutLinkGitHub": "GitHub Repository",
-    "aboutLinkHomepage": "Homepage"
+    "aboutLinkGitHub": "GitHub",
+    "aboutLinkHomepage": "Home"
 }

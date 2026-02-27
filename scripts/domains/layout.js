@@ -3,8 +3,13 @@ import { modalLayer } from '../platform/modal-layer.js';
 import { DisposableComponent } from '../platform/lifecycle.js';
 import { launchpad } from './quicklinks/launchpad.js';
 import * as storageRepo from '../platform/storage-repo.js';
-import { getSyncSettings } from '../platform/settings-contract.js';
+import { getSyncSettings, SYNC_SETTINGS_DEFAULTS } from '../platform/settings-contract.js';
 import { isTimeoutError, logWithDedup } from '../shared/error-utils.js';
+import {
+    SHORTCUT_SETTING_KEYS,
+    matchesShortcutEvent,
+    resolveShortcutSettings
+} from '../platform/shortcut-manager.js';
 
 export class LayoutManager extends DisposableComponent {
     constructor({ backgroundSystem } = {}) {
@@ -34,6 +39,10 @@ export class LayoutManager extends DisposableComponent {
 
         this._isDownloading = false;
         this._isFavoriting = false;
+        this._shortcuts = resolveShortcutSettings({
+            [SHORTCUT_SETTING_KEYS.focusSearch]: SYNC_SETTINGS_DEFAULTS[SHORTCUT_SETTING_KEYS.focusSearch],
+            [SHORTCUT_SETTING_KEYS.openLaunchpad]: SYNC_SETTINGS_DEFAULTS[SHORTCUT_SETTING_KEYS.openLaunchpad]
+        });
 
     }
 
@@ -101,6 +110,13 @@ export class LayoutManager extends DisposableComponent {
                 this._applyLaunchpadShowNames(changes.launchpadShowNames.newValue);
             }
 
+            if (changes[SHORTCUT_SETTING_KEYS.focusSearch] || changes[SHORTCUT_SETTING_KEYS.openLaunchpad]) {
+                this._applyShortcutSettings({
+                    [SHORTCUT_SETTING_KEYS.focusSearch]: changes[SHORTCUT_SETTING_KEYS.focusSearch]?.newValue,
+                    [SHORTCUT_SETTING_KEYS.openLaunchpad]: changes[SHORTCUT_SETTING_KEYS.openLaunchpad]?.newValue
+                });
+            }
+
             if (changes.backgroundSettings) {
                 const bgSettings = changes.backgroundSettings.newValue || {};
                 this._applyBackgroundVisibilitySettings(bgSettings);
@@ -135,13 +151,13 @@ export class LayoutManager extends DisposableComponent {
             return;
         }
 
-        if (e.key === '.' && (e.metaKey || e.ctrlKey)) {
+        if (matchesShortcutEvent(e, this._shortcuts.openLaunchpad)) {
             e.preventDefault();
             launchpad.toggle({ focusSearch: true });
             return;
         }
 
-        if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        if (matchesShortcutEvent(e, this._shortcuts.focusSearch)) {
             e.preventDefault();
             this.toggleSearch(true, true, { focus: true });
             return;
@@ -160,6 +176,8 @@ export class LayoutManager extends DisposableComponent {
             showSearchBtn: undefined,
             showSettingsBtn: undefined,
             launchpadShowNames: undefined,
+            [SHORTCUT_SETTING_KEYS.focusSearch]: undefined,
+            [SHORTCUT_SETTING_KEYS.openLaunchpad]: undefined,
             backgroundSettings: undefined
         });
 
@@ -174,8 +192,19 @@ export class LayoutManager extends DisposableComponent {
         }
 
         this._applyLaunchpadShowNames(settings.launchpadShowNames);
+        this._applyShortcutSettings(settings);
 
         this._applyBackgroundVisibilitySettings(bgSettings);
+    }
+
+    _applyShortcutSettings(settings = {}) {
+        const next = resolveShortcutSettings({
+            [SHORTCUT_SETTING_KEYS.focusSearch]:
+                settings[SHORTCUT_SETTING_KEYS.focusSearch] ?? this._shortcuts.focusSearch,
+            [SHORTCUT_SETTING_KEYS.openLaunchpad]:
+                settings[SHORTCUT_SETTING_KEYS.openLaunchpad] ?? this._shortcuts.openLaunchpad
+        });
+        this._shortcuts = next;
     }
 
     _applyLaunchpadShowNames(show) {
@@ -388,7 +417,7 @@ export class LayoutManager extends DisposableComponent {
                     unsplash: '?w=300&q=70&auto=format',
                     pexels: '?auto=compress&cs=tinysrgb&fit=max&w=600&q=85&fm=webp'
                 };
-                const thumbParams = thumbParamsByProvider[provider] || '?w=300&q=70&auto=format';
+                const thumbParams = thumbParamsByProvider[provider] || '';
 
                 const isFiles = provider === 'files' || currentBg.file || String(currentBg.urls?.full || '').startsWith('blob:');
                 const success = isFiles

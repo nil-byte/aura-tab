@@ -195,6 +195,7 @@ class LibraryStore {
         const downloadCandidate = safeString(background?.downloadUrl, '');
         const fullCandidate = downloadCandidate || safeString(background?.urls?.full, '');
         const downloadUrl = downloadCandidate || fullCandidate;
+        const smallCandidate = safeString(background?.urls?.small, '');
 
         const resolvedProvider = safeString(provider, '') || safeString(background?.provider, '') || 'unsplash';
 
@@ -205,6 +206,7 @@ class LibraryStore {
             remote: {
                 rawUrl: fullCandidate,
                 downloadUrl,
+                smallUrl: smallCandidate,
                 thumbParams: safeString(thumbParams, '')
             },
             favoritedAt: new Date().toISOString(),

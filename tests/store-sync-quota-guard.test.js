@@ -39,6 +39,35 @@ describe('Store sync quota guard', () => {
         store.destroy?.();
     });
 
+    it('should fail closed when quota precheck throws and avoid writes', async () => {
+        const store = await freshStore();
+        await store.init();
+
+        const storageRepo = await import('../scripts/platform/storage-repo.js');
+        const getAllSpy = vi.spyOn(storageRepo.sync, 'getAll').mockRejectedValue(new Error('sync read failed'));
+
+        chrome.storage.sync.set.mockClear();
+
+        const result = await store.bulkAddItems([
+            {
+                pageIndex: store.getPageCount(),
+                items: [
+                    { title: 'Precheck Fail Test', url: 'https://precheck.example.com', icon: '' }
+                ]
+            }
+        ]);
+
+        expect(result.status).toBe('failed');
+        expect(result.success).toBe(0);
+        expect(result.failed).toBe(1);
+        expect(result.errorCode).toBe('SYNC_QUOTA_PRECHECK_FAILED');
+        expect(result.errorMessage).toContain('precheck');
+        expect(chrome.storage.sync.set).not.toHaveBeenCalled();
+
+        getAllSpy.mockRestore();
+        store.destroy?.();
+    });
+
     it('should split writes by byte budget in setStorageInChunks', async () => {
         vi.resetModules();
         const { setStorageInChunks } = await import('../scripts/shared/storage.js');

@@ -9,7 +9,7 @@ import { t } from '../../platform/i18n.js';
 export { DEFAULT_SETTINGS } from './defaults.js';
 
 /**
- * @typedef {'files' | 'unsplash' | 'pixabay' | 'pexels' | 'color'} BackgroundType
+ * @typedef {'files' | 'unsplash' | 'pixabay' | 'pexels' | 'bing' | 'color'} BackgroundType
  */
 
 /**

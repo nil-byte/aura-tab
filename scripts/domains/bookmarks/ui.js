@@ -541,6 +541,10 @@ class BookmarkImportUI {
             return t('bookmarkImportQuotaExceeded')
                 || 'Import failed: sync storage quota exceeded';
         }
+        if (result?.errorCode === 'SYNC_QUOTA_PRECHECK_FAILED') {
+            return t('bookmarkImportPrecheckFailed')
+                || 'Import failed: unable to complete storage quota precheck';
+        }
         if (result?.errorMessage) {
             return result.errorMessage;
         }

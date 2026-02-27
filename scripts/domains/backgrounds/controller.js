@@ -27,6 +27,7 @@ import {
 import { localFilesManager } from './source-local.js';
 import { getProvider } from './source-remote.js';
 import { DEFAULT_SETTINGS } from './types.js';
+import { resolveEffectiveFrequency } from './refresh-policy.js';
 
 export const RUNTIME_KEYS = {
     overlay: 'bgRuntimeOverlay',
@@ -119,7 +120,7 @@ class BackgroundSystem {
         }
 
         textureManager.apply(this.settings.texture);
-        const startupNeedRefresh = needsBackgroundChange(this.settings.frequency, this.lastChange);
+        const startupNeedRefresh = needsBackgroundChange(this.settings.frequency, this.lastChange, this.settings.type);
         const hasStoredStartupBackground = this.settings.type !== 'color' && Boolean(this.currentBackground);
         let shouldRefreshAfterInit = false;
 
@@ -396,7 +397,7 @@ class BackgroundSystem {
         await this._loadMutex.acquire();
 
         try {
-            const needNew = force || needsBackgroundChange(this.settings.frequency, this.lastChange);
+            const needNew = force || needsBackgroundChange(this.settings.frequency, this.lastChange, this.settings.type);
 
             if (needNew && this.settings.type !== 'color') {
                 this._ensurePlaceholderBackground();
@@ -429,6 +430,7 @@ class BackgroundSystem {
                 case 'unsplash':
                 case 'pixabay':
                 case 'pexels':
+                case 'bing':
                     background = await this.getProviderBackground(this.settings.type, {
                         suppressRecoverableErrors
                     });
@@ -516,8 +518,10 @@ class BackgroundSystem {
             throw new Error(t('bgUnknownProvider'));
         }
 
-        const apiKey = this.settings.apiKeys[type];
-        if (!apiKey) {
+        const apiKey = this.settings.apiKeys[type] || '';
+        const requiresApiKey = provider.requiresApiKey !== false;
+
+        if (requiresApiKey && !apiKey) {
             showNotification(t('bgApiKeyRequiredWithSource', { source: provider.name }), 'error');
             return this.getLocalFileBackground();
         }
@@ -555,6 +559,10 @@ class BackgroundSystem {
 
     _getApplyOptions(type = this.settings.type) {
         return getBackgroundApplyOptions(this.settings, type);
+    }
+
+    _getEffectiveFrequency(type = this.settings.type, frequency = this.settings.frequency) {
+        return resolveEffectiveFrequency(type, frequency);
     }
 
     async _prepareBackgroundForDisplay(background, { timeoutMs = 140 } = {}) {
@@ -630,7 +638,8 @@ class BackgroundSystem {
         const oldType = this.settings.type;
 
         this.settings = { ...this.settings, ...newSettings };
-        if (this.settings.type === 'color' || this.settings.frequency !== 'tabs') {
+        const effectiveFrequency = this._getEffectiveFrequency(this.settings.type, this.settings.frequency);
+        if (this.settings.type === 'color' || effectiveFrequency !== 'tabs') {
             this._pendingStartupRefreshOnVisible = false;
         }
         await this.saveSettings();
@@ -709,7 +718,7 @@ class BackgroundSystem {
                 this._pendingStartupRefreshOnVisible = true;
                 return;
             }
-            if (this.settings.frequency === 'tabs') {
+            if (this._getEffectiveFrequency() === 'tabs') {
                 void this.refresh();
                 return;
             }
@@ -728,9 +737,10 @@ class BackgroundSystem {
 
     _shouldAutoRefreshOnVisibility() {
         if (this.settings.type === 'color') return false;
-        if (this.settings.frequency === 'tabs') return false;
-        if (this.settings.frequency === 'never') return false;
-        return needsBackgroundChange(this.settings.frequency, this.lastChange);
+        const effectiveFrequency = this._getEffectiveFrequency();
+        if (effectiveFrequency === 'tabs') return false;
+        if (effectiveFrequency === 'never') return false;
+        return needsBackgroundChange(this.settings.frequency, this.lastChange, this.settings.type);
     }
 
     initStorageListener() {
@@ -788,7 +798,8 @@ class BackgroundSystem {
             texture: { ...DEFAULT_SETTINGS.texture, ...(newValue.texture || {}) },
             apiKeys: { ...DEFAULT_SETTINGS.apiKeys, ...(newValue.apiKeys || {}) }
         };
-        if (this.settings.type === 'color' || this.settings.frequency !== 'tabs') {
+        const effectiveFrequency = this._getEffectiveFrequency(this.settings.type, this.settings.frequency);
+        if (this.settings.type === 'color' || effectiveFrequency !== 'tabs') {
             this._pendingStartupRefreshOnVisible = false;
         }
 

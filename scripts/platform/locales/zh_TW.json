@@ -131,6 +131,7 @@
     "bookmarkImportSuccess": "成功匯入 {count} 個書籤",
     "bookmarkImportPartialWarning": "成功匯入 {success} 個書籤，{failed} 個失敗",
     "bookmarkImportQuotaExceeded": "匯入失敗：同步儲存空間已達上限",
+    "bookmarkImportPrecheckFailed": "匯入失敗：無法完成儲存配額檢查，請稍後重試或減少匯入數量",
     "totalBookmarks": "書籤總數",
     "folders": "資料夾",
     "maxImport": "單次最大匯入",
@@ -171,6 +172,7 @@
     "settingsBgSection": "背景圖片設定",
     "settingsBgSource": "圖片來源",
     "settingsBgSourceLocal": "使用本地",
+    "settingsBgSourceBing": "Bing 每日桌布",
     "settingsBgSourceColor": "純色背景",
     "settingsBgApiKey": "API Key",
     "settingsBgApiKeyGet": "獲取 API Key",
@@ -283,6 +285,10 @@
     "macSettingsAllRightsReserved": "保留所有權利。",
     "shortcutFocusSearch": "聚焦搜尋",
     "shortcutOpenLaunchpad": "打開啟動台",
+    "shortcutPressKeys": "請按下快捷鍵...",
+    "shortcutConflict": "快捷鍵衝突，請使用不同組合",
+    "shortcutSaved": "快捷鍵已保存",
+    "shortcutSaveFailed": "快捷鍵保存失敗",
     "ariaMinimize": "最小化",
     "ariaExpand": "展開",
     "macSettingsTheme": "主題",
@@ -306,6 +312,7 @@
     "photosFavorites": "收藏",
     "photosLocalUploads": "本機上傳",
     "photosLocal": "本機上傳",
+    "photosBing": "Bing",
     "photosNoFavorites": "還沒有收藏的圖片",
     "photosNoFavoritesHint": "點擊新分頁右上角的心形按鈕收藏喜歡的桌布",
     "photosFavorited": "已收藏",
@@ -385,6 +392,6 @@
     "contextRemoveFromFolder": "從資料夾移出",
     "toastFolderCreated": "資料夾已建立",
     "toastFolderDissolved": "已取消群組",
-    "aboutLinkGitHub": "GitHub 開源倉庫",
-    "aboutLinkHomepage": "專案首頁"
+    "aboutLinkGitHub": "GitHub",
+    "aboutLinkHomepage": "主頁"
 }
