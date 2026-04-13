@@ -12,16 +12,18 @@
 </head>
 
 <body>
+    <a href="#main-content" class="skip-link" data-i18n="skipToMain"></a>
     <!-- Background container dynamically created by backgrounds/index.js -->
 
     <!-- Add dynamic glow effect -->
-    <div class="light-orb"></div>
+    <div class="light-orb" aria-hidden="true"></div>
+    <div class="ui-grain" aria-hidden="true"></div>
 
     <!-- ================================================
          Core Interaction Area - Highest DOM priority, ensure Tab key reaches first
          ================================================ -->
 
-    <div class="layout-container">
+    <div class="layout-container" id="main-content">
         <!-- Clock container -->
         <div class="clock-container">
             <div class="clock-wrapper">
@@ -160,7 +162,8 @@
                     <label class="quicklink-form-label">
                         <span data-i18n="dialogUrl"></span>
                         <input type="url" id="quicklinkUrlInput" data-i18n="dialogUrlPlaceholder" placeholder=""
-                            maxlength="512">
+                            maxlength="512" autocomplete="url" aria-describedby="quicklinkUrlError">
+                        <p class="quicklink-url-error" id="quicklinkUrlError" role="alert" aria-live="polite"></p>
                     </label>
                     <label class="quicklink-form-option" for="quicklinkDockCheckbox">
                         <input type="checkbox" id="quicklinkDockCheckbox">

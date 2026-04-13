@@ -56,6 +56,23 @@ export function normalizeUrlForNavigation(url) {
     return `https://${url}`;
 }
 
+/**
+ * Whether the string can be parsed as an http(s) URL after quicklink normalization.
+ * @param {string} input
+ * @returns {boolean}
+ */
+export function isValidQuicklinkUrl(input) {
+    const raw = String(input ?? '').trim();
+    if (!raw) return false;
+    const normalized = normalizeUrlForNavigation(raw);
+    try {
+        const u = new URL(normalized);
+        return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
 export function normalizeUrlForDeduplication(url) {
     if (!url) return '';
 

@@ -119,6 +119,24 @@ describe('photos domain', () => {
             expect(photoInfo?.classList.contains('hidden')).toBe(false);
         });
 
+        it('removes author link href when no page URL is provided', async () => {
+            const backgroundSystem = {
+                whenReady: () => Promise.resolve(),
+                getCurrentBackground: () => ({ username: 'Bob', page: '' })
+            };
+            const layout = new LayoutManager({ backgroundSystem });
+
+            layout._applyBackgroundVisibilitySettings({ type: 'unsplash', showPhotoInfo: true });
+            await layout._updatePhotoInfo();
+
+            const photoAuthor = document.getElementById('photoAuthor');
+            const photoInfo = document.getElementById('photoInfo');
+
+            expect(photoAuthor?.hasAttribute('href')).toBe(false);
+            expect(photoAuthor?.getAttribute('aria-disabled')).toBe('true');
+            expect(photoInfo?.classList.contains('hidden')).toBe(false);
+        });
+
         it('hides photo info when current background has no author metadata', async () => {
             const backgroundSystem = {
                 whenReady: () => Promise.resolve(),

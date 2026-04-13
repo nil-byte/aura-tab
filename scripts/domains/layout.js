@@ -236,7 +236,14 @@ export class LayoutManager extends DisposableComponent {
 
             if (currentBg?.username && this.authorName && this.photoAuthor) {
                 this.authorName.textContent = currentBg.username;
-                this.photoAuthor.href = currentBg.page || '#';
+                const page = typeof currentBg.page === 'string' ? currentBg.page.trim() : '';
+                if (page) {
+                    this.photoAuthor.setAttribute('href', page);
+                    this.photoAuthor.removeAttribute('aria-disabled');
+                } else {
+                    this.photoAuthor.removeAttribute('href');
+                    this.photoAuthor.setAttribute('aria-disabled', 'true');
+                }
                 this.photoInfo?.classList.remove('hidden');
 
                 await this._updateFavoriteButtonState(currentBg);

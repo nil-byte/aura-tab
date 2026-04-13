@@ -10,8 +10,7 @@ import { modalLayer } from '../../platform/modal-layer.js';
 import { iconCache } from '../../platform/icon-cache.js';
 import { DisposableComponent, createDebounce } from '../../platform/lifecycle.js';
 import { fetchIconBlobViaBackground } from '../../platform/icon-fetch-bridge.js';
-import { normalizeUrlForNavigation } from '../../shared/text.js';
-import { getInitial } from '../../shared/text.js';
+import { getInitial, isValidQuicklinkUrl, normalizeUrlForNavigation } from '../../shared/text.js';
 import { updateElement } from '../../shared/dom.js';
 
 const MODAL_ID = 'quicklink-dialog';
@@ -84,7 +83,9 @@ class QuickLinksApp extends DisposableComponent {
 
             tagsInput: byId('quicklinkTagsInput'),
             tagsContainer: byId('quicklinkTagsContainer'),
-            tagsSuggestions: byId('quicklinkTagsSuggestions')
+            tagsSuggestions: byId('quicklinkTagsSuggestions'),
+
+            urlError: byId('quicklinkUrlError')
         };
 
         this.dialogOverlay = this.refs.dialogOverlay;
@@ -112,7 +113,10 @@ class QuickLinksApp extends DisposableComponent {
         const urlInput = this.refs.urlInput;
         if (urlInput) {
             this._events.add(urlInput, 'blur', () => this._updatePreviewIcon());
-            this._events.add(urlInput, 'input', () => this._debouncedPreview.call());
+            this._events.add(urlInput, 'input', () => {
+                this._clearUrlValidation();
+                this._debouncedPreview.call();
+            });
         }
 
         const iconInput = this.refs.iconInput;
@@ -202,6 +206,7 @@ class QuickLinksApp extends DisposableComponent {
             }
         }
 
+        this._clearUrlValidation();
         this._updatePreviewIcon();
         updateElement(this.dialogOverlay, { classes: { active: true } });
         this.dialogOverlay.setAttribute('aria-hidden', 'false');
@@ -241,6 +246,24 @@ class QuickLinksApp extends DisposableComponent {
         }
     }
 
+    _clearUrlValidation() {
+        const { urlInput, urlError } = this.refs;
+        if (urlError) urlError.textContent = '';
+        if (urlInput) {
+            urlInput.removeAttribute('aria-invalid');
+            urlInput.classList.remove('quicklink-input-invalid');
+        }
+    }
+
+    _setUrlInvalid(message) {
+        const { urlInput, urlError } = this.refs;
+        if (urlError) urlError.textContent = message;
+        if (urlInput) {
+            urlInput.setAttribute('aria-invalid', 'true');
+            urlInput.classList.add('quicklink-input-invalid');
+        }
+    }
+
     async _handleDialogSave() {
         const { titleInput, urlInput, iconInput, dockCheckbox } = this.refs;
 
@@ -248,7 +271,15 @@ class QuickLinksApp extends DisposableComponent {
         let url = urlInput?.value.trim() || '';
         const icon = iconInput?.value.trim() || '';
 
+        this._clearUrlValidation();
+
         if (!url) {
+            urlInput?.focus();
+            return;
+        }
+
+        if (!isValidQuicklinkUrl(url)) {
+            this._setUrlInvalid(t('toastInvalidUrl'));
             urlInput?.focus();
             return;
         }

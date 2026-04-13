@@ -329,14 +329,6 @@ export function registerAboutContent(window) {
                             labelKey: 'macSettingsCloseOverlay',
                             label: 'Close Overlay',
                             controlHtml: '<kbd class="mac-kbd">Esc</kbd>'
-                        },
-                        {
-                            type: 'custom',
-                            html: `
-                                <p style="margin: 8px 0 0; font-size: 12px; color: var(--mac-text-tertiary); line-height: 1.55;">
-                                    ${t('shortcutHintSearch')} · ${t('shortcutHintSettings')}
-                                </p>
-                            `
                         }
                     ]
                 },

@@ -50,7 +50,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    padding: 6px 10px;
+    padding: var(--space-2) var(--space-3);
     border-radius: var(--mac-menu-item-radius);
     border: 1px solid var(--mac-border-color);
     background: var(--mac-item-hover);
@@ -62,13 +62,15 @@
         color var(--mac-transition-fast);
 }
 
-.photos-header-btn:hover {
-    background: var(--mac-item-hover);
-    color: var(--mac-text-primary);
+.photos-header-btn:active {
+    transform: scale(var(--scale-press));
 }
 
-.photos-header-btn:active {
-    transform: scale(0.98);
+@media (hover: hover) and (pointer: fine) {
+    .photos-header-btn:hover {
+        background: var(--mac-item-hover);
+        color: var(--mac-text-primary);
+    }
 }
 
 .photos-header-btn svg {
@@ -108,21 +110,35 @@
 
 .photos-card {
     position: relative;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     overflow: hidden;
     cursor: pointer;
     background: var(--mac-item-hover);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--duration-fast) var(--ease-out-strong);
     /* Prevent Grid layout from stretching card height */
     height: fit-content;
 }
 
-.photos-card:hover {
-    transform: scale(1.03);
+.photos-card:active {
+    transform: scale(var(--scale-press));
 }
 
-.photos-card:active {
-    transform: scale(0.98);
+@media (hover: hover) and (pointer: fine) {
+    .photos-card:hover {
+        transform: scale(1.03);
+    }
+
+    .photos-card.is-loaded:hover .photos-card-img {
+        transform: scale(1.05);
+    }
+
+    .photos-card:hover .photos-card-img {
+        transform: scale(1.05);
+    }
+
+    .photos-card:hover .photos-card-overlay {
+        opacity: 1;
+    }
 }
 
 .photos-card-image {
@@ -144,9 +160,8 @@
     opacity: 0;
     transform: scale(1.02);
     transition:
-        opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: opacity, transform;
+        opacity var(--duration-slow) var(--ease-out-strong),
+        transform var(--duration-slow) var(--ease-out-strong);
 }
 
 /* ========== Skeleton Screen Loading Animation (Apple-style) ========== */
@@ -196,15 +211,6 @@
     transform: scale(1);
 }
 
-/* Override transform on hover, maintain fade-in effect */
-.photos-card.is-loaded:hover .photos-card-img {
-    transform: scale(1.05);
-}
-
-.photos-card:hover .photos-card-img {
-    transform: scale(1.05);
-}
-
 /* Card Overlay */
 .photos-card-overlay {
     position: absolute;
@@ -218,10 +224,6 @@
     flex-direction: column;
     justify-content: flex-end;
     padding: var(--space-3);
-}
-
-.photos-card:hover .photos-card-overlay {
-    opacity: 1;
 }
 
 .photos-card-author {
@@ -249,13 +251,15 @@
         transform var(--mac-transition-fast);
 }
 
-.photos-card-btn:hover {
-    background: transparent;
-    transform: scale(1.1);
-}
+@media (hover: hover) and (pointer: fine) {
+    .photos-card-btn:hover {
+        background: transparent;
+        transform: scale(1.1);
+    }
 
-.photos-card-btn--favorite:hover {
-    background: transparent;
+    .photos-card-btn--favorite:hover {
+        background: transparent;
+    }
 }
 
 .photos-card-btn--local.is-active {
@@ -462,10 +466,11 @@
         color 0.15s ease;
 }
 
-/* Only show when mouse hovers over the button itself */
-.immersive-close-corner:hover {
-    opacity: 1;
-    color: rgba(255, 255, 255, 0.9);
+@media (hover: hover) and (pointer: fine) {
+    .immersive-close-corner:hover {
+        opacity: 1;
+        color: rgba(255, 255, 255, 0.9);
+    }
 }
 
 .immersive-close-corner:active {
@@ -953,13 +958,15 @@
         color 0.15s ease;
 }
 
-.photos-storage-stats:hover .photos-storage-clear {
-    opacity: 1;
-}
+@media (hover: hover) and (pointer: fine) {
+    .photos-storage-stats:hover .photos-storage-clear {
+        opacity: 1;
+    }
 
-.photos-storage-clear:hover {
-    background: var(--surface-glass);
-    color: var(--mac-text-secondary);
+    .photos-storage-clear:hover {
+        background: var(--surface-glass);
+        color: var(--mac-text-secondary);
+    }
 }
 
 .photos-storage-clear:active {
@@ -972,14 +979,25 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .photos-card,
+    .photos-card:hover,
+    .photos-card:active {
+        transform: none;
+        transition: opacity var(--duration-fast) var(--ease-default);
+    }
+
     .photos-card-img {
-        will-change: auto;
-        transition: opacity 0.2s ease;
+        transition: opacity var(--duration-fast) var(--ease-default);
     }
 
     .photos-card-skeleton {
         animation: none;
         opacity: 0.88;
+    }
+
+    .photos-loading-spinner {
+        animation: none;
+        opacity: 0.85;
     }
 
     .immersive-image.is-blur-placeholder {
@@ -990,6 +1008,12 @@
     .immersive-image.is-blur-placeholder.is-sharp {
         filter: none;
         transform: none;
-        transition: opacity 0.2s ease;
+        transition: opacity var(--duration-fast) var(--ease-default);
+    }
+
+    .photos-immersive-viewer {
+        transition:
+            opacity var(--duration-fast) var(--ease-default),
+            visibility var(--duration-fast) var(--ease-default);
     }
 }

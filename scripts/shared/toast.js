@@ -104,27 +104,15 @@ function enforceLimit() {
 }
 
 /**
- * SF Symbols style Toast icons
+ * Toast icons — Heroicons 24 outline (Iconify `heroicons`), stroke 1.5, unified visual weight.
+ * Pinned to Iconify ids: check-circle, x-circle, exclamation-circle, information-circle.
+ * @see https://iconify.design — collection heroicons
  */
-const TOAST_ICONS = {
-    success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>`,
-    error: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="15" y1="9" x2="9" y2="15"></line>
-        <line x1="9" y1="9" x2="15" y2="15"></line>
-    </svg>`,
-    warning: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-    </svg>`,
-    info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-    </svg>`
+export const TOAST_ICONS = {
+    success: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75L11.25 15L15 9.75M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0"/></svg>`,
+    error: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0"/></svg>`,
+    warning: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0a9 9 0 0 1 18 0m-9 3.75h.008v.008H12z"/></svg>`,
+    info: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0m-9-3.75h.008v.008H12z"/></svg>`
 };
 
 /**
@@ -155,6 +143,7 @@ export function toast(message, options = {}) {
 
     const el = document.createElement('div');
     el.className = `toast toast-${type}`;
+    el.setAttribute('data-toast-type', type);
     el.setAttribute('role', 'alert');
     el.setAttribute('aria-live', 'polite');
 
@@ -162,10 +151,11 @@ export function toast(message, options = {}) {
     const content = document.createElement('div');
     content.className = 'toast-content';
 
-    if (showIcon && TOAST_ICONS[type]) {
+    const iconHtml = TOAST_ICONS[type] || TOAST_ICONS.info;
+    if (showIcon && iconHtml) {
         const iconWrapper = document.createElement('span');
         iconWrapper.className = 'toast-icon';
-        iconWrapper.innerHTML = TOAST_ICONS[type];
+        iconWrapper.innerHTML = iconHtml;
         content.appendChild(iconWrapper);
     }
 

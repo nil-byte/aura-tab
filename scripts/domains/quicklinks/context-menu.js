@@ -374,7 +374,7 @@ class ContextMenu {
                     ? btn({ action: 'removeFromDock', label: t('contextRemoveFromDock'), icon: ICON_X })
                     : btn({
                         action: 'addToDock',
-                        label: canPin ? t('contextAddToDock') : t('contextAddToDockFull'),
+                        label: t('contextAddToDock'),
                         disabled: !canPin,
                         icon: ICON_PLUS
                     })
@@ -394,7 +394,7 @@ class ContextMenu {
                     ? btn({ action: 'removeFromDock', label: t('contextRemoveFromDock'), icon: ICON_X })
                     : btn({
                         action: 'addToDock',
-                        label: canPin ? t('contextAddToDock') : t('contextAddToDockFull'),
+                        label: t('contextAddToDock'),
                         disabled: !canPin,
                         icon: ICON_PLUS
                     }),
