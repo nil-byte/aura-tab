@@ -249,6 +249,8 @@ export class Launchpad {
         this._dragStyleBackup = null;
         this._searchDebounce = null;
         this._previousActiveElement = null;
+        /** @type {Element | null} */
+        this._folderOverlayPreviousActive = null;
         this._gridColumns = 6;
         this._gridRows = 4;
         this._unsubscribeStore = null;

@@ -3820,17 +3820,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .toast {
-        transition: opacity 150ms ease-out;
-        transform: none !important;
-    }
-
-    .toast.show {
-        transform: none !important;
-    }
-}
-
 .corner-zone {
     position: fixed;
     z-index: var(--z-fixed);
@@ -4030,6 +4019,55 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 
     50% {
         opacity: 0.4;
+    }
+}
+
+.favorite-bg-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: none;
+    background: var(--surface-glass-hover);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    transition:
+        opacity var(--duration-fast) var(--ease-default),
+        transform var(--duration-fast) var(--ease-out),
+        background-color var(--duration-fast) var(--ease-default),
+        color var(--duration-fast) var(--ease-default);
+}
+
+.favorite-bg-btn:hover {
+    opacity: 1;
+    background: var(--overlay-medium);
+    transform: scale(var(--scale-lift));
+}
+
+.favorite-bg-btn:active {
+    transform: scale(var(--scale-press));
+}
+
+.favorite-bg-btn.is-favorited {
+    color: var(--color-red);
+}
+
+.favorite-bg-btn.favoriting {
+    animation: favorite-pulse 400ms var(--ease-out) both;
+}
+
+@keyframes favorite-pulse {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.25);
+    }
+    100% {
+        transform: scale(1);
     }
 }
 
@@ -6559,4 +6597,39 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     color: var(--mac-text-secondary, rgba(255, 255, 255, 0.4));
     font-size: var(--text-sm);
     font-style: italic;
+}
+
+/* ================================================
+   Reduced Motion — accessibility for vestibular-sensitive users
+   ================================================ */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0s !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0s !important;
+        scroll-behavior: auto !important;
+    }
+
+    /* Preserve functional opacity transitions (fades are safe) */
+    .quicklinks-container,
+    .search-container,
+    .launchpad-overlay,
+    .mac-window-overlay,
+    .bookmark-import-modal,
+    .toast {
+        transition: opacity 150ms ease-out !important;
+    }
+
+    .toast.show {
+        transform: none !important;
+    }
+
+    /* Preserve loading spinners (slowed, no spatial motion) */
+    .refresh-bg-btn.refreshing svg,
+    .webdav-sync-status-icon.syncing svg {
+        animation: spin 2s linear infinite !important;
+    }
 }

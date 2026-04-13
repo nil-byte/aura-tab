@@ -385,6 +385,7 @@
     "toolbarIconResetFailed": "Failed to reset icon",
     "toolbarIconNote": "Only affects the toolbar icon. Extension management page icon cannot be changed.",
     "folderDefaultName": "Untitled Folder",
+    "folderTitleField": "Folder name",
     "contextRenameFolder": "Rename Folder",
     "contextDissolveFolder": "Ungroup",
     "contextDeleteFolder": "Delete Folder and Contents",

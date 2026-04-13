@@ -29,6 +29,9 @@ export class MacWindowBase extends DisposableComponent {
 
         this._behaviorSettingsReady = Promise.resolve();
 
+        /** @type {(() => void) | null} */
+        this._focusTrapRemover = null;
+
     }
 
     _getModalId() {
@@ -255,6 +258,8 @@ export class MacWindowBase extends DisposableComponent {
 
         modalLayer.bringToFront(this._getModalId());
 
+        this._attachFocusTrap();
+
         // Windows that are lazily created/opened can race storage I/O on first open.
         // Re-register after settings load so outside-click behavior is always correct
         // without changing the current stacking order.
@@ -280,6 +285,8 @@ export class MacWindowBase extends DisposableComponent {
 
         this._isOpen = false;
 
+        this._detachFocusTrap();
+
         this._overlay.classList.remove('visible');
         this._overlay.setAttribute('aria-hidden', 'true');
 
@@ -304,6 +311,62 @@ export class MacWindowBase extends DisposableComponent {
             this.close();
         } else {
             this.open();
+        }
+    }
+
+    _attachFocusTrap() {
+        this._detachFocusTrap();
+        const handler = (e) => {
+            if (!this._isOpen || e.key !== 'Tab' || !this._window) return;
+
+            const selector = [
+                'button:not([disabled])',
+                '[href]',
+                'input:not([disabled])',
+                'select:not([disabled])',
+                'textarea:not([disabled])',
+                '[tabindex]:not([tabindex="-1"])'
+            ].join(', ');
+
+            const nodes = Array.from(this._window.querySelectorAll(selector)).filter((el) => {
+                if (!(el instanceof HTMLElement)) return false;
+                if (el.hasAttribute('disabled')) return false;
+                return el.getClientRects().length > 0;
+            });
+            if (nodes.length === 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            const active = document.activeElement;
+            const first = nodes[0];
+            const last = nodes[nodes.length - 1];
+
+            if (!this._window.contains(active)) {
+                e.preventDefault();
+                first.focus();
+                return;
+            }
+
+            const idx = nodes.indexOf(active);
+            if (e.shiftKey) {
+                if (idx <= 0) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else if (idx === -1 || idx >= nodes.length - 1) {
+                e.preventDefault();
+                first.focus();
+            }
+        };
+        this._focusTrapRemover = this._events.add(document, 'keydown', handler, true);
+    }
+
+    _detachFocusTrap() {
+        if (this._focusTrapRemover) {
+            this._focusTrapRemover();
+            this._focusTrapRemover = null;
         }
     }
 

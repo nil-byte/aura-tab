@@ -202,6 +202,9 @@ export const launchpadFolderMethods = {
         const overlay = this._createFolderOverlayDom(folder);
         document.body.appendChild(overlay);
 
+        this._folderOverlayPreviousActive = document.activeElement;
+        overlay.setAttribute('aria-hidden', 'false');
+
         // Set transform-origin to folder icon center
         if (iconRect) {
             const panel = overlay.querySelector('.launchpad-folder-panel');
@@ -221,6 +224,10 @@ export const launchpadFolderMethods = {
 
         requestAnimationFrame(() => {
             overlay.classList.add('active');
+            const titleInput = overlay.querySelector('.launchpad-folder-title-input');
+            requestAnimationFrame(() => {
+                titleInput?.focus?.({ preventScroll: true });
+            });
         });
 
         this._initFolderOverlaySortable(overlay, folderId);
@@ -250,6 +257,12 @@ export const launchpadFolderMethods = {
         titleInput.value = folder.title || '';
         titleInput.placeholder = t('folderDefaultName');
         titleInput.maxLength = store.CONFIG.MAX_FOLDER_TITLE_LENGTH;
+        titleInput.id = 'launchpad-folder-title-input';
+
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', t('folders'));
+        titleInput.setAttribute('aria-label', t('folderTitleField'));
 
         titleInput.addEventListener('blur', () => {
             const newTitle = titleInput.value.trim();
@@ -890,6 +903,20 @@ export const launchpadFolderMethods = {
     _closeFolderOverlay() {
         const overlay = document.querySelector('.launchpad-folder-overlay');
         if (!overlay) return;
+
+        const prevFocus = this._folderOverlayPreviousActive;
+        this._folderOverlayPreviousActive = null;
+
+        overlay.setAttribute('aria-hidden', 'true');
+        if (overlay.contains(document.activeElement)) {
+            (/** @type {HTMLElement} */ (document.activeElement)).blur();
+        }
+        if (prevFocus && typeof prevFocus.focus === 'function' && prevFocus.isConnected) {
+            try {
+                prevFocus.focus({ preventScroll: true });
+            } catch {
+            }
+        }
 
         this._resetFolderDragSession();
         this._destroyFolderOverlaySortable(overlay);

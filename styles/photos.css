@@ -970,3 +970,26 @@
     width: 12px;
     height: 12px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .photos-card-img {
+        will-change: auto;
+        transition: opacity 0.2s ease;
+    }
+
+    .photos-card-skeleton {
+        animation: none;
+        opacity: 0.88;
+    }
+
+    .immersive-image.is-blur-placeholder {
+        filter: none;
+        transform: none;
+    }
+
+    .immersive-image.is-blur-placeholder.is-sharp {
+        filter: none;
+        transform: none;
+        transition: opacity 0.2s ease;
+    }
+}

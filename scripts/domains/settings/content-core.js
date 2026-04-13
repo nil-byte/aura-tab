@@ -11,6 +11,7 @@ import {
 } from '../../platform/shortcut-manager.js';
 import { createSettingsBuilder } from './builder.js';
 import { normalizeLocaleForChangelog, loadChangelogData } from '../changelog/utils.js';
+import { escapeHtml } from '../../shared/text.js';
 
 const ONLINE_BACKGROUND_SOURCES = ['unsplash', 'pixabay', 'pexels', 'bing'];
 const BACKGROUND_UI_DEFAULTS = createBackgroundSettingsDefaults();
@@ -162,14 +163,15 @@ export function registerAboutContent(window) {
         const manifest = chrome.runtime.getManifest();
         const version = manifest.version || '1.0.0';
         const name = manifest.name || 'Aura Tab';
+        const safeName = escapeHtml(name);
 
         container.innerHTML = `
             <div class="mac-about-content">
                 <div class="mac-about-header">
                     <div class="mac-about-icon">
-                        <img src="assets/icons/icon128.png" alt="${name}" width="96" height="96">
+                        <img src="assets/icons/icon128.png" alt="${safeName}" width="96" height="96">
                     </div>
-                    <h2 class="mac-about-name">${name}</h2>
+                    <h2 class="mac-about-name">${safeName}</h2>
                     <p class="mac-about-version">${t('macSettingsVersion') || 'Version'} ${version}</p>
                 </div>
 
@@ -327,6 +329,14 @@ export function registerAboutContent(window) {
                             labelKey: 'macSettingsCloseOverlay',
                             label: 'Close Overlay',
                             controlHtml: '<kbd class="mac-kbd">Esc</kbd>'
+                        },
+                        {
+                            type: 'custom',
+                            html: `
+                                <p style="margin: 8px 0 0; font-size: 12px; color: var(--mac-text-tertiary); line-height: 1.55;">
+                                    ${t('shortcutHintSearch')} · ${t('shortcutHintSettings')}
+                                </p>
+                            `
                         }
                     ]
                 },

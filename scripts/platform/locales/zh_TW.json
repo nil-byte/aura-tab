@@ -385,6 +385,7 @@
     "toolbarIconResetFailed": "重置圖示失敗",
     "toolbarIconNote": "僅影響工具列圖示，擴充功能管理頁面的圖示無法更改。",
     "folderDefaultName": "未命名資料夾",
+    "folderTitleField": "資料夾名稱",
     "contextRenameFolder": "重新命名資料夾",
     "contextDissolveFolder": "取消群組",
     "contextDeleteFolder": "刪除資料夾及內容",

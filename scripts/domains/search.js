@@ -97,6 +97,7 @@ class Search extends DisposableComponent {
             btn.className = 'engine-btn';
             btn.dataset.engine = key;
             btn.tabIndex = 0;
+            btn.type = 'button';
             btn.textContent = this._getEngineLabel(engine);
             this.engineButtonsContainer.appendChild(btn);
             return btn;
@@ -104,10 +105,10 @@ class Search extends DisposableComponent {
 
         // Restore current selection
         this.engineBtns.forEach((btn, index) => {
-            if (btn.dataset.engine === this.currentEngine) {
-                btn.classList.add('selected');
-                this.selectedIndex = index;
-            }
+            const on = btn.dataset.engine === this.currentEngine;
+            btn.classList.toggle('selected', on);
+            if (on) this.selectedIndex = index;
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
     }
 
@@ -224,6 +225,7 @@ class Search extends DisposableComponent {
             } else {
                 btn.classList.remove('selected');
             }
+            btn.setAttribute('aria-pressed', btn.dataset.engine === engine ? 'true' : 'false');
         });
 
         try {
@@ -241,6 +243,7 @@ class Search extends DisposableComponent {
 
         this.isOpen = true;
         this.overlay.classList.add('active');
+        this.overlay.setAttribute('aria-hidden', 'false');
 
         modalLayer.register(
             MODAL_ID,
@@ -250,13 +253,10 @@ class Search extends DisposableComponent {
             () => this.closeSwitcher(false, { restoreFocus: false })
         );
 
-        this.engineBtns.forEach((btn, index) => {
-            if (btn.dataset.engine === this.currentEngine) {
-                btn.classList.add('selected');
-                this.selectedIndex = index;
-            } else {
-                btn.classList.remove('selected');
-            }
+        this.engineBtns.forEach((btn) => {
+            const on = btn.dataset.engine === this.currentEngine;
+            btn.classList.toggle('selected', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
 
         const selectedBtn = this.engineBtns[this.selectedIndex];
@@ -271,16 +271,21 @@ class Search extends DisposableComponent {
         this.isOpen = false;
         this.overlay.classList.remove('active');
 
+        // Move focus out before aria-hidden: Esc/outside-dismiss can leave focus on .engine-btn otherwise.
+        if (this.overlay.contains(document.activeElement)) {
+            if (restoreFocus) {
+                this.searchInput?.focus();
+            } else {
+                (/** @type {HTMLElement} */ (document.activeElement)).blur();
+            }
+        }
+
+        this.overlay.setAttribute('aria-hidden', 'true');
+
         modalLayer.unregister(MODAL_ID);
 
         if (!saveSelection) {
             this.loadSavedPreferences();
-        }
-
-        // Key: do not force focus back to new tab search box on "outside click close".
-        // This prevents upper layer UI like Launchpad / Settings from focusing input (cursor flashes then gets stolen back).
-        if (restoreFocus) {
-            this.searchInput.focus();
         }
     }
 
@@ -298,6 +303,8 @@ class Search extends DisposableComponent {
 
         this.engineBtns.forEach((btn, i) => {
             btn.classList.toggle('selected', i === index);
+            // aria-pressed reflects committed selection (currentEngine), not hover/keyboard preview ring.
+            btn.setAttribute('aria-pressed', btn.dataset.engine === this.currentEngine ? 'true' : 'false');
         });
     }
 

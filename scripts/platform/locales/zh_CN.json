@@ -385,6 +385,7 @@
     "toolbarIconResetFailed": "重置图标失败",
     "toolbarIconNote": "仅影响工具栏图标，扩展管理页面图标无法更改。",
     "folderDefaultName": "未命名文件夹",
+    "folderTitleField": "文件夹名称",
     "contextRenameFolder": "重命名文件夹",
     "contextDissolveFolder": "取消分组",
     "contextDeleteFolder": "删除文件夹及内容",

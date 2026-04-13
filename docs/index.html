@@ -5,7 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Tab — Reimagining Your New Tab</title>
     <meta name="description" content="A minimalist, native-feeling New Tab extension for macOS lovers.">
+    <meta name="robots" content="index,follow">
+    <!-- Absolute URLs below must match the deployed docs origin (e.g. GitHub Pages). Update if the site moves. -->
+    <link rel="canonical" href="https://nil-byte.github.io/aura-tab/docs/index.html">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="zh_CN">
+    <meta property="og:url" content="https://nil-byte.github.io/aura-tab/docs/index.html">
+    <meta property="og:title" content="Aura Tab — Reimagining Your New Tab">
+    <meta property="og:description" content="A minimalist, native-feeling New Tab extension for macOS lovers.">
+    <meta property="og:image" content="https://nil-byte.github.io/aura-tab/docs/images/desktop.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Aura Tab — Reimagining Your New Tab">
+    <meta name="twitter:description" content="A minimalist, native-feeling New Tab extension for macOS lovers.">
+    <meta name="twitter:image" content="https://nil-byte.github.io/aura-tab/docs/images/desktop.png">
+
     <link rel="icon" type="image/png" href="images/icon128.png">
+    <link rel="apple-touch-icon" href="images/icon128.png">
 
     <style>
         :root {
@@ -32,6 +52,21 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+        .docs-skip-link {
+            position: absolute;
+            left: -9999px;
+            z-index: 100000;
+            padding: 12px 16px;
+            background: var(--fg);
+            color: var(--bg);
+            font-size: 14px;
+            border-radius: 8px;
+        }
+        .docs-skip-link:focus {
+            left: 16px;
+            top: 12px;
+        }
         
         body {
             font-family: var(--font);
@@ -53,7 +88,10 @@
             height: 48px;
             background: transparent;
             z-index: 9999;
-            transition: all 0.5s var(--ease);
+            transition:
+                background-color 0.35s var(--ease),
+                border-color 0.35s var(--ease),
+                box-shadow 0.35s var(--ease);
         }
 
         nav.scrolled {
@@ -87,11 +125,29 @@
             cursor: pointer; width: 30px; height: 30px;
             display: flex; align-items: center; justify-content: center;
             border-radius: 50%; color: var(--gray);
-            transition: all 0.2s;
+            transition: color 0.2s var(--ease), background-color 0.2s var(--ease);
+            border: none;
+            background: transparent;
+            padding: 0;
+            font: inherit;
         }
         .icon-btn:hover { color: var(--fg); background: rgba(0,0,0,0.04); }
         [data-theme="dark"] .icon-btn:hover { background: rgba(255,255,255,0.08); }
         .icon-btn svg { width: 17px; height: 17px; stroke-width: 2.2; }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            nav { transition: none; }
+            .reveal { transition: none !important; opacity: 1 !important; transform: none !important; }
+            .reveal.visible { transform: none !important; }
+            .hero-image { transition: none !important; }
+            .feature-media img { transition: none !important; }
+            .feature-row:hover .feature-media img {
+                transform: none;
+                box-shadow: 0 25px 60px -10px rgba(0,0,0,0.12);
+            }
+            .cta-pill:hover { transform: none; }
+        }
 
         .cta-pill { 
             font-size: 12px; font-weight: 500;
@@ -209,7 +265,10 @@
 </head>
 <body>
 
-    <nav id="navbar">
+    <a href="#main-content" class="docs-skip-link" data-lang="en">Skip to content</a>
+    <a href="#main-content" class="docs-skip-link" data-lang="zh">跳到主内容</a>
+
+    <nav id="navbar" aria-label="Primary">
         <div class="nav-content">
             <div class="nav-brand">
                 <img src="images/icon128.png" alt="Aura Tab">
@@ -222,16 +281,18 @@
                 <a href="#settings" data-lang="en">Settings</a><a href="#settings" data-lang="zh">设置</a>
             </div>
             <div class="nav-right">
-                <div class="icon-btn" id="langBtn">CN</div>
-                <div class="icon-btn" id="themeBtn">
-                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display:none;">
+                <button type="button" class="icon-btn" id="langBtn" aria-label="Switch language">
+                    <span aria-hidden="true">CN</span>
+                </button>
+                <button type="button" class="icon-btn" id="themeBtn" aria-label="Toggle color theme">
+                    <svg class="sun-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display:none;">
                         <circle cx="12" cy="12" r="4.5"></circle>
                         <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
                     </svg>
-                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <svg class="moon-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
-                </div>
+                </button>
                 <a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank" class="cta-pill">
                     <span data-lang="en">Download</span>
                     <span data-lang="zh">下载</span>
@@ -240,8 +301,9 @@
         </div>
     </nav>
 
+    <main id="main-content">
     <!-- Hero -->
-    <section class="hero reveal">
+    <section class="hero reveal" aria-label="Introduction">
         <h1 data-lang="en">Your New Tab.<br>Reimagined.</h1>
         <h1 data-lang="zh">全新标签页。<br>重新想象。</h1>
         
@@ -316,6 +378,8 @@
         </div>
     </section>
 
+    </main>
+
     <footer>
         <div class="footer-content">
             <div>Copyright © 2026 Aura Tab</div>
@@ -324,19 +388,27 @@
     </footer>
 
     <script>
-        // Nav Scroll Logic
+        // Nav scroll: rAF-throttled class toggle (avoid scroll handler doing redundant work)
         const nav = document.getElementById('navbar');
-        window.onscroll = () => {
+        let navScrollQueued = false;
+        function syncNavScrolled() {
+            navScrollQueued = false;
             if (window.scrollY > 50) nav.classList.add('scrolled');
             else nav.classList.remove('scrolled');
-        };
+        }
+        window.addEventListener('scroll', () => {
+            if (!navScrollQueued) {
+                navScrollQueued = true;
+                requestAnimationFrame(syncNavScrolled);
+            }
+        }, { passive: true });
 
         // Theme Logic
         const themeBtn = document.getElementById('themeBtn');
         const sunIcon = document.querySelector('.sun-icon');
         const moonIcon = document.querySelector('.moon-icon');
         const html = document.documentElement;
-        
+
         function setTheme(theme) {
             html.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
@@ -347,10 +419,10 @@
             }
         }
 
-        themeBtn.onclick = () => {
+        themeBtn.addEventListener('click', () => {
             const current = html.getAttribute('data-theme') || 'light';
             setTheme(current === 'light' ? 'dark' : 'light');
-        };
+        });
 
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) setTheme(savedTheme);
@@ -358,16 +430,35 @@
 
         // Lang Logic
         const langBtn = document.getElementById('langBtn');
+        const langShown = langBtn.querySelector('span[aria-hidden="true"]');
         const body = document.body;
-        langBtn.onclick = () => {
+
+        function applyDocsLang(isZh) {
+            document.documentElement.lang = isZh ? 'zh-CN' : 'en';
+            langBtn.setAttribute('aria-label', isZh ? 'Switch language to English' : '切换到中文');
+        }
+
+        langBtn.addEventListener('click', () => {
             const isZh = body.classList.toggle('zh');
-            langBtn.textContent = isZh ? 'EN' : 'CN';
+            if (langShown) langShown.textContent = isZh ? 'EN' : 'CN';
             localStorage.setItem('lang', isZh ? 'zh' : 'en');
-        };
-        if (localStorage.getItem('lang') === 'zh' || navigator.language.startsWith('zh')) {
-            body.classList.add('zh'); langBtn.textContent = 'EN';
+            applyDocsLang(isZh);
+        });
+        const storedLang = localStorage.getItem('lang');
+        if (storedLang === 'zh') {
+            body.classList.add('zh');
+            if (langShown) langShown.textContent = 'EN';
+            applyDocsLang(true);
+        } else if (storedLang === 'en') {
+            if (langShown) langShown.textContent = 'CN';
+            applyDocsLang(false);
+        } else if (navigator.language.startsWith('zh')) {
+            body.classList.add('zh');
+            if (langShown) langShown.textContent = 'EN';
+            applyDocsLang(true);
         } else {
-            langBtn.textContent = 'CN';
+            if (langShown) langShown.textContent = 'CN';
+            applyDocsLang(false);
         }
 
         // Reveal Logic

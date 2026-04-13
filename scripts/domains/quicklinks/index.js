@@ -204,6 +204,7 @@ class QuickLinksApp extends DisposableComponent {
 
         this._updatePreviewIcon();
         updateElement(this.dialogOverlay, { classes: { active: true } });
+        this.dialogOverlay.setAttribute('aria-hidden', 'false');
 
         const hitTestEl = this.dialogOverlay.querySelector('.quicklink-dialog') || this.dialogOverlay;
         modalLayer.register(
@@ -225,6 +226,7 @@ class QuickLinksApp extends DisposableComponent {
         if (!wasActive) return;
 
         updateElement(this.dialogOverlay, { classes: { active: false } });
+        this.dialogOverlay.setAttribute('aria-hidden', 'true');
         modalLayer.unregister(MODAL_ID);
 
         const wasFromLaunchpad = this.editState.source === 'launchpad';
@@ -651,6 +653,7 @@ class QuickLinksApp extends DisposableComponent {
 
         if (this.dialogOverlay?.classList.contains('active')) {
             updateElement(this.dialogOverlay, { classes: { active: false } });
+            this.dialogOverlay.setAttribute('aria-hidden', 'true');
             modalLayer.unregister(MODAL_ID);
         }
 
