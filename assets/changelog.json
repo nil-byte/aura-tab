@@ -1,4 +1,19 @@
 {
+  "3.4.8": {
+    "en": [
+      "Accessibility: Stronger ARIA labeling, modal focus management, and screen reader support across the new tab experience",
+      "Quick Links: URL validation with clear feedback for invalid addresses; skip link to main content; clearer context menu labels"
+    ],
+    "zh_CN": [
+      "无障碍：强化 ARIA 与焦点管理，优化模态框与装饰性图标的读屏体验",
+      "快速链接：强化 URL 校验与无效地址提示；新增跳转主内容的跳过链接；优化右键菜单文案"
+    ],
+    "zh_TW": [
+      "無障礙：強化 ARIA 與焦點管理，優化模態框與裝飾性圖示的螢幕閱讀體驗",
+      "快速連結：強化 URL 檢核與無效位址提示；新增跳至主內容的跳過連結；優化右鍵選單文案"
+    ],
+    "moreUrl": ""
+  },
   "3.4.7": {
     "en": [
       "Background Sources: Added Bing with market-aware daily refresh and no API key requirement",
