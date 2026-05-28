@@ -6,7 +6,7 @@ import {
     updateItemTitle as updateLaunchpadTitle
 } from './icon-renderer.js';
 
-export const launchpadGridMethods = {
+const launchpadGridMethods = {
     _applyGridDensityValues(columns, rows) {
         if (!this._dom.container) return;
 

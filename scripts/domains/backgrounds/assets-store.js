@@ -672,4 +672,3 @@ class AssetsStore {
     }
 }
 export const assetsStore = new AssetsStore();
-export { AssetsStore };

@@ -11,7 +11,6 @@ import { iconCache } from '../../platform/icon-cache.js';
 import { DisposableComponent, createDebounce } from '../../platform/lifecycle.js';
 import { fetchIconBlobViaBackground } from '../../platform/icon-fetch-bridge.js';
 import { getInitial, isValidQuicklinkUrl, normalizeUrlForNavigation } from '../../shared/text.js';
-import { updateElement } from '../../shared/dom.js';
 
 const MODAL_ID = 'quicklink-dialog';
 
@@ -78,8 +77,6 @@ class QuickLinksApp extends DisposableComponent {
             refreshIconRow: byId('quicklinkRefreshIconRow'),
             refreshIconBtn: byId('quicklinkRefreshIconBtn'),
             refreshIconLabel: byId('quicklinkRefreshIconLabel'),
-
-            launchpadContainer: byId('launchpadContainer'),
 
             tagsInput: byId('quicklinkTagsInput'),
             tagsContainer: byId('quicklinkTagsContainer'),
@@ -178,21 +175,17 @@ class QuickLinksApp extends DisposableComponent {
         }
         this.editState.tags = nextTags;
 
-        updateElement(this.refs.tagsSuggestions, { html: '' });
+        if (this.refs.tagsSuggestions) this.refs.tagsSuggestions.innerHTML = '';
         if (this.refs.tagsInput) this.refs.tagsInput.value = '';
 
         this._renderTags();
 
-        updateElement(dialogTitle, {
-            text: this.editState.isEditing ? t('dialogEditLink') : t('dialogAddLink')
-        });
+        if (dialogTitle) {
+            dialogTitle.textContent = this.editState.isEditing ? t('dialogEditLink') : t('dialogAddLink');
+        }
 
-        updateElement(this.refs.deleteBtn, {
-            classes: { hidden: !this.editState.isEditing }
-        });
-        updateElement(refreshIconRow, {
-            classes: { hidden: !this.editState.isEditing }
-        });
+        this.refs.deleteBtn?.classList.toggle('hidden', !this.editState.isEditing);
+        refreshIconRow?.classList.toggle('hidden', !this.editState.isEditing);
 
         if (titleInput) titleInput.value = link ? link.title : '';
         if (urlInput) urlInput.value = link ? link.url : '';
@@ -208,7 +201,7 @@ class QuickLinksApp extends DisposableComponent {
 
         this._clearUrlValidation();
         this._updatePreviewIcon();
-        updateElement(this.dialogOverlay, { classes: { active: true } });
+        this.dialogOverlay.classList.add('active');
         this.dialogOverlay.setAttribute('aria-hidden', 'false');
 
         const hitTestEl = this.dialogOverlay.querySelector('.quicklink-dialog') || this.dialogOverlay;
@@ -230,7 +223,7 @@ class QuickLinksApp extends DisposableComponent {
         const wasActive = this.dialogOverlay.classList.contains('active');
         if (!wasActive) return;
 
-        updateElement(this.dialogOverlay, { classes: { active: false } });
+        this.dialogOverlay.classList.remove('active');
         this.dialogOverlay.setAttribute('aria-hidden', 'true');
         modalLayer.unregister(MODAL_ID);
 
@@ -411,7 +404,7 @@ class QuickLinksApp extends DisposableComponent {
             } catch { /* revokeObjectURL may fail for non-blob URLs */ }
         }
 
-        updateElement(previewIcon, { html: '' });
+        previewIcon.innerHTML = '';
 
         const normalizedUrl = url ? this._normalizeUrl(url) : '';
         const urls = [customIcon, ...getFaviconUrlCandidates(normalizedUrl, { size: 64 })].filter(Boolean);
@@ -511,7 +504,7 @@ class QuickLinksApp extends DisposableComponent {
         const container = this.refs.tagsContainer;
         if (!container) return;
 
-        updateElement(container, { html: '' });
+        container.innerHTML = '';
 
         const tagsSnapshot = [...this.editState.tags];
 
@@ -556,7 +549,8 @@ class QuickLinksApp extends DisposableComponent {
         const query = input.value.trim().toLowerCase();
 
         if (!query) {
-            updateElement(container, { html: '', classes: { visible: false } });
+            container.innerHTML = '';
+            container.classList.remove('visible');
             return;
         }
 
@@ -569,11 +563,12 @@ class QuickLinksApp extends DisposableComponent {
             .filter(t => t.toLowerCase().includes(query));
 
         if (matches.length === 0) {
-            updateElement(container, { html: '', classes: { visible: false } });
+            container.innerHTML = '';
+            container.classList.remove('visible');
             return;
         }
 
-        updateElement(container, { html: '' });
+        container.innerHTML = '';
         matches.slice(0, 8).forEach(tagName => {
             const el = document.createElement('button');
             el.type = 'button'; // Prevent form submission
@@ -592,14 +587,15 @@ class QuickLinksApp extends DisposableComponent {
                 this._addTag(tagName);
                 input.value = '';
 
-                updateElement(container, { html: '', classes: { visible: false } });
+                container.innerHTML = '';
+                container.classList.remove('visible');
 
                 input.focus();
             };
 
             container.appendChild(el);
         });
-        updateElement(container, { classes: { visible: true } });
+        container.classList.add('visible');
     }
 
     _handleClickOutsideTags(e) {
@@ -613,7 +609,8 @@ class QuickLinksApp extends DisposableComponent {
             !e.target.closest('.quicklink-tags-wrapper');
 
         if (isOutside) {
-            updateElement(container, { html: '', classes: { visible: false } });
+            container.innerHTML = '';
+            container.classList.remove('visible');
         }
     }
 
@@ -683,7 +680,7 @@ class QuickLinksApp extends DisposableComponent {
         this._debouncedPreview.cancel();
 
         if (this.dialogOverlay?.classList.contains('active')) {
-            updateElement(this.dialogOverlay, { classes: { active: false } });
+            this.dialogOverlay.classList.remove('active');
             this.dialogOverlay.setAttribute('aria-hidden', 'true');
             modalLayer.unregister(MODAL_ID);
         }

@@ -1,6 +1,6 @@
 import { store } from './store.js';
 
-export const launchpadDragMethods = {
+const launchpadDragMethods = {
     // ─── Folder merge drag config ─────────────────────────────
     _FOLDER_MERGE_HOVER_MS_ITEM: 450,    // Hover on regular item to create folder
     _FOLDER_MERGE_HOVER_MS_FOLDER: 250,  // Hover on existing folder to add into

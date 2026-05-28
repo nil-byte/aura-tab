@@ -8,7 +8,7 @@ import {
     getCacheKeyForItem
 } from './icon-renderer.js';
 
-export const launchpadSearchMethods = {
+const launchpadSearchMethods = {
     _setupSearchInput() {
         const input = this._dom.searchInput;
         if (!input) return;

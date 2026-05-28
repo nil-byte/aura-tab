@@ -34,7 +34,6 @@ export async function initChangelog() {
   const shouldShow = await shouldShowVersion(version)
   if (shouldShow) {
     mount({
-      title: chrome.i18n.getMessage('changelog_title') || "What's new",
       version,
       items,
       moreUrl,
@@ -73,7 +72,6 @@ export async function initChangelog() {
       if (!shouldShowNow) return
       const sel = pickChangelogItems(data, v, getUiLang())
       mount({
-        title: chrome.i18n.getMessage('changelog_title') || "What's new",
         version: v,
         items: sel.items,
         moreUrl: sel.moreUrl,

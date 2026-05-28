@@ -46,7 +46,6 @@ describe('settings-contract', () => {
             dateFormat: SYNC_SETTINGS_DEFAULTS.dateFormat,
             showSeconds: SYNC_SETTINGS_DEFAULTS.showSeconds,
             preferredSearchEngine: SYNC_SETTINGS_DEFAULTS.preferredSearchEngine,
-            useDefaultEngine: SYNC_SETTINGS_DEFAULTS.useDefaultEngine,
             searchOpenInNewTab: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab,
             searchActive: SYNC_SETTINGS_DEFAULTS.searchActive,
             showSettingsBtn: SYNC_SETTINGS_DEFAULTS.showSettingsBtn,

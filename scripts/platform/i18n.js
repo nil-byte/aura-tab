@@ -1,3 +1,4 @@
+// Boundary: `_locales/` only keeps manifest and `chrome.i18n.getMessage` keys; all in-page UI copy lives in `scripts/platform/locales/`.
 import { SYNC_SETTINGS_DEFAULTS, getSyncSettings } from './settings-contract.js';
 
 let cachedLocale = null;

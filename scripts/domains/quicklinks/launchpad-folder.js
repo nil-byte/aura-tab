@@ -110,7 +110,7 @@ function updateFolderElement(el, folder) {
     }
 }
 
-export const launchpadFolderMethods = {
+const launchpadFolderMethods = {
     _createFolderElement(item) {
         return createFolderElement(item);
     },

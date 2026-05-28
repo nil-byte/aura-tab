@@ -19,7 +19,7 @@ import {
 
 const MODAL_ID = 'launchpad';
 
-export class SortableManager {
+class SortableManager {
     #SortableClass = null;
     #instances = new Map();
     #isLoading = false;
@@ -158,7 +158,7 @@ export const CONFIG = {
     }
 };
 
-export class Launchpad {
+class Launchpad {
     constructor() {
         this._config = {
             ...CONFIG,

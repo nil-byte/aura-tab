@@ -35,7 +35,6 @@ export const SYNC_SETTINGS_DEFAULTS = Object.freeze({
     dateFormat: 'en',
     showSeconds: false,
     preferredSearchEngine: 'default',
-    useDefaultEngine: true,
     searchOpenInNewTab: false,
     searchActive: false,
     showSettingsBtn: true,

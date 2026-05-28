@@ -22,7 +22,6 @@ class Search extends DisposableComponent {
 
         // State
         this.currentEngine = 'default';
-        this.useDefaultEngine = true;
         this.openInNewTab = false;
         this.selectedIndex = 0;
         this.isOpen = false;
@@ -169,10 +168,8 @@ class Search extends DisposableComponent {
         try {
             const settings = await getSyncSettings({
                 preferredSearchEngine: SYNC_SETTINGS_DEFAULTS.preferredSearchEngine,
-                useDefaultEngine: SYNC_SETTINGS_DEFAULTS.useDefaultEngine,
                 searchOpenInNewTab: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab
             });
-            this.useDefaultEngine = settings.useDefaultEngine;
             this.openInNewTab = settings.searchOpenInNewTab;
 
             const engines = Array.from(this.engineBtns).map(btn => btn.dataset.engine);
@@ -199,7 +196,6 @@ class Search extends DisposableComponent {
         if (!this.searchEngines[engine]) return;
 
         this.currentEngine = engine;
-        this.useDefaultEngine = (engine === 'default');
 
         this.engineBtns.forEach((btn, index) => {
             if (btn.dataset.engine === engine) {
@@ -212,8 +208,7 @@ class Search extends DisposableComponent {
         });
 
         chrome.storage.sync.set({
-            preferredSearchEngine: engine,
-            useDefaultEngine: this.useDefaultEngine
+            preferredSearchEngine: engine
         }).catch(() => {});
     }
 
@@ -340,7 +335,7 @@ class Search extends DisposableComponent {
         const query = this.searchInput.value.trim();
         if (!query) return;
 
-        if (this.useDefaultEngine) {
+        if (this.currentEngine === 'default') {
             try {
                 await chrome.search.query({
                     text: query,

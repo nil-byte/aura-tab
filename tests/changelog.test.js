@@ -50,6 +50,8 @@ describe('changelog', () => {
         const { view } = await initChangelog({ locale: 'zh-CN' });
         const args = view.mount.mock.calls[0][0];
         expect(args.items).toEqual(['A', 'B']);
+        expect(args.title).toBeUndefined();
+        expect(global.chrome.i18n.getMessage).not.toHaveBeenCalledWith('changelog_title');
     });
 
     it('falls back to en when locale unavailable', async () => {
@@ -68,6 +70,8 @@ describe('changelog', () => {
         expect(view.mount).toHaveBeenCalled();
         const args = view.mount.mock.calls[0][0];
         expect(args.version).toBe('3.0');
+        expect(args.title).toBeUndefined();
+        expect(global.chrome.i18n.getMessage).not.toHaveBeenCalledWith('changelog_title');
     });
 
     it('close should persist lastSeenVersion', async () => {
