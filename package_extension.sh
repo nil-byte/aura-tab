@@ -7,39 +7,30 @@ set -e
 VERSION=$(grep '"version"' manifest.json | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
 OUTPUT_FILE="aura-tab-v${VERSION}.zip"
 
-echo "📦 Packaging Aura Tab extension v${VERSION}..."
+echo "📦 Packaging Aura Tab v${VERSION} (Chrome Web Store — allowlist only)..."
 
-# check if zip command exists
 if ! command -v zip &> /dev/null; then
     echo "Error: 'zip' command not found."
     exit 1
 fi
 
-# Remove existing zips if they exist (optional, but keeps it clean)
 rm -f aura-tab-v*.zip
 
-# Create the zip file
-# -r: recurse into directories
-# -x: exclude the following patterns
-zip -r "$OUTPUT_FILE" . \
-    -x "*.git*" \
-    -x ".github/*" \
-    -x "node_modules/*" \
-    -x "tests/*" \
-    -x "docs/*" \
-    -x "coverage/*" \
-    -x ".claude/*" \
-    -x ".kiro/*" \
-    -x "*/.DS_Store" \
-    -x ".DS_Store" \
-    -x ".gitignore" \
-    -x "package.json" \
-    -x "package-lock.json" \
-    -x "vitest.config.js" \
-    -x "*.zip" \
-    -x "package_extension.sh" \
-    -x "assets/other/*" \
-    -x "*.md"
+# Allowlist: runtime files only (manifest, new tab page, service worker, i18n, CSS, JS, store assets).
+# Excludes by omission: .git, .github, tests, node_modules, docs, tooling, dev assets (e.g. assets/other).
+zip -r "$OUTPUT_FILE" \
+    manifest.json \
+    newtab.html \
+    background-worker.js \
+    LICENSE \
+    styles \
+    scripts \
+    _locales \
+    assets/backgrounds \
+    assets/icons \
+    assets/changelog.json \
+    -x "*.DS_Store" \
+    -x "**/.DS_Store"
 
 echo "✅ Compression complete!"
 echo "You can upload $OUTPUT_FILE to the Chrome Web Store."
