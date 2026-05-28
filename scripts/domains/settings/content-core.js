@@ -28,7 +28,6 @@ const SHORTCUT_ACTION_TO_SETTING_KEY = Object.freeze({
 export function registerGeneralContent(window) {
     window.registerContentRenderer('general', (container) => {
         const builder = createSettingsBuilder(container, {
-            sourcePrefix: 'mac-settings.general',
             sections: [
                 {
                     type: 'section',
@@ -66,8 +65,7 @@ export function registerGeneralContent(window) {
                             id: 'macShowSeconds',
                             labelKey: 'settingsClockShowSeconds',
                             storageKey: 'showSeconds',
-                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSeconds,
-                            source: 'mac-settings.general.toggle'
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSeconds
                         }
                     ]
                 },
@@ -80,8 +78,7 @@ export function registerGeneralContent(window) {
                             id: 'macSearchOpenNewTab',
                             labelKey: 'settingsUiSearchNewTab',
                             storageKey: 'searchOpenInNewTab',
-                            defaultValue: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab,
-                            source: 'mac-settings.general.toggle'
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab
                         }
                     ]
                 },
@@ -96,23 +93,21 @@ export function registerGeneralContent(window) {
                             storageKey: 'backgroundSettings',
                             defaultValue: BACKGROUND_UI_DEFAULTS.showRefreshButton,
                             read: ({ storage }) => storage?.sync?.backgroundSettings?.showRefreshButton,
-                            write: (value) => patchBackgroundSettings({ showRefreshButton: value }, 'mac-settings.general.backgroundToggle')
+                            write: (value) => patchBackgroundSettings({ showRefreshButton: value })
                         },
                         {
                             type: 'toggle',
                             id: 'macShowSettingsBtn',
                             labelKey: 'settingsUiShowSettingsBtn',
                             storageKey: 'showSettingsBtn',
-                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSettingsBtn,
-                            source: 'mac-settings.general.toggle'
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSettingsBtn
                         },
                         {
                             type: 'toggle',
                             id: 'macShowSearchBtn',
                             labelKey: 'settingsUiShowSearchBtn',
                             storageKey: 'showSearchBtn',
-                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSearchBtn,
-                            source: 'mac-settings.general.toggle'
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSearchBtn
                         },
                         {
                             type: 'toggle',
@@ -122,15 +117,14 @@ export function registerGeneralContent(window) {
                             storageKey: 'backgroundSettings',
                             defaultValue: BACKGROUND_UI_DEFAULTS.showPhotoInfo,
                             read: ({ storage }) => storage?.sync?.backgroundSettings?.showPhotoInfo,
-                            write: (value) => patchBackgroundSettings({ showPhotoInfo: value }, 'mac-settings.general.backgroundToggle')
+                            write: (value) => patchBackgroundSettings({ showPhotoInfo: value })
                         },
                         {
                             type: 'toggle',
                             id: 'macLaunchpadShowNames',
                             labelKey: 'settingsUiLaunchpadShowNames',
                             storageKey: 'launchpadShowNames',
-                            defaultValue: SYNC_SETTINGS_DEFAULTS.launchpadShowNames,
-                            source: 'mac-settings.general.toggle'
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.launchpadShowNames
                         },
                         {
                             type: 'toggle',
@@ -139,8 +133,7 @@ export function registerGeneralContent(window) {
                             storageKey: 'macSettingsDismissOnOutsideClick',
                             defaultValue: SYNC_SETTINGS_DEFAULTS.macSettingsDismissOnOutsideClick,
                             toInput: (value) => value === true,
-                            fromInput: (value) => value === true,
-                            source: 'mac-settings.general.toggle'
+                            fromInput: (value) => value === true
                         }
                     ]
                 }
@@ -274,7 +267,6 @@ export function registerAboutContent(window) {
         if (!sectionHost) return;
 
         const builder = createSettingsBuilder(sectionHost, {
-            sourcePrefix: 'mac-settings.about',
             sections: [
                 {
                     type: 'section',
@@ -520,10 +512,7 @@ async function _initShortcutEditors(container) {
             }
 
             try {
-                const result = await patchSyncSettings(
-                    { [key]: normalizedShortcut },
-                    'mac-settings.about.shortcuts'
-                );
+                const result = await patchSyncSettings({ [key]: normalizedShortcut });
                 if (!result?.ok) {
                     toast(t('shortcutSaveFailed'));
                     return;

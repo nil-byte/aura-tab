@@ -59,6 +59,7 @@ export class PhotosWindow extends MacWindowBase {
         this._categoryCache = new Map();
         this._categoryCacheExpiry = 30000; // Cache expiration 30 seconds
         this._lastKnownCounts = { all: 0, favorites: 0, local: 0, ...createRemoteProviderCounts() };
+        this._libraryItemsStorageHandler = null;
         this._init();
     }
     _getModalId() {
@@ -415,9 +416,15 @@ export class PhotosWindow extends MacWindowBase {
             return;
         }
         this._bindPhotosEvents();
-        this._getStorageManager().register('photos.libraryItems', (changes, areaName) => {
+        this._libraryItemsStorageHandler = (changes, areaName) => {
             if (areaName !== 'local' || !changes.libraryItems) return;
             this._handleLibraryItemsStorageChange();
+        };
+        chrome.storage.onChanged.addListener(this._libraryItemsStorageHandler);
+        this._addDisposable(() => {
+            if (!this._libraryItemsStorageHandler) return;
+            chrome.storage.onChanged.removeListener(this._libraryItemsStorageHandler);
+            this._libraryItemsStorageHandler = null;
         });
         initHtmlI18n(this._window);
     }

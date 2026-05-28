@@ -1,23 +1,8 @@
-/**
- * Search - Search Module (Architecture Refactored v2)
- *
- * Design Philosophy:
- * 1. Inherits DisposableComponent for lifecycle management
- * 2. All event listeners managed via EventListenerManager
- * 3. Zero memory leaks on destroy
- *
- * v2 Changes:
- * - Migrated to DisposableComponent pattern
- * - All addEventListener calls replaced with _events.add()
- * - Proper cleanup in destroy()
- */
-
 import { modalLayer } from '../platform/modal-layer.js';
 import {
     DisposableComponent
 } from '../platform/lifecycle.js';
 import { t } from '../platform/i18n.js';
-import * as storageRepo from '../platform/storage-repo.js';
 import { SYNC_SETTINGS_DEFAULTS, getSyncSettings } from '../platform/settings-contract.js';
 
 const MODAL_ID = 'engine-switcher';
@@ -25,8 +10,6 @@ const MODAL_ID = 'engine-switcher';
 class Search extends DisposableComponent {
     constructor() {
         super();
-
-        // DOM Elements
         this.searchInput = document.getElementById('searchInput');
         this.searchEngineBtn = document.getElementById('searchEngineBtn');
         this.searchContainer = document.querySelector('.search-container');
@@ -208,7 +191,7 @@ class Search extends DisposableComponent {
         this.openInNewTab = Boolean(openInNewTab);
 
         if (persist) {
-            storageRepo.sync.setMultiple({ searchOpenInNewTab: this.openInNewTab }).catch(() => { });
+            chrome.storage.sync.set({ searchOpenInNewTab: this.openInNewTab }).catch(() => {});
         }
     }
 
@@ -228,14 +211,10 @@ class Search extends DisposableComponent {
             btn.setAttribute('aria-pressed', btn.dataset.engine === engine ? 'true' : 'false');
         });
 
-        try {
-            storageRepo.sync.setMultiple({
-                preferredSearchEngine: engine,
-                useDefaultEngine: this.useDefaultEngine
-            });
-        } catch {
-            // Ignore storage errors
-        }
+        chrome.storage.sync.set({
+            preferredSearchEngine: engine,
+            useDefaultEngine: this.useDefaultEngine
+        }).catch(() => {});
     }
 
     openSwitcher() {

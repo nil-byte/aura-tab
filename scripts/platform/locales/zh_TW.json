@@ -287,6 +287,7 @@
     "shortcutConflict": "快捷鍵衝突，請使用不同組合",
     "shortcutSaved": "快捷鍵已保存",
     "shortcutSaveFailed": "快捷鍵保存失敗",
+    "settingsSaveFailed": "設定保存失敗",
     "ariaMinimize": "最小化",
     "ariaExpand": "展開",
     "macSettingsTheme": "主題",

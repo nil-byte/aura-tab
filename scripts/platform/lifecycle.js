@@ -61,11 +61,7 @@ export class DragStateMachine {
         if (this.#state === newState) return;
         this.#state = newState;
         for (const cb of this.#listeners) {
-            try {
-                cb(newState);
-            } catch (e) {
-                console.error('[DragStateMachine] Listener error:', e);
-            }
+            cb(newState);
         }
     }
 }
@@ -235,8 +231,6 @@ let STORAGE_MASTER_HANDLER = null;
 export class StorageListenerManager {
     #handlers = new Map();
     #destroyed = false;
-    #writeRevision = null;
-    #writeRevisionTimer = null;
     constructor() {
         STORAGE_MANAGER_INSTANCES.add(this);
         if (!STORAGE_MASTER_HANDLER) {
@@ -250,15 +244,8 @@ export class StorageListenerManager {
     }
     _handleStorageChange(changes, areaName) {
         if (this.#destroyed) return;
-        if (this.#writeRevision && changes._writeRevision?.newValue === this.#writeRevision) {
-            return;
-        }
         for (const handler of this.#handlers.values()) {
-            try {
-                handler(changes, areaName);
-            } catch (error) {
-                console.error('[StorageListenerManager] Handler error:', error);
-            }
+            handler(changes, areaName);
         }
     }
     register(name, handler) {
@@ -269,32 +256,9 @@ export class StorageListenerManager {
     unregister(name) {
         this.#handlers.delete(name);
     }
-    markWrite() {
-        if (this.#writeRevisionTimer !== null) {
-            clearTimeout(this.#writeRevisionTimer);
-        }
-        this.#writeRevision = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        this.#writeRevisionTimer = setTimeout(() => {
-            this.#writeRevisionTimer = null;
-            this.#writeRevision = null;
-        }, 2000);
-        return this.#writeRevision;
-    }
-    clearWriteMark() {
-        if (this.#writeRevisionTimer !== null) {
-            clearTimeout(this.#writeRevisionTimer);
-            this.#writeRevisionTimer = null;
-        }
-        this.#writeRevision = null;
-    }
     destroy() {
         if (this.#destroyed) return;
         this.#destroyed = true;
-        if (this.#writeRevisionTimer !== null) {
-            clearTimeout(this.#writeRevisionTimer);
-            this.#writeRevisionTimer = null;
-        }
-        this.#writeRevision = null;
         STORAGE_MANAGER_INSTANCES.delete(this);
         if (STORAGE_MANAGER_INSTANCES.size === 0 && STORAGE_MASTER_HANDLER) {
             try {

@@ -4,7 +4,6 @@ import { toast } from '../../shared/toast.js';
 import { t } from '../../platform/i18n.js';
 import { getSortable } from '../../libs/sortable-loader.js';
 import { modalLayer } from '../../platform/modal-layer.js';
-import { createMachine } from '../../platform/ui-state-machine.js';
 import { installLaunchpadGridMethods } from './launchpad-grid.js';
 import { installLaunchpadSearchMethods } from './launchpad-search.js';
 import { installLaunchpadDragMethods } from './launchpad-drag.js';
@@ -193,15 +192,6 @@ export class Launchpad {
         };
 
         this._dragState = new DragStateMachine(this._config.MOTION.justDraggedLockMs);
-        this._quicklinksUiMachine = createMachine('booting', {
-            booting: ['ready', 'error'],
-            ready: ['dragging', 'cooldown', 'error'],
-            dragging: ['cooldown', 'ready', 'error'],
-            cooldown: ['ready', 'error'],
-            error: ['ready', 'booting']
-        });
-        this._dragStateUnsubscribe = null;
-        this._bindDragStateToUiMachine();
 
         this._timers = new TimerManager();
         this._events = new EventListenerManager();
@@ -282,17 +272,12 @@ export class Launchpad {
 
         this._bindElements();
         if (!this._dom.overlay) {
-            this._quicklinksUiMachine.transition('error', { reason: 'missing-overlay' });
             console.warn('[Launchpad] Overlay element not found, skipping init');
             return;
         }
 
         this._applyGridDensityValues(store?.settings?.launchpadGridColumns, store?.settings?.launchpadGridRows);
         this._syncConfigFromCss();
-
-        this._dragState.destroy();
-        this._dragState = new DragStateMachine(this._config.MOTION.justDraggedLockMs);
-        this._bindDragStateToUiMachine();
 
         this._deferredRerenderExecutor = createConditionalExecutor(
             () => this._dragState.canOperate,
@@ -320,7 +305,6 @@ export class Launchpad {
         });
 
         this._state.isInitialized = true;
-        this._quicklinksUiMachine.transition('ready', { reason: 'init' });
     }
 
     destroy() {
@@ -342,10 +326,7 @@ export class Launchpad {
         this._searchDebounce?.cancel();
         this._searchDebounce = null;
 
-        this._dragStateUnsubscribe?.();
-        this._dragStateUnsubscribe = null;
         this._dragState.destroy();
-        this._quicklinksUiMachine.destroy();
         this._gridSortableManager.destroy();
         this._folderSortableManager.destroy();
 
@@ -364,23 +345,6 @@ export class Launchpad {
         };
 
         this._state.isInitialized = false;
-    }
-
-    _bindDragStateToUiMachine() {
-        this._dragStateUnsubscribe?.();
-        this._dragStateUnsubscribe = this._dragState.subscribe((dragState) => {
-            if (dragState === 'dragging') {
-                this._quicklinksUiMachine.transition('dragging', { dragState });
-                return;
-            }
-            if (dragState === 'cooldown') {
-                this._quicklinksUiMachine.transition('cooldown', { dragState });
-                return;
-            }
-            if (dragState === 'idle') {
-                this._quicklinksUiMachine.transition('ready', { dragState });
-            }
-        });
     }
 
     _bindElements() {
@@ -799,7 +763,7 @@ export class Launchpad {
         if (this._state.isDestroyed) return;
 
         if (item?._id === '__SYSTEM_SETTINGS__') {
-            import('../settings/index.js').then((m) => {
+            import('../settings/window.js').then((m) => {
                 m.macSettingsWindow?.open();
             }).catch((err) => {
                 console.error('[Launchpad] Failed to open Mac settings:', err);

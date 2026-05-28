@@ -1,4 +1,3 @@
-import * as storageRepo from './storage-repo.js';
 import { DEFAULT_SETTINGS as BACKGROUND_DEFAULT_SETTINGS } from '../domains/backgrounds/defaults.js';
 import { SHORTCUT_DEFAULTS, SHORTCUT_SETTING_KEYS } from './shortcut-manager.js';
 
@@ -98,5 +97,5 @@ export function resolveSyncSettingsDefaults(requestedDefaults = {}) {
 }
 
 export async function getSyncSettings(requestedDefaults = {}) {
-    return storageRepo.sync.getMultiple(resolveSyncSettingsDefaults(requestedDefaults));
+    return chrome.storage.sync.get(resolveSyncSettingsDefaults(requestedDefaults));
 }

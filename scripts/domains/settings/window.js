@@ -1,28 +1,10 @@
-/**
- * MacSettingsWindow - macOS-style Settings Window Component
- *
- * Inherits from MacWindowBase to get:
- * - Unified lifecycle management (open/close/toggle/destroy)
- * - Modal layer integration (modalLayer)
- * - Window dragging (WindowDragController)
- * - Behavior settings (dismissOnOutsideClick)
- * - Focus management
- *
- * This class specific features:
- * - Left sidebar settings menu navigation
- * - Content renderer registration mechanism
- */
-
 import { MacWindowBase } from '../../platform/mac-window-base.js';
 import { t, initHtmlI18n } from '../../platform/i18n.js';
-import { markSettingsPanelOpen, markSettingsPanelClosed } from '../../platform/settings-repo.js';
+import { registerGeneralContent, registerAboutContent, registerChangelogContent } from './content-core.js';
+import { registerAppearanceContent } from './content-appearance.js';
+import { registerDockContent } from './content-dock.js';
+import { registerDataContent } from './content-data.js';
 
-// ========== Constants ==========
-
-/**
- * Menu configuration
- * @type {Array<{ key: string, icon: string, labelKey: string }>}
- */
 const MENU_ITEMS = [
     {
         key: 'general',
@@ -84,8 +66,6 @@ const MENU_ITEMS = [
     }
 ];
 
-// ========== MacSettingsWindow Class ==========
-
 export class MacSettingsWindow extends MacWindowBase {
     constructor() {
         super();
@@ -99,8 +79,6 @@ export class MacSettingsWindow extends MacWindowBase {
         // Initialize
         this._init();
     }
-
-    // ========== Abstract Method Implementations ==========
 
     _getModalId() {
         return 'mac-settings';
@@ -126,30 +104,16 @@ export class MacSettingsWindow extends MacWindowBase {
         return 'mac-settings:close';
     }
 
-    // ========== Lifecycle Hooks ==========
-
     _onAfterOpen() {
-        markSettingsPanelOpen('mac-settings-window');
-        // Render current menu content
         this._renderContent(this._selectedMenu);
     }
 
-    _onAfterClose() {
-        markSettingsPanelClosed('mac-settings-window');
-    }
+    _onAfterClose() {}
 
-    /**
-     * Reset settings window state (called when closing)
-     */
     _resetState() {
-        // Reset to default menu
         this._selectedMenu = 'general';
-
-        // Reset expanded state
         this._isExpanded = false;
         this._window?.classList.remove('is-expanded');
-
-        // Update menu active state
         const menu = this._window?.querySelector('#macSettingsMenu');
         if (menu) {
             menu.querySelectorAll('.mac-menu-item').forEach(item => {
@@ -159,34 +123,21 @@ export class MacSettingsWindow extends MacWindowBase {
             });
         }
 
-        // Update title
         const title = this._window?.querySelector('#macSettingsTitle');
         if (title) {
             title.textContent = t('macSettingsGeneral') || 'General';
         }
     }
 
-    // ========== Initialization ==========
-
     _init() {
-        // Render window content first
         this._renderWindowContent();
-
-        // Call base class initialization (get DOM, bind events, etc.)
         if (!this._initializeBase()) {
             return;
         }
-
-        // Bind settings window specific events
         this._bindSettingsEvents();
-
-        // Window-level i18n initialization (sidebar menu, etc.)
         initHtmlI18n(this._window);
     }
 
-    /**
-     * Render window content structure
-     */
     _renderWindowContent() {
         const windowEl = document.getElementById(this._getWindowId());
         if (!windowEl) return;
@@ -220,9 +171,6 @@ export class MacSettingsWindow extends MacWindowBase {
         `;
     }
 
-    /**
-     * Render menu items
-     */
     _renderMenuItems() {
         return MENU_ITEMS.map(item => `
             <button class="mac-menu-item${item.key === this._selectedMenu ? ' active' : ''}"
@@ -236,22 +184,13 @@ export class MacSettingsWindow extends MacWindowBase {
         `).join('');
     }
 
-    /**
-     * Bind settings window specific events
-     */
     _bindSettingsEvents() {
         if (!this._window) return;
-
-        // Listen for language change events
         this._events.add(window, 'languageChanged', () => {
-            // 1. Update static text (sidebar, title, etc.)
             initHtmlI18n(this._window);
-
-            // 2. Re-render current content area (ensure text updates in content pages)
             this._renderContent(this._selectedMenu);
         });
 
-        // Menu item click
         const menu = this._window.querySelector('#macSettingsMenu');
         if (menu) {
             this._events.add(menu, 'click', (e) => {
@@ -263,29 +202,14 @@ export class MacSettingsWindow extends MacWindowBase {
         }
     }
 
-    // ========== Public Methods ==========
-
-    /**
-     * Register content renderer
-     * @param {string} menuKey - Menu key
-     * @param {(container: HTMLElement) => void} renderer - Render function
-     */
     registerContentRenderer(menuKey, renderer) {
         this._contentRenderers.set(menuKey, renderer);
     }
 
-    // ========== Private Methods ==========
-
-    /**
-     * Select menu item
-     * @param {string} menuKey
-     */
     _selectMenu(menuKey) {
         if (menuKey === this._selectedMenu) return;
 
         this._selectedMenu = menuKey;
-
-        // Update menu active state
         const menu = this._window?.querySelector('#macSettingsMenu');
         if (menu) {
             menu.querySelectorAll('.mac-menu-item').forEach(item => {
@@ -295,7 +219,6 @@ export class MacSettingsWindow extends MacWindowBase {
             });
         }
 
-        // Update title
         const title = this._window?.querySelector('#macSettingsTitle');
         if (title) {
             const menuItem = MENU_ITEMS.find(m => m.key === menuKey);
@@ -307,50 +230,45 @@ export class MacSettingsWindow extends MacWindowBase {
             title.textContent = t(menuItem?.labelKey) || menuKey;
         }
 
-        // Render content
         this._renderContent(menuKey);
     }
 
-    /**
-     * Render content area
-     * @param {string} menuKey
-     */
     _renderContent(menuKey) {
         const container = this._window?.querySelector('#macSettingsContentBody');
         if (!container) return;
-
-        // Clear content
         container.innerHTML = '';
-
-        // Check if there's a registered renderer
         const renderer = this._contentRenderers.get(menuKey);
         if (renderer) {
             renderer(container);
         } else {
-            // Default placeholder content
             container.innerHTML = `
                 <div class="mac-settings-placeholder">
                     <p>${t('macSettingsContentPlaceholder') || 'Content for ' + menuKey}</p>
                 </div>
             `;
         }
-
-        // Apply i18n
         initHtmlI18n(container);
     }
 }
 
-// ========== Singleton Export ==========
-
 let _instance = null;
 
-/**
- * Get MacSettingsWindow singleton
- * @returns {MacSettingsWindow}
- */
 export function getMacSettingsWindow() {
     if (!_instance) {
         _instance = new MacSettingsWindow();
     }
     return _instance;
+}
+
+export const macSettingsWindow = getMacSettingsWindow();
+
+export function initMacSettings() {
+    const window = getMacSettingsWindow();
+    registerGeneralContent(window);
+    registerAppearanceContent(window);
+    registerDockContent(window);
+    registerDataContent(window);
+    registerAboutContent(window);
+    registerChangelogContent(window);
+    return window;
 }

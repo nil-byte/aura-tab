@@ -1,9 +1,3 @@
-/**
- * Shared background defaults.
- *
- * Keep this file dependency-free so both runtime and settings contract can
- * consume one canonical source without import cycles.
- */
 export const DEFAULT_SETTINGS = Object.freeze({
     type: 'files',
     frequency: 'never',

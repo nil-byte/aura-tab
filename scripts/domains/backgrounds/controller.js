@@ -1,9 +1,4 @@
 import { t } from '../../platform/i18n.js';
-import { MSG, runtimeBus } from '../../platform/runtime-bus.js';
-import { setBackgroundSettings } from '../../platform/settings-repo.js';
-import { onStorageChange } from '../../platform/storage-runtime.js';
-import * as storageRepo from '../../platform/storage-repo.js';
-import { createMachine } from '../../platform/ui-state-machine.js';
 import { runWithTimeout } from '../../shared/net.js';
 import { getErrorMessage, isRecoverableError, logWithDedup } from '../../shared/error-utils.js';
 import {
@@ -28,6 +23,8 @@ import { localFilesManager } from './source-local.js';
 import { getProvider } from './source-remote.js';
 import { DEFAULT_SETTINGS } from './types.js';
 import { resolveEffectiveFrequency } from './refresh-policy.js';
+
+const REFRESH_BACKGROUND_MESSAGE = 'refreshBackground';
 
 export const RUNTIME_KEYS = {
     overlay: 'bgRuntimeOverlay',
@@ -64,18 +61,11 @@ class BackgroundSystem {
         this.localDefaultPath = 'assets/backgrounds/Background1.jpg';
 
         this._saveTimeout = null;
-        this._unsubscribeStorageChange = null;
-        this._unsubscribeRuntimeMessage = null;
         this._visibilityHandler = null;
         this._startupPhaseResetTimer = null;
         this._pendingStartupRefreshOnVisible = false;
-        this._runtimeOwner = `background.system.${this._instanceId}`;
-        this._stateMachine = createMachine('idle', {
-            idle: ['loading', 'error'],
-            loading: ['applied', 'error'],
-            applied: ['loading', 'error'],
-            error: ['loading']
-        });
+        this._runtimeMessageHandler = null;
+        this._storageChangeHandler = null;
     }
 
     async init() {
@@ -91,7 +81,7 @@ class BackgroundSystem {
 
         // Show cached average color immediately (eliminates black-screen gap).
         try {
-            const { lastBackgroundColor } = await storageRepo.local.getMultiple({
+            const { lastBackgroundColor } = await chrome.storage.local.get({
                 lastBackgroundColor: null
             });
             if (lastBackgroundColor) {
@@ -237,7 +227,7 @@ class BackgroundSystem {
                 }
             }
 
-            const localData = await storageRepo.local.getMultiple({
+            const localData = await chrome.storage.local.get({
                 currentBackground: null,
                 lastBackgroundChange: null
             });
@@ -333,7 +323,7 @@ class BackgroundSystem {
                 apiKeys: { ...this.settings.apiKeys }
             };
 
-            await setBackgroundSettings(settingsToSave, 'background.system.saveSettings');
+            await chrome.storage.sync.set({ backgroundSettings: settingsToSave });
         } catch (error) {
             console.error('[Background] Failed to save settings:', error);
         }
@@ -393,7 +383,6 @@ class BackgroundSystem {
             suppressRecoverableErrors
         } = this._normalizeLoadBackgroundOptions(forceOrOptions);
 
-        this._stateMachine.transition('loading', { force, phase });
         await this._loadMutex.acquire();
 
         try {
@@ -413,7 +402,6 @@ class BackgroundSystem {
                     preload: false,
                     ...(phase === 'startup' ? { phase } : {})
                 });
-                this._stateMachine.transition('applied', { type: this.settings.type });
                 return;
             }
 
@@ -425,7 +413,6 @@ class BackgroundSystem {
                     break;
                 case 'color':
                     this.applyColorBackground(this.settings.color);
-                    this._stateMachine.transition('applied', { type: 'color' });
                     return;
                 case 'unsplash':
                 case 'pixabay':
@@ -449,7 +436,6 @@ class BackgroundSystem {
                     preload: true,
                     ...(phase === 'startup' ? { phase } : {})
                 });
-                this._stateMachine.transition('applied', { type: this.settings.type });
             }
 
         } catch (error) {
@@ -460,7 +446,6 @@ class BackgroundSystem {
             if (!(suppressRecoverableErrors && isRecoverableError(error))) {
                 showNotification(getErrorMessage(error, t('bgLoadFailed')), 'error');
             }
-            this._stateMachine.transition('error', { error });
             try {
                 await this.applyDefaultBackground();
             } catch (fallbackError) {
@@ -482,7 +467,7 @@ class BackgroundSystem {
         this._lastStorageWrite = now;
 
         try {
-            await storageRepo.local.setMultiple({
+            await chrome.storage.local.set({
                 currentBackground: this._serializeBackgroundForStorage(background),
                 lastBackgroundChange: this.lastChange,
                 lastBackgroundColor: background.color || null,
@@ -686,10 +671,13 @@ class BackgroundSystem {
     }
 
     initMessageListener() {
-        if (this._unsubscribeRuntimeMessage) return;
-        this._unsubscribeRuntimeMessage = runtimeBus.register(MSG.REFRESH_BACKGROUND, () => {
+        if (this._runtimeMessageHandler) return;
+        this._runtimeMessageHandler = (message) => {
+            if (message?.type !== REFRESH_BACKGROUND_MESSAGE) return false;
             void this.refresh();
-        }, this._runtimeOwner);
+            return false;
+        };
+        chrome.runtime.onMessage.addListener(this._runtimeMessageHandler);
     }
 
     initVisibilityListener() {
@@ -744,9 +732,9 @@ class BackgroundSystem {
     }
 
     initStorageListener() {
-        if (this._unsubscribeStorageChange) return;
+        if (this._storageChangeHandler) return;
 
-        this._unsubscribeStorageChange = onStorageChange(`background.system.${this._instanceId}`, (changes, areaName) => {
+        this._storageChangeHandler = (changes, areaName) => {
             if (areaName === 'session') {
                 const runtime = {};
                 if (changes[RUNTIME_KEYS.overlay]) {
@@ -776,7 +764,8 @@ class BackgroundSystem {
                     });
                 });
             }
-        });
+        };
+        chrome.storage.onChanged.addListener(this._storageChangeHandler);
     }
 
     _handleSettingsChange(newValue) {
@@ -951,20 +940,18 @@ class BackgroundSystem {
         if (this._saveTimeout) {
             clearTimeout(this._saveTimeout);
         }
-        if (this._unsubscribeRuntimeMessage) {
-            this._unsubscribeRuntimeMessage();
-            this._unsubscribeRuntimeMessage = null;
+        if (this._runtimeMessageHandler) {
+            chrome.runtime.onMessage.removeListener(this._runtimeMessageHandler);
+            this._runtimeMessageHandler = null;
         }
-        runtimeBus.unregister(this._runtimeOwner);
         if (this._visibilityHandler) {
             document.removeEventListener('visibilitychange', this._visibilityHandler);
             this._visibilityHandler = null;
         }
-        if (this._unsubscribeStorageChange) {
-            this._unsubscribeStorageChange();
-            this._unsubscribeStorageChange = null;
+        if (this._storageChangeHandler) {
+            chrome.storage.onChanged.removeListener(this._storageChangeHandler);
+            this._storageChangeHandler = null;
         }
-        this._stateMachine.destroy();
     }
 }
 

@@ -40,14 +40,11 @@ function createStore(initialItems = []) {
 describe('Icon fetch bridge', () => {
     it('icon_bridge_normalizes_arraybuffer_typedarray_number_array', async () => {
         const expectPayload = async (data) => {
-            chrome.runtime.sendMessage.mockImplementationOnce((_message, callback) => {
-                chrome.runtime.lastError = null;
-                callback({
+            chrome.runtime.sendMessage.mockResolvedValueOnce({
                     success: true,
                     data,
                     contentType: 'image/png'
                 });
-            });
 
             const payload = await fetchIconPayloadViaBackground('https://example.com/favicon.ico');
             expect(payload).toBeTruthy();
@@ -69,11 +66,7 @@ describe('Icon fetch bridge', () => {
     });
 
     it('icon_bridge_handles_runtime_last_error_silently', async () => {
-        chrome.runtime.sendMessage.mockImplementationOnce((_message, callback) => {
-            chrome.runtime.lastError = { message: 'Could not establish connection' };
-            callback(undefined);
-            chrome.runtime.lastError = null;
-        });
+        chrome.runtime.sendMessage.mockRejectedValueOnce(new Error('Could not establish connection'));
 
         await expect(fetchIconPayloadViaBackground('https://example.com/favicon.ico')).resolves.toBeNull();
     });

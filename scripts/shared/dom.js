@@ -1,32 +1,14 @@
-/**
- * DOM Utilities
- *
- * Integrate CSS variable reading and declarative DOM update utilities.
- */
-
-// ========== CSS Variables Reader ==========
-
-/** @type {CSSStyleDeclaration | null} */
 let cachedStyle = null;
-
-/** @type {number} Cache timestamp */
 let cacheTimestamp = -1;
-
-/** @type {number} Cache validity period (~1 frame ~16ms) */
+// ~1 frame worth of caching: subsequent reads in the same tick reuse the snapshot
 const CACHE_TTL = 16;
 
-/**
- * Read CSS variable (internal function, with cache)
- * @param {string} name
- * @returns {string}
- */
 function readCssVar(name) {
     if (typeof document === 'undefined') return '';
     if (!name) return '';
 
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
-    // check if cache expired (exceeds one frame time)
     if (!cachedStyle || (now - cacheTimestamp) > CACHE_TTL) {
         cachedStyle = getComputedStyle(document.documentElement);
         cacheTimestamp = now;
@@ -51,21 +33,10 @@ export function readCssVarMs(name, fallbackMs) {
     return unit === 's' ? Math.round(num * 1000) : Math.round(num);
 }
 
-// ========== Declarative DOM Update ==========
-
 /**
- * Minimal declarative DOM update utility.
- * Covers only Aura Tab's current high-frequency update scenarios, avoiding repetitive imperative boilerplate.
- *
+ * Declarative DOM update covering the project's common props.
+ * Supported props: text, html, classes, attrs, style.
  * @param {HTMLElement | null | undefined} el
- * @param {{
- *   text?: string,
- *   html?: string,
- *   classes?: Record<string, boolean>,
- *   attrs?: Record<string, string | null | undefined>,
- *   style?: Record<string, string | null | undefined>
- * }} props
- * @returns {HTMLElement | null | undefined}
  */
 export function updateElement(el, props = {}) {
     if (!el) return el;
@@ -108,18 +79,4 @@ export function updateElement(el, props = {}) {
     }
 
     return el;
-}
-
-// ========== Element Selectors ==========
-
-export function byId(id) {
-    return document.getElementById(id);
-}
-
-export function $(selector) {
-    return document.querySelector(selector);
-}
-
-export function $$(selector) {
-    return document.querySelectorAll(selector);
 }

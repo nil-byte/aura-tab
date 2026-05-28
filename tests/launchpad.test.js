@@ -121,7 +121,6 @@ describe('DragStateMachine', () => {
 
     describe('State Transitions', () => {
         it('should start in idle state', () => {
-            expect(stateMachine.state).toBe('idle');
             expect(stateMachine.isIdle).toBe(true);
             expect(stateMachine.canOperate).toBe(true);
         });
@@ -130,7 +129,6 @@ describe('DragStateMachine', () => {
             const result = stateMachine.startDrag();
 
             expect(result).toBe(true);
-            expect(stateMachine.state).toBe('dragging');
             expect(stateMachine.isDragging).toBe(true);
             expect(stateMachine.canOperate).toBe(false);
         });
@@ -140,8 +138,7 @@ describe('DragStateMachine', () => {
             const result = stateMachine.endDrag();
 
             expect(result).toBe(true);
-            expect(stateMachine.state).toBe('cooldown');
-            expect(stateMachine.isInCooldown).toBe(true);
+            expect(stateMachine.isDragging).toBe(false);
             expect(stateMachine.canOperate).toBe(false);
         });
 
@@ -151,7 +148,7 @@ describe('DragStateMachine', () => {
 
             vi.advanceTimersByTime(150);
 
-            expect(stateMachine.state).toBe('idle');
+            expect(stateMachine.isIdle).toBe(true);
             expect(stateMachine.canOperate).toBe(true);
         });
 
@@ -162,7 +159,8 @@ describe('DragStateMachine', () => {
             const result = stateMachine.startDrag();
 
             expect(result).toBe(false);
-            expect(stateMachine.state).toBe('cooldown');
+            expect(stateMachine.isDragging).toBe(false);
+            expect(stateMachine.canOperate).toBe(false);
         });
 
         it('should not start drag during dragging', () => {
@@ -171,14 +169,14 @@ describe('DragStateMachine', () => {
             const result = stateMachine.startDrag();
 
             expect(result).toBe(false);
-            expect(stateMachine.state).toBe('dragging');
+            expect(stateMachine.isDragging).toBe(true);
         });
 
         it('should not end drag from idle', () => {
             const result = stateMachine.endDrag();
 
             expect(result).toBe(false);
-            expect(stateMachine.state).toBe('idle');
+            expect(stateMachine.isIdle).toBe(true);
         });
     });
 
@@ -219,6 +217,15 @@ describe('DragStateMachine', () => {
             stateMachine.startDrag();
 
             expect(listener).not.toHaveBeenCalled();
+        });
+
+        it('should rethrow listener errors', () => {
+            stateMachine.subscribe(() => {
+                throw new Error('listener failed');
+            });
+
+            expect(() => stateMachine.startDrag()).toThrow('listener failed');
+            expect(stateMachine.isDragging).toBe(true);
         });
     });
 
@@ -397,18 +404,6 @@ describe('EventListenerManager', () => {
         expect(handler2).not.toHaveBeenCalled();
     });
 
-    it('should track listener count', () => {
-        expect(eventManager.count).toBe(0);
-
-        eventManager.add(element, 'click', () => { });
-        expect(eventManager.count).toBe(1);
-
-        eventManager.add(element, 'click', () => { });
-        expect(eventManager.count).toBe(2);
-
-        eventManager.removeAll();
-        expect(eventManager.count).toBe(0);
-    });
 });
 
 // ========== AsyncTaskTracker Tests ==========
@@ -432,22 +427,11 @@ describe('AsyncTaskTracker', () => {
         expect(task.isValid()).toBe(true);
     });
 
-    it('should track pending tasks', () => {
-        expect(tracker.pendingCount).toBe(0);
-
-        tracker.createTask();
-        expect(tracker.pendingCount).toBe(1);
-
-        tracker.createTask();
-        expect(tracker.pendingCount).toBe(2);
-    });
-
     it('should complete task', () => {
         const task = tracker.createTask();
 
         tracker.completeTask(task.id);
-
-        expect(tracker.pendingCount).toBe(0);
+        expect(task.isValid()).toBe(false);
     });
 
     it('should cancel task', () => {
@@ -457,18 +441,16 @@ describe('AsyncTaskTracker', () => {
 
         expect(task.isValid()).toBe(false);
         expect(task.signal.aborted).toBe(true);
-        expect(tracker.pendingCount).toBe(0);
     });
 
-    it('should cancel all tasks', () => {
+    it('should abort all tasks on destroy', () => {
         const task1 = tracker.createTask();
         const task2 = tracker.createTask();
 
-        tracker.cancelAll();
+        tracker.destroy();
 
         expect(task1.signal.aborted).toBe(true);
         expect(task2.signal.aborted).toBe(true);
-        expect(tracker.pendingCount).toBe(0);
     });
 
     it('should return invalid task after destroy', () => {

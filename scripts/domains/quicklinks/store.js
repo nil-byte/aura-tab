@@ -1,8 +1,6 @@
-import { StorageListenerManager } from '../../platform/lifecycle.js';
 import { t } from '../../platform/i18n.js';
 import { setStorageInChunks } from '../../shared/storage.js';
 import { clamp } from '../../shared/text.js';
-import * as storageRepo from '../../platform/storage-repo.js';
 
 export const QUICKLINKS_SYNC_KEYS = Object.freeze({
     enabled: 'quicklinksEnabled',
@@ -195,7 +193,7 @@ class Store {
         };
         this._listeners = new Set();
         this._writeQueue = Promise.resolve();
-        this._storageManager = null;
+        this._storageChangeHandler = null;
         this._lastLocalStorageRevision = null;
         this._dockCleanupScheduled = false;
         this._pendingDockCleanup = null;
@@ -229,9 +227,9 @@ class Store {
     destroy() {
         if (this._destroyed) return;
         this._destroyed = true;
-        if (this._storageManager) {
-            this._storageManager.destroy();
-            this._storageManager = null;
+        if (this._storageChangeHandler) {
+            chrome.storage.onChanged.removeListener(this._storageChangeHandler);
+            this._storageChangeHandler = null;
         }
         this._listeners.clear();
         this._writeQueue = Promise.resolve();
@@ -466,7 +464,7 @@ class Store {
         return null;
     }
     async _getActiveChunkSetMeta() {
-        const activeData = await storageRepo.sync.getMultiple({ [CONFIG.ACTIVE_SET_KEY]: null });
+        const activeData = await chrome.storage.sync.get({ [CONFIG.ACTIVE_SET_KEY]: null });
         const activeSetId = typeof activeData?.[CONFIG.ACTIVE_SET_KEY] === 'string'
             ? activeData[CONFIG.ACTIVE_SET_KEY]
             : null;
@@ -478,7 +476,7 @@ class Store {
             };
         }
         const indexKey = this._chunkSetIndexKey(activeSetId);
-        const indexData = await storageRepo.sync.getMultiple({ [indexKey]: [] });
+        const indexData = await chrome.storage.sync.get({ [indexKey]: [] });
         const rawChunkKeys = Array.isArray(indexData?.[indexKey]) ? indexData[indexKey] : [];
         const chunkKeys = rawChunkKeys.filter((key) => this._isChunkSetChunkKey(key, activeSetId));
         return { activeSetId, indexKey, chunkKeys };
@@ -487,7 +485,7 @@ class Store {
         if (!Array.isArray(keys) || keys.length === 0) return;
         const safe = keys.filter(Boolean);
         for (let i = 0; i < safe.length; i += batchSize) {
-            await storageRepo.sync.removeMultiple(safe.slice(i, i + batchSize));
+            await chrome.storage.sync.remove(safe.slice(i, i + batchSize));
         }
     }
     async _readChunkedItemsMap() {
@@ -502,7 +500,7 @@ class Store {
             };
         }
         const defaultsForChunks = Object.fromEntries(meta.chunkKeys.map(key => [key, {}]));
-        const rawChunks = await storageRepo.sync.getMultiple(defaultsForChunks);
+        const rawChunks = await chrome.storage.sync.get(defaultsForChunks);
         const chunksByKey = {};
         const itemsById = new Map();
         for (const key of meta.chunkKeys) {
@@ -554,7 +552,7 @@ class Store {
         const { chunkKeys } = await this._getActiveChunkSetMeta();
         if (chunkKeys.length > 0) {
             const defaultsForChunks = Object.fromEntries(chunkKeys.map(key => [key, {}]));
-            const chunks = await storageRepo.sync.getMultiple(defaultsForChunks);
+            const chunks = await chrome.storage.sync.get(defaultsForChunks);
             for (const key of chunkKeys) {
                 const obj = chunks?.[key];
                 if (!obj || typeof obj !== 'object') continue;
@@ -612,7 +610,7 @@ class Store {
             if (!Number.isFinite(quotaBytes) || quotaBytes <= 0) {
                 return { ok: true };
             }
-            const currentAll = await storageRepo.sync.getAll();
+            const currentAll = await chrome.storage.sync.get(null);
             const currentBytes = this._estimateSize(currentAll);
             if (currentBytes >= quotaBytes) {
                 return {
@@ -621,7 +619,7 @@ class Store {
                     errorMessage: `sync quota exceeded (${currentBytes}/${quotaBytes})`
                 };
             }
-            const base = await storageRepo.sync.getMultiple({
+            const base = await chrome.storage.sync.get({
                 quicklinksItems: [],
                 quicklinksDockPins: [],
                 quicklinksTags: []
@@ -693,7 +691,7 @@ class Store {
         };
     }
     async _collectObsoleteStorageKeys(activeSetId, extraKeys = []) {
-        const all = await storageRepo.sync.getAll();
+        const all = await chrome.storage.sync.get(null);
         const obsolete = new Set(extraKeys.filter(Boolean));
         for (const key of Object.keys(all)) {
             const setId = this._extractChunkSetId(key);
@@ -769,7 +767,7 @@ class Store {
     }
     getFolderForItem(itemId) {
         if (!itemId) return null;
-        for (const [id, item] of this._itemsCache) {
+        for (const [, item] of this._itemsCache) {
             if (item.type === 'folder' && Array.isArray(item.children) && item.children.includes(itemId)) {
                 return item;
             }
@@ -858,7 +856,7 @@ class Store {
     async _commit({ apply, itemsToSet = null, itemIdsToRemove = null, includeItemsMap = false, _retryCount = 0 }) {
         this._assertNotDestroyed();
         try {
-            const base = await storageRepo.sync.getMultiple({
+            const base = await chrome.storage.sync.get({
                 quicklinksItems: [],
                 quicklinksDockPins: [],
                 quicklinksTags: [],
@@ -902,7 +900,7 @@ class Store {
                 }
             }
             if (!hasItemChanges) {
-                await storageRepo.sync.setMultiple(updates);
+                await chrome.storage.sync.set(updates);
                 return { items: nextItems, dockPins: nextDockPins, tags: nextTags };
             }
             const {
@@ -929,7 +927,7 @@ class Store {
             if (Object.keys(stagedChunkData).length > 0) {
                 await setStorageInChunks('sync', stagedChunkData);
             }
-            await storageRepo.sync.setMultiple({
+            await chrome.storage.sync.set({
                 ...updates,
                 [CONFIG.ACTIVE_SET_KEY]: nextSetId
             });
@@ -969,11 +967,7 @@ class Store {
     _notify(event, data) {
         if (this._destroyed) return;
         for (const cb of this._listeners) {
-            try {
-                cb(event, data);
-            } catch (error) {
-                console.error('[Store] Listener error:', error);
-            }
+            cb(event, data);
         }
     }
     async init() {
@@ -981,7 +975,7 @@ class Store {
         await this.loadSettings();
         await this.loadData();
         await this._ensureSystemItemsPersisted();
-        const { quicklinksTags } = await storageRepo.sync.getMultiple({ quicklinksTags: [] });
+        const { quicklinksTags } = await chrome.storage.sync.get({ quicklinksTags: [] });
         this.tags = this._normalizeTagLibrary(quicklinksTags);
         const dockLimit = this._getDockLimit();
         if ((!Array.isArray(this.dockPins) || this.dockPins.length === 0) && this.getAllItems().length > 0) {
@@ -996,11 +990,11 @@ class Store {
         this._initStorageListener();
     }
     _initStorageListener() {
-        if (this._storageManager || this._destroyed) return;
-        this._storageManager = new StorageListenerManager();
-        this._storageManager.register('store-sync', (changes, areaName) => {
+        if (this._storageChangeHandler || this._destroyed) return;
+        this._storageChangeHandler = (changes, areaName) => {
             this._handleStorageChange(changes, areaName);
-        });
+        };
+        chrome.storage.onChanged.addListener(this._storageChangeHandler);
     }
     _handleStorageChange(changes, areaName) {
         if (this._destroyed || areaName !== 'sync') return;
@@ -1090,7 +1084,7 @@ class Store {
     async loadSettings() {
         try {
             const keys = QUICKLINKS_SYNC_KEYS;
-            const data = await storageRepo.sync.getMultiple(QUICKLINKS_SYNC_DEFAULTS);
+            const data = await chrome.storage.sync.get(QUICKLINKS_SYNC_DEFAULTS);
             this.settings = {
                 enabled: data[keys.enabled],
                 style: normalizeQuicklinksStyle(data[keys.style]),
@@ -1111,7 +1105,7 @@ class Store {
         const defaultItems = [PHOTOS_ITEM_ID, SETTINGS_ITEM_ID];
         const setId = this._generateChunkSetId();
         const indexKey = this._chunkSetIndexKey(setId);
-        await storageRepo.sync.setMultiple({
+        await chrome.storage.sync.set({
             storageVersion: CONFIG.STORAGE_VERSION,
             quicklinksItems: defaultItems,
             quicklinksDockPins: [],
@@ -1130,7 +1124,7 @@ class Store {
     async loadData() {
         this._assertNotDestroyed();
         try {
-            const syncData = await storageRepo.sync.getAll();
+            const syncData = await chrome.storage.sync.get(null);
             let persisted = {
                 quicklinksItems: syncData.quicklinksItems,
                 quicklinksDockPins: syncData.quicklinksDockPins
@@ -2581,7 +2575,7 @@ class Store {
             if (this.settings.launchpadGridRows != null) {
                 updates[keys.gridRows] = clampLaunchpadGridRows(this.settings.launchpadGridRows);
             }
-            await storageRepo.sync.setMultiple(updates);
+            await chrome.storage.sync.set(updates);
         } catch {
         }
         this._notify('settingsChanged', { ...this.settings });

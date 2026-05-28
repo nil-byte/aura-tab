@@ -1,14 +1,3 @@
-/**
- * Network & async helpers
- */
-
-/**
- * Add timeout control for Promise
- * @template T
- * @param {Promise<T>} promise
- * @param {number} timeoutMs
- * @returns {Promise<{ timedOut: boolean, result: T | null }>}
- */
 export function runWithTimeout(promise, timeoutMs) {
     const TIMEOUT_SIGNAL = Symbol('timeout');
 

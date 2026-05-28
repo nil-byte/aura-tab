@@ -1,7 +1,6 @@
 import { idbRequest, idbBatch, idbCursorAll, idbCursorEach } from '../shared/storage.js';
 import { buildIconCacheKey } from '../shared/text.js';
 import { fetchIconBlobViaBackground } from './icon-fetch-bridge.js';
-import * as storageRepo from './storage-repo.js';
 
 /**
  * Naming convention:
@@ -94,13 +93,7 @@ class IconCacheManager {
   async _loadTTLSettings() {
     if (this.#ttlLoaded) return;
     try {
-      if (!storageRepo?.sync?.getMultiple) {
-        console.warn('[IconCacheManager] storageRepo.sync not available, using default TTL');
-        this.#ttlLoaded = true;
-        return;
-      }
-
-      const result = await storageRepo.sync.getMultiple({ [IconCacheManager.STORAGE_KEY]: null });
+      const result = await chrome.storage.sync.get({ [IconCacheManager.STORAGE_KEY]: null });
       const settings = result[IconCacheManager.STORAGE_KEY];
       if (settings && typeof settings.ttl === 'number') {
         const validTTLs = Object.values(IconCacheManager.TTL_OPTIONS);
@@ -125,12 +118,7 @@ class IconCacheManager {
     }
 
     try {
-      if (!storageRepo?.sync?.setMultiple) {
-        console.warn('[IconCacheManager] storageRepo.sync not available');
-        this.#ttl = ttl;
-        return true;
-      }
-      await storageRepo.sync.setMultiple({ [IconCacheManager.STORAGE_KEY]: { ttl } });
+      await chrome.storage.sync.set({ [IconCacheManager.STORAGE_KEY]: { ttl } });
       this.#ttl = ttl;
       return true;
     } catch (error) {

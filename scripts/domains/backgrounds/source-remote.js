@@ -1,12 +1,3 @@
-/**
- * Background Providers
- *
- * Production-grade online background image provider implementation
- * - Comprehensive error handling and retry mechanism
- * - Request timeout control
- * - API rate limiting protection
- */
-
 import { API_CONFIG } from './types.js';
 import { t } from '../../platform/i18n.js';
 import { fetchWithRetry } from '../../shared/net.js';
@@ -138,9 +129,6 @@ async function readErrorText(response) {
     }
 }
 
-/**
- * Handle API errors
- */
 async function handleApiError(response, source, { treatForbiddenAsInvalid = true } = {}) {
     if (response.status === 401) {
         throw new Error(t('bgApiKeyInvalidWithSource', { source }));
@@ -176,9 +164,6 @@ async function handleApiError(response, source, { treatForbiddenAsInvalid = true
     }
 }
 
-/**
- * Validate API Key format
- */
 function validateApiKey(apiKey, source) {
     if (!apiKey || typeof apiKey !== 'string') {
         throw new Error(t('bgApiKeyRequiredWithSource', { source }));

@@ -1,10 +1,3 @@
-/**
- * Background System Type Definitions
- *
- * Background system type definitions - Production-grade implementation
- * Supports multiple background sources, smart caching, texture overlays, etc.
- */
-
 import { t } from '../../platform/i18n.js';
 export { DEFAULT_SETTINGS } from './defaults.js';
 
@@ -75,16 +68,7 @@ export { DEFAULT_SETTINGS } from './defaults.js';
  * @property {string} pexels
  */
 
-// ============ Configuration Constants ============
-
-// Texture type keys - use getTextureLabel() for localized labels
 export const TEXTURE_TYPE_KEYS = Object.freeze(['none', 'grain', 'grid', 'lines']);
-
-/**
- * Get localized texture label
- * @param {string} type - Texture type key ('none' | 'grain' | 'grid' | 'lines')
- * @returns {string} Localized label
- */
 export function getTextureLabel(type) {
     const keyMap = {
         none: 'textureNone',

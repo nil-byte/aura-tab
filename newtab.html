@@ -6,33 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Tab</title>
     <script src="scripts/boot/first-paint.js"></script>
-    <!-- Bundled CSS for faster new-tab startup (generated) -->
     <link rel="stylesheet" href="styles/bundle.css">
     <link rel="stylesheet" href="styles/photos.css">
 </head>
 
 <body>
     <a href="#main-content" class="skip-link" data-i18n="skipToMain"></a>
-    <!-- Background container dynamically created by backgrounds/index.js -->
 
-    <!-- Add dynamic glow effect -->
     <div class="light-orb" aria-hidden="true"></div>
     <div class="ui-grain" aria-hidden="true"></div>
 
-    <!-- ================================================
-         Core Interaction Area - Highest DOM priority, ensure Tab key reaches first
-         ================================================ -->
-
     <div class="layout-container" id="main-content">
-        <!-- Clock container -->
         <div class="clock-container">
             <div class="clock-wrapper">
                 <div class="clock" id="clock">00:00</div>
                 <div class="date" id="date">Monday, January 01</div>
             </div>
         </div>
-
-        <!-- Search box container - use autofocus for gentle focus -->
         <div class="search-container" id="searchContainer">
             <div class="search-engine-wrapper">
                 <button class="search-engine-btn" id="searchEngineBtn" data-i18n="ariaSwitchEngine"
@@ -47,10 +37,7 @@
                 autofocus>
         </div>
     </div>
-
-    <!-- Quick links container - fixed Dock at bottom -->
     <div class="quicklinks-container" id="quicklinksContainer" data-style="medium">
-        <!-- Launchpad button -->
         <button class="launchpad-btn" id="launchpadBtn" data-i18n="ariaLaunchpad" data-i18n-attr="aria-label"
             aria-label="" tabindex="-1">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -60,14 +47,9 @@
                 <rect x="13" y="13" width="8.5" height="8.5" rx="1.5" />
             </svg>
         </button>
-
-        <!-- Left divider line -->
         <div class="dock-separator" aria-hidden="true"></div>
-        <!-- Quick links list -->
         <ul class="quicklinks-list" id="quicklinksList"></ul>
-        <!-- Right divider line -->
         <div class="dock-separator" aria-hidden="true"></div>
-        <!-- Add button -->
         <div class="quicklinks-add-wrapper">
             <button class="quicklinks-add-btn" id="quicklinksAddBtn" data-i18n="ariaAddLink" data-i18n-attr="aria-label"
                 aria-label="" tabindex="-1">
@@ -80,15 +62,9 @@
         </div>
     </div>
 
-    <!-- ================================================
-         Modal / Overlay Area - Hidden by default, does not affect Tab order
-         ================================================ -->
-
-    <!-- Launchpad Overlay -->
     <div class="launchpad-overlay" id="launchpadOverlay" data-modal="true" role="dialog" aria-modal="true"
         data-i18n="ariaLaunchpad" data-i18n-attr="aria-label" aria-label="" aria-hidden="true">
         <div class="launchpad-container" id="launchpadContainer">
-            <!-- Search bar -->
             <div class="launchpad-search-bar">
                 <svg aria-hidden="true" class="launchpad-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -98,32 +74,22 @@
                 <input type="text" class="launchpad-search-input" id="launchpadSearchInput" data-i18n="searchApps"
                     placeholder="" autocomplete="off">
             </div>
-            <!-- Pagination container -->
             <div class="launchpad-pages-wrapper">
                 <div class="launchpad-pages" id="launchpadPages"></div>
             </div>
-            <!-- Page indicator -->
             <div class="launchpad-indicator" id="launchpadIndicator"></div>
         </div>
     </div>
-
-    <!-- Mac-style settings window -->
     <div class="mac-window-overlay mac-settings-overlay" id="macSettingsOverlay" data-modal="true" role="dialog"
         aria-modal="true" aria-labelledby="macSettingsTitle" aria-hidden="true">
         <div class="mac-window mac-settings-window" id="macSettingsWindow">
-            <!-- Dynamically rendered by mac-settings/index.js -->
         </div>
     </div>
-
-    <!-- Photo album window -->
     <div class="mac-window-overlay photos-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true"
         aria-labelledby="photosTitle" aria-hidden="true">
         <div class="mac-window photos-window" id="photosWindow">
-            <!-- Dynamically rendered by photos/photos-window.js -->
         </div>
     </div>
-
-    <!-- Search engine selector modal -->
     <div class="engine-switcher-overlay" id="engineSwitcherOverlay" data-modal="true" role="dialog" aria-modal="true"
         data-i18n="ariaSwitchEngine" data-i18n-attr="aria-label" aria-label="" aria-hidden="true">
         <div class="engine-switcher" id="engineSwitcher">
@@ -131,8 +97,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Quick link edit dialog -->
     <div class="quicklink-dialog-overlay" id="quicklinkDialogOverlay" data-modal="true" role="dialog" aria-modal="true"
         aria-labelledby="quicklinkDialogTitle" aria-hidden="true">
         <div class="quicklink-dialog" id="quicklinkDialog">
@@ -205,17 +169,10 @@
             </div>
         </div>
     </div>
-
-    <!-- Quick link context menu -->
     <div class="quicklink-context-menu" id="quicklinkContextMenu" data-modal="true" role="menu" aria-label=""
         aria-hidden="true">
     </div>
 
-    <!-- ================================================
-         Auxiliary buttons - Lowest DOM priority, end of Tab order
-         ================================================ -->
-
-    <!-- Top-left hotspot - refresh background button -->
     <div class="corner-zone corner-top-left" id="cornerTopLeft">
         <button class="refresh-bg-btn" id="refreshBgBtn" data-i18n="ariaRefreshBg" data-i18n-attr="aria-label"
             aria-label="" tabindex="-1">
@@ -226,8 +183,6 @@
             </svg>
         </button>
     </div>
-
-    <!-- Top-right hotspot - image info (author + favorite + download) -->
     <div class="corner-zone corner-top-right disabled" id="cornerTopRight">
         <div class="photo-info hidden" id="photoInfo">
             <a class="photo-author" id="photoAuthor" href="#" target="_blank" rel="noopener noreferrer" tabindex="-1">
@@ -258,8 +213,6 @@
             </button>
         </div>
     </div>
-
-    <!-- Bottom-left hotspot - settings button -->
     <div class="corner-zone corner-bottom-left" id="cornerBottomLeft">
         <button class="settings-btn" id="settingsBtn" data-i18n="ariaSettings" data-i18n-attr="aria-label" aria-label=""
             tabindex="-1">
@@ -271,8 +224,6 @@
             </svg>
         </button>
     </div>
-
-    <!-- Bottom-right hotspot - search button -->
     <div class="corner-zone corner-bottom-right" id="cornerBottomRight">
         <button class="search-toggle-btn" id="searchToggleBtn" data-i18n="ariaSearch" data-i18n-attr="aria-label"
             aria-label="" tabindex="-1">
@@ -283,8 +234,6 @@
             </svg>
         </button>
     </div>
-
-    <!-- Script loading (single entry point, all modules explicitly initialized) -->
     <script type="module" src="scripts/main.js"></script>
 </body>
 

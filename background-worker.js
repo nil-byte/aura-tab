@@ -1,26 +1,12 @@
-/**
- * Background Service Worker (MV3 production-grade implementation)
- *
- * Design principles:
- * 1. Correctly handle Service Worker lifecycle
- * 2. All state persisted through storage
- * 3. Comprehensive error handling and recovery mechanism
- * 4. Idempotent operation design
- */
-
-import { runtimeBus } from './scripts/platform/runtime-bus.js';
-import { MSG } from './scripts/platform/runtime-bus.js';
-import { onStorageChange } from './scripts/platform/storage-runtime.js';
-import * as storageRepo from './scripts/platform/storage-repo.js';
 import { restoreToolbarIcon } from './scripts/platform/toolbar-icon-service.js';
 import { createBackgroundSettingsDefaults } from './scripts/platform/settings-contract.js';
 import { resolveEffectiveFrequency } from './scripts/domains/backgrounds/refresh-policy.js';
 
-const ALARM_NAME = MSG.REFRESH_BACKGROUND;
+const ALARM_NAME = 'refreshBackground';
+const FETCH_ICON_MESSAGE = 'fetchIcon';
+const SHOW_CHANGELOG_MESSAGE = 'showChangelog';
 const MAX_ICON_BYTES = 262144;
 let autoRefreshSyncChain = Promise.resolve();
-
-// ========== Lifecycle Events ==========
 
 chrome.runtime.onInstalled.addListener(async (details) => {
     try {
@@ -30,9 +16,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
         // Initialize default settings on first install
         if (details.reason === 'install') {
-            const backgroundSettings = await storageRepo.sync.get('backgroundSettings');
+            const { backgroundSettings } = await chrome.storage.sync.get({ backgroundSettings: undefined });
             if (!backgroundSettings) {
-                await storageRepo.sync.setMultiple({
+                await chrome.storage.sync.set({
                     backgroundSettings: createBackgroundSettingsDefaults()
                 });
             }
@@ -47,7 +33,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         if (details.reason === 'update') {
             try {
                 const version = chrome.runtime.getManifest()?.version || ''
-                await chrome.runtime.sendMessage({ type: MSG.SHOW_CHANGELOG, version })
+                await chrome.runtime.sendMessage({ type: SHOW_CHANGELOG_MESSAGE, version })
             } catch (error) {
                 if (!isExpectedConnectionError(error)) {
                     console.error('[SW] showChangelog broadcast error:', error);
@@ -68,13 +54,11 @@ chrome.runtime.onStartup.addListener(() => {
     });
 });
 
-// ========== Timer Handling ==========
-
 chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name !== ALARM_NAME) return;
 
     try {
-        const backgroundSettings = await storageRepo.sync.get('backgroundSettings', null);
+        const { backgroundSettings } = await chrome.storage.sync.get({ backgroundSettings: null });
         const backgroundType = backgroundSettings?.type || 'files';
         const effectiveFrequency = resolveEffectiveFrequency(
             backgroundType,
@@ -97,15 +81,13 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     }
 });
 
-// ========== Message Handling ==========
-runtimeBus.register(MSG.FETCH_ICON, (message, sender, sendResponse) => {
-    handleFetchIcon(message?.url)
-        .then(result => sendResponse(result))
-        .catch(error => sendResponse({ success: false, error: String(error) }));
-    return true; // Keep message channel open
-}, 'service-worker.icon-fetch');
-
-// ========== Icon Fetch Proxy ==========
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== FETCH_ICON_MESSAGE) return false;
+    handleFetchIcon(message.url)
+        .then((result) => sendResponse(result))
+        .catch((error) => sendResponse({ success: false, error: String(error) }));
+    return true;
+});
 
 /**
  * Proxy icon fetching (bypass CORS restrictions)
@@ -191,18 +173,15 @@ async function handleFetchIcon(url) {
     }
 }
 
-// ========== Storage Change Listener ==========
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes.toolbarIconConfig) {
+        restoreToolbarIcon().catch(error => {
+            console.error('[SW] toolbar icon update on storage change:', error);
+        });
+        return;
+    }
 
-onStorageChange('service-worker.toolbar-icon', (changes, areaName) => {
-    if (areaName !== 'local' || !changes.toolbarIconConfig) return;
-    restoreToolbarIcon().catch(error => {
-        console.error('[SW] toolbar icon update on storage change:', error);
-    });
-});
-
-onStorageChange('service-worker.auto-refresh', (changes, areaName) => {
-    if (areaName !== 'sync') return;
-    if (!changes.backgroundSettings) return;
+    if (areaName !== 'sync' || !changes.backgroundSettings) return;
 
     const { oldValue, newValue } = changes.backgroundSettings;
     const newSettings = newValue;
@@ -219,8 +198,6 @@ onStorageChange('service-worker.auto-refresh', (changes, areaName) => {
     });
 });
 
-// ========== Utility Functions ==========
-
 function isExpectedConnectionError(error) {
     if (!error) return false;
     const message = error.message || String(error);
@@ -233,7 +210,7 @@ function isExpectedConnectionError(error) {
 
 async function notifyRefreshBackground() {
     try {
-        await chrome.runtime.sendMessage({ type: MSG.REFRESH_BACKGROUND });
+        await chrome.runtime.sendMessage({ type: ALARM_NAME });
     } catch (error) {
         if (!isExpectedConnectionError(error)) {
             throw error;
@@ -244,7 +221,7 @@ async function notifyRefreshBackground() {
 async function syncAutoRefresh() {
     autoRefreshSyncChain = autoRefreshSyncChain
         .then(async () => {
-            const backgroundSettings = await storageRepo.sync.get('backgroundSettings', null);
+            const { backgroundSettings } = await chrome.storage.sync.get({ backgroundSettings: null });
             const interval = backgroundSettings?.frequency || 'never';
             const backgroundType = backgroundSettings?.type || 'files';
             await applyAutoRefresh(interval, backgroundType);

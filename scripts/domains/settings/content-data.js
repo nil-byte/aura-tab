@@ -1,7 +1,6 @@
 
 import { t } from '../../platform/i18n.js';
 import { escapeHtml } from '../../shared/text.js';
-import * as storageRepo from '../../platform/storage-repo.js';
 
 let _linkManagerInstance = null;
 let _backupProtectionCount = 0;
@@ -11,7 +10,6 @@ let _backupProtectionBeforeUnload = null;
 export function registerDataContent(window) {
     window.registerContentRenderer('data', async (container) => {
         container.innerHTML = `
-            <!-- Link Manager (Moved to Top) -->
             <div class="mac-settings-section">
                 <h3 class="mac-settings-section-title" data-i18n="linkManagerTitle"></h3>
                 <div class="mac-settings-section-content">
@@ -19,7 +17,6 @@ export function registerDataContent(window) {
                 </div>
             </div>
 
-            <!-- Data Import/Export -->
             <div class="mac-settings-section">
                 <h3 class="mac-settings-section-title" data-i18n="settingsDataSection"></h3>
                 <div class="mac-settings-section-content">
@@ -36,7 +33,6 @@ export function registerDataContent(window) {
                 </div>
             </div>
 
-            <!-- Quick Links Import/Export -->
             <div class="mac-settings-section">
                 <h3 class="mac-settings-section-title" data-i18n="settingsQuicklinksSection"></h3>
                 <div class="mac-settings-section-content">
@@ -53,11 +49,9 @@ export function registerDataContent(window) {
                 </div>
             </div>
 
-            <!-- Cloud Backup (WebDAV) -->
             <div class="mac-settings-section webdav-config-section">
                 <h3 class="mac-settings-section-title" data-i18n="webdavBackupSection"></h3>
                 <div class="mac-settings-section-content">
-                    <!-- Server Address -->
                     <div class="mac-settings-row">
                         <div class="mac-settings-row-label">
                             <span class="mac-settings-row-title" data-i18n="webdavServerUrl"></span>
@@ -68,7 +62,6 @@ export function registerDataContent(window) {
                                    placeholder="https://dav.example.com/" style="width: 240px;">
                         </div>
                     </div>
-                    <!-- Remote Directory -->
                     <div class="mac-settings-row">
                         <div class="mac-settings-row-label">
                             <span class="mac-settings-row-title" data-i18n="webdavRemoteDir"></span>
@@ -79,7 +72,6 @@ export function registerDataContent(window) {
                                    placeholder="AuraTabBackups" style="width: 200px;">
                         </div>
                     </div>
-                    <!-- Username -->
                     <div class="mac-settings-row">
                         <div class="mac-settings-row-label">
                             <span class="mac-settings-row-title" data-i18n="webdavUsername"></span>
@@ -89,7 +81,6 @@ export function registerDataContent(window) {
                                    placeholder="" style="width: 200px;">
                         </div>
                     </div>
-                    <!-- Password -->
                     <div class="mac-settings-row">
                         <div class="mac-settings-row-label">
                             <span class="mac-settings-row-title" data-i18n="webdavPassword"></span>
@@ -112,7 +103,6 @@ export function registerDataContent(window) {
                             </div>
                         </div>
                     </div>
-                    <!-- Action Buttons -->
                     <div class="mac-settings-row webdav-actions">
                         <div class="mac-settings-row-label"></div>
                         <div class="mac-settings-row-control" style="display: flex; gap: 10px;">
@@ -123,7 +113,6 @@ export function registerDataContent(window) {
                 </div>
             </div>
 
-            <!-- Backup Version List -->
             <div class="mac-settings-section webdav-versions-section" id="webdavVersionsSection" style="display: none;">
                 <div class="mac-settings-section-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                     <h3 class="mac-settings-section-title" data-i18n="webdavVersionListTitle" style="margin-bottom: 0;"></h3>
@@ -144,7 +133,6 @@ export function registerDataContent(window) {
                 </div>
             </div>
 
-            <!-- Privacy Notice -->
             <div class="mac-settings-section">
                 <h3 class="mac-settings-section-title" data-i18n="settingsPrivacySection"></h3>
                 <div class="mac-settings-section-content">
@@ -350,7 +338,7 @@ function _bindWebDAVEvents(container) {
 
 async function _loadWebDAVConfig(container) {
     try {
-        const result = await storageRepo.local.getMultiple({ [WEBDAV_CONFIG_KEY]: null });
+        const result = await chrome.storage.local.get({ [WEBDAV_CONFIG_KEY]: null });
         const config = result[WEBDAV_CONFIG_KEY];
         if (!config) return;
 
@@ -371,7 +359,7 @@ async function _loadWebDAVConfig(container) {
 async function _saveWebDAVConfig(container) {
     try {
         const config = _getWebDAVConfigFromForm(container);
-        await storageRepo.local.setMultiple({ [WEBDAV_CONFIG_KEY]: config });
+        await chrome.storage.local.set({ [WEBDAV_CONFIG_KEY]: config });
     } catch (error) {
         console.error('[DataSettings] Failed to save WebDAV config:', error);
     }
@@ -647,7 +635,7 @@ async function _handleWebDAVRestore(container, filename) {
             const backupManager = getBackupManager();
 
             const result = await backupManager.restoreFromBackup(zipBlob, {
-                onProgress: ({ stage, percent }) => {
+                onProgress: ({ stage: _stage, percent: _percent }) => {
                 }
             });
 

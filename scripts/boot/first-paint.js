@@ -113,22 +113,6 @@
         }
     }
 
-    function applyImageStyles(target, snapshot) {
-        if (!target || !snapshot) return;
-
-        if (snapshot.previewDataUrl) {
-            target.style.backgroundImage = `url(${snapshot.previewDataUrl})`;
-            target.style.backgroundSize = snapshot.size || 'cover';
-            target.style.backgroundPosition = snapshot.position || '50% 50%';
-            target.style.backgroundRepeat = snapshot.repeat || 'no-repeat';
-        } else {
-            target.style.removeProperty('background-image');
-            target.style.removeProperty('background-size');
-            target.style.removeProperty('background-position');
-            target.style.removeProperty('background-repeat');
-        }
-    }
-
     /**
      * Create a full-screen overlay div for the first-paint snapshot image.
      * Sits above #background-wrapper (z-index:-1) so it masks the wallpaper

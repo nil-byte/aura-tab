@@ -43,8 +43,7 @@ describe('Store sync quota guard', () => {
         const store = await freshStore();
         await store.init();
 
-        const storageRepo = await import('../scripts/platform/storage-repo.js');
-        const getAllSpy = vi.spyOn(storageRepo.sync, 'getAll').mockRejectedValue(new Error('sync read failed'));
+        const getSpy = vi.spyOn(chrome.storage.sync, 'get').mockRejectedValue(new Error('sync read failed'));
 
         chrome.storage.sync.set.mockClear();
 
@@ -64,7 +63,7 @@ describe('Store sync quota guard', () => {
         expect(result.errorMessage).toContain('precheck');
         expect(chrome.storage.sync.set).not.toHaveBeenCalled();
 
-        getAllSpy.mockRestore();
+        getSpy.mockRestore();
         store.destroy?.();
     });
 

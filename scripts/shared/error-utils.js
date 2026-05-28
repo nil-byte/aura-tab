@@ -28,7 +28,7 @@ export function isTimeoutError(error) {
     return TIMEOUT_PATTERN.test(message);
 }
 
-export function isNetworkError(error) {
+function isNetworkError(error) {
     if (!error) return false;
     if (isTimeoutError(error)) return true;
     const message = getErrorMessage(error, '').trim();

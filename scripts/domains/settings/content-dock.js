@@ -58,7 +58,6 @@ const STEPPER_CONFIGS = [
 export function registerDockContent(window) {
     window.registerContentRenderer('dock', (container) => {
         const builder = createSettingsBuilder(container, {
-            sourcePrefix: 'mac-settings.dock',
             sections: createSections()
         });
         void builder.init();
@@ -80,7 +79,6 @@ function createSections() {
                 defaultValue: DEFAULTS[KEYS.style],
                 toInput: normalizeQuicklinksStyle,
                 fromInput: normalizeQuicklinksStyle,
-                source: 'mac-settings.dock.style',
                 options: STYLE_OPTIONS
             },
             createStepperRow(STEPPER_CONFIGS[0]),
@@ -101,8 +99,7 @@ function createSections() {
                 formatValue: (value) => `${value}%`,
                 controlStyle: 'flex: 1; max-width: 200px;',
                 toInput: clampQuicklinksMagnifyScale,
-                fromInput: clampQuicklinksMagnifyScale,
-                source: 'mac-settings.dock.magnify'
+                fromInput: clampQuicklinksMagnifyScale
             }
         ]),
         section('settingsLaunchpadDensity', STEPPER_CONFIGS.slice(1).map(createStepperRow)),
@@ -218,7 +215,14 @@ function bindStepperEvents(builder, { prefix, storageKey, min, max, defaultValue
         const next = Math.max(min, Math.min(max, current + delta));
         if (next === current) return;
         applyStepperUi(refs, next, min, max);
-        await patchSyncSettings({ [storageKey]: next }, `mac-settings.dock.stepper.${storageKey}`);
+        try {
+            await patchSyncSettings({ [storageKey]: next });
+        } catch (error) {
+            console.error('[settings:dock] persist failed:', error);
+            applyStepperUi(refs, current, min, max);
+            const { toast } = await import('../../shared/toast.js');
+            toast(t('settingsSaveFailed') || 'Failed to save settings');
+        }
     };
 
     if (refs.decreaseButton) {

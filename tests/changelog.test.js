@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getStorageData, setStorageData } from './setup.js';
 
 vi.mock('../scripts/domains/changelog/view.js', () => ({
     mount: vi.fn(),
@@ -7,7 +8,7 @@ vi.mock('../scripts/domains/changelog/view.js', () => ({
     updateContent: vi.fn()
 }));
 
-vi.mock('../scripts/domains/settings/index.js', () => ({
+vi.mock('../scripts/domains/settings/window.js', () => ({
     macSettingsWindow: {
         open: vi.fn()
     }
@@ -69,24 +70,17 @@ describe('changelog', () => {
         expect(args.version).toBe('3.0');
     });
 
-    it('sets and gets last seen version', async () => {
-        const changelog = await import('../scripts/domains/changelog/index.js');
-        await changelog.setLastSeenVersion('3.0');
-        expect(await changelog.getLastSeenVersion()).toBe('3.0');
-    });
-
     it('close should persist lastSeenVersion', async () => {
-        const { changelog, view } = await initChangelog({
+        const { view } = await initChangelog({
             payload: { '3.0': { en: ['a'] } }
         });
         const args = view.mount.mock.calls[0][0];
         await args.onClose();
-        expect(await changelog.getLastSeenVersion()).toBe('3.0');
+        expect(getStorageData('local')['changelog:lastSeenVersion']).toBe('3.0');
     });
 
     it('should not mount when current version is already seen', async () => {
-        const changelog = await import('../scripts/domains/changelog/index.js');
-        await changelog.setLastSeenVersion('3.0');
+        setStorageData({ 'changelog:lastSeenVersion': '3.0' }, 'local');
         const view = await import('../scripts/domains/changelog/view.js');
         await initChangelog({ payload: { '3.0': { en: ['a'] } } });
         expect(view.mount).not.toHaveBeenCalled();
@@ -95,8 +89,7 @@ describe('changelog', () => {
     it('runtime message should not remount seen version', async () => {
         const listeners = [];
         global.chrome.runtime.onMessage.addListener = vi.fn((fn) => listeners.push(fn));
-        const changelog = await import('../scripts/domains/changelog/index.js');
-        await changelog.setLastSeenVersion('3.0');
+        setStorageData({ 'changelog:lastSeenVersion': '3.0' }, 'local');
 
         const { view } = await initChangelog({ payload: {} });
         await listeners[0]({ type: 'showChangelog', version: '3.0' });
@@ -107,7 +100,7 @@ describe('changelog', () => {
         const { view } = await initChangelog({
             payload: { '3.0': { en: ['a'] } }
         });
-        const settings = await import('../scripts/domains/settings/index.js');
+        const settings = await import('../scripts/domains/settings/window.js');
         const args = view.mount.mock.calls[0][0];
         await args.onMore();
         expect(settings.macSettingsWindow.open).toHaveBeenCalled();

@@ -1,7 +1,6 @@
 import { t } from '../../platform/i18n.js';
-import { setSyncSetting } from '../../platform/settings-repo.js';
-import * as storageRepo from '../../platform/storage-repo.js';
-import { $, $$, byId } from '../../shared/dom.js';
+import { toast } from '../../shared/toast.js';
+import { patchSyncSettings } from '../../platform/settings-repo.js';
 
 const CONTROL_TYPES = new Set(['toggle', 'select', 'slider']);
 
@@ -25,20 +24,20 @@ function attr(name, value) {
 }
 
 function byIdIn(container, id) {
-    const el = byId(id);
+    const el = document.getElementById(id);
     if (!container || !el) return null;
     return container.contains(el) ? el : null;
 }
 
 function oneIn(container, selector) {
-    const el = $(selector);
+    const el = document.querySelector(selector);
     if (!container || !el) return null;
     return container.contains(el) ? el : null;
 }
 
 function allIn(container, selector) {
     if (!container) return [];
-    return Array.from($$(selector)).filter((el) => container.contains(el));
+    return Array.from(document.querySelectorAll(selector)).filter((el) => container.contains(el));
 }
 
 function clamp(value, min, max) {
@@ -49,7 +48,6 @@ export class SettingsBuilder {
     constructor(container, config = {}) {
         this.container = container;
         this.sections = Array.isArray(config.sections) ? config.sections : [];
-        this.sourcePrefix = config.sourcePrefix || 'mac-settings.builder';
         this.onAfterLoad = config.onAfterLoad;
         this._disposeFns = [];
         this.state = {
@@ -132,8 +130,8 @@ export class SettingsBuilder {
         }
 
         const [syncData, localData] = await Promise.all([
-            Object.keys(syncDefaults).length > 0 ? storageRepo.sync.getMultiple(syncDefaults) : Promise.resolve({}),
-            Object.keys(localDefaults).length > 0 ? storageRepo.local.getMultiple(localDefaults) : Promise.resolve({})
+            Object.keys(syncDefaults).length > 0 ? chrome.storage.sync.get(syncDefaults) : Promise.resolve({}),
+            Object.keys(localDefaults).length > 0 ? chrome.storage.local.get(localDefaults) : Promise.resolve({})
         ]);
 
         this.state.storage.sync = syncData || {};
@@ -215,7 +213,13 @@ export class SettingsBuilder {
         const raw = this._readInputValue(row, control);
         const normalized = await this._normalizeStorageValue(row, raw, section);
 
-        await this._persistValue(row, normalized, section);
+        try {
+            await this._persistValue(row, normalized, section);
+        } catch (error) {
+            console.error('[settings:builder] persist failed:', { rowId: row?.id, error });
+            toast(t('settingsSaveFailed') || 'Failed to save settings');
+            return;
+        }
         this.state.values.set(row.id, normalized);
 
         if (typeof row.onChange === 'function') {
@@ -412,9 +416,9 @@ export class SettingsBuilder {
 
         const area = row.storageArea === 'local' ? 'local' : 'sync';
         if (area === 'local') {
-            await storageRepo.local.set(row.storageKey, value);
+            await chrome.storage.local.set({ [row.storageKey]: value });
         } else {
-            await setSyncSetting(row.storageKey, value, row.source || `${this.sourcePrefix}.${row.storageKey}`);
+            await patchSyncSettings({ [row.storageKey]: value });
         }
 
         this.state.storage[area][row.storageKey] = value;

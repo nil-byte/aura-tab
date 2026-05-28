@@ -2,7 +2,6 @@
 import { modalLayer } from '../platform/modal-layer.js';
 import { DisposableComponent } from '../platform/lifecycle.js';
 import { launchpad } from './quicklinks/launchpad.js';
-import * as storageRepo from '../platform/storage-repo.js';
 import { getSyncSettings, SYNC_SETTINGS_DEFAULTS } from '../platform/settings-contract.js';
 import { isTimeoutError, logWithDedup } from '../shared/error-utils.js';
 import {
@@ -39,6 +38,7 @@ export class LayoutManager extends DisposableComponent {
 
         this._isDownloading = false;
         this._isFavoriting = false;
+        this._storageChangeHandler = null;
         this._shortcuts = resolveShortcutSettings({
             [SHORTCUT_SETTING_KEYS.focusSearch]: SYNC_SETTINGS_DEFAULTS[SHORTCUT_SETTING_KEYS.focusSearch],
             [SHORTCUT_SETTING_KEYS.openLaunchpad]: SYNC_SETTINGS_DEFAULTS[SHORTCUT_SETTING_KEYS.openLaunchpad]
@@ -85,7 +85,7 @@ export class LayoutManager extends DisposableComponent {
 
         await this.initAllVisibilitySettings();
 
-        this._getStorageManager().register('layoutStorage', (changes, areaName) => {
+        this._storageChangeHandler = (changes, areaName) => {
             if (areaName === 'local' && changes.libraryItems) {
                 const currentBg = this.backgroundSystem?.getCurrentBackground?.();
                 if (currentBg?.id) {
@@ -121,6 +121,12 @@ export class LayoutManager extends DisposableComponent {
                 const bgSettings = changes.backgroundSettings.newValue || {};
                 this._applyBackgroundVisibilitySettings(bgSettings);
             }
+        };
+        chrome.storage.onChanged.addListener(this._storageChangeHandler);
+        this._addDisposable(() => {
+            if (!this._storageChangeHandler) return;
+            chrome.storage.onChanged.removeListener(this._storageChangeHandler);
+            this._storageChangeHandler = null;
         });
 
         this._markInitialized();
@@ -462,7 +468,7 @@ export class LayoutManager extends DisposableComponent {
         }
 
         if (save) {
-            storageRepo.sync.setMultiple({ searchActive: this.isSearchActive });
+            chrome.storage.sync.set({ searchActive: this.isSearchActive });
         }
     }
 

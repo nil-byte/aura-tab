@@ -49,6 +49,7 @@ const mockStorage = {
     local: {
         _data: {},
         get: vi.fn(async (keys) => {
+            if (keys === null) return { ...mockStorage.local._data };
             if (typeof keys === 'string') {
                 return { [keys]: mockStorage.local._data[keys] };
             }
@@ -73,6 +74,9 @@ const mockStorage = {
             for (const key of keyArray) {
                 delete mockStorage.local._data[key];
             }
+        }),
+        clear: vi.fn(async () => {
+            mockStorage.local._data = {};
         })
     },
     onChanged: {

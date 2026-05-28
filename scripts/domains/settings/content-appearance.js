@@ -3,8 +3,31 @@ import { t } from '../../platform/i18n.js';
 import { backgroundSystem } from '../backgrounds/controller.js';
 import { toast } from '../../shared/toast.js';
 import { SYNC_SETTINGS_DEFAULTS, createBackgroundSettingsDefaults, getSyncSettings } from '../../platform/settings-contract.js';
-import { patchBackgroundSettings, patchSyncSettings } from '../../platform/settings-repo.js';
+import {
+    patchBackgroundSettings as rawPatchBackgroundSettings,
+    patchSyncSettings as rawPatchSyncSettings
+} from '../../platform/settings-repo.js';
 import { mountToolbarIconSection } from './content-icon.js';
+
+async function patchBackgroundSettings(patch) {
+    try {
+        return await rawPatchBackgroundSettings(patch);
+    } catch (error) {
+        console.error('[settings:appearance] patchBackgroundSettings failed:', error);
+        toast(t('settingsSaveFailed') || 'Failed to save settings');
+        return null;
+    }
+}
+
+async function patchSyncSettings(patch) {
+    try {
+        return await rawPatchSyncSettings(patch);
+    } catch (error) {
+        console.error('[settings:appearance] patchSyncSettings failed:', error);
+        toast(t('settingsSaveFailed') || 'Failed to save settings');
+        return null;
+    }
+}
 
 let _activeAppearanceContainer = null;
 let _appearanceGlobalListenersBound = false;
@@ -329,7 +352,7 @@ function _bindAppearanceEvents(container) {
     if (themeToggle) {
         themeToggle.addEventListener('change', async (e) => {
             const isDark = e.target.checked;
-            await patchSyncSettings({ uiTheme: isDark ? 'dark' : 'light' }, 'mac-settings.appearance.theme');
+            await patchSyncSettings({ uiTheme: isDark ? 'dark' : 'light' });
         });
     }
 
@@ -340,7 +363,7 @@ function _bindAppearanceEvents(container) {
             const patch = source === 'bing'
                 ? { type: source, frequency: 'day' }
                 : { type: source };
-            await patchBackgroundSettings(patch, 'mac-settings.appearance.source');
+            await patchBackgroundSettings(patch);
             _updateSourceUI(container, source);
         });
     }
@@ -348,7 +371,7 @@ function _bindAppearanceEvents(container) {
     const autoRefreshSelect = container.querySelector('#macAutoRefresh');
     if (autoRefreshSelect) {
         autoRefreshSelect.addEventListener('change', async (e) => {
-            await patchBackgroundSettings({ frequency: e.target.value }, 'mac-settings.appearance.frequency');
+            await patchBackgroundSettings({ frequency: e.target.value });
         });
     }
 
@@ -362,7 +385,7 @@ function _bindAppearanceEvents(container) {
         colorPicker.addEventListener('input', async (e) => {
             const color = e.target.value;
             if (colorText) colorText.value = color;
-            await patchBackgroundSettings({ color }, 'mac-settings.appearance.colorPicker');
+            await patchBackgroundSettings({ color });
         });
     }
     if (colorText) {
@@ -370,7 +393,7 @@ function _bindAppearanceEvents(container) {
             const color = e.target.value;
             if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
                 if (colorPicker) colorPicker.value = color;
-                await patchBackgroundSettings({ color }, 'mac-settings.appearance.colorText');
+                await patchBackgroundSettings({ color });
             }
         });
     }
@@ -389,7 +412,7 @@ function _bindAppearanceEvents(container) {
             textureSelector.querySelectorAll('.mac-texture-option').forEach(opt => {
                 opt.classList.toggle('active', opt === option);
             });
-            await patchBackgroundSettings({ texture: { type: texture } }, 'mac-settings.appearance.texture');
+            await patchBackgroundSettings({ texture: { type: texture } });
         });
     }
 }
@@ -434,7 +457,7 @@ async function _saveApiKey(input, apiType) {
         delete input.dataset.value;
         input.value = '';
         toast(t('settingsApiKeyCleared'));
-        await patchBackgroundSettings({ apiKeys: { [apiType]: '' } }, 'mac-settings.appearance.apiKey.clear');
+        await patchBackgroundSettings({ apiKeys: { [apiType]: '' } });
         return;
     }
 
@@ -444,7 +467,7 @@ async function _saveApiKey(input, apiType) {
 
     const safeValue = value.slice(0, API_KEY_MAX_LENGTH);
     input.dataset.value = safeValue;
-    await patchBackgroundSettings({ apiKeys: { [apiType]: safeValue } }, 'mac-settings.appearance.apiKey.save');
+    await patchBackgroundSettings({ apiKeys: { [apiType]: safeValue } });
 
     if (input.type === 'password') {
         input.value = '•'.repeat(12);
@@ -639,7 +662,7 @@ function _bindSliderEvents(container, sliderId, valueId, fillId, unit, max, sett
 
     slider.addEventListener('change', async (e) => {
         const value = parseInt(e.target.value, 10);
-        await patchBackgroundSettings({ [settingKey]: value }, `mac-settings.appearance.slider.${settingKey}`);
+        await patchBackgroundSettings({ [settingKey]: value });
     });
 }
 
@@ -710,7 +733,7 @@ async function _loadAppearanceSettings(container) {
         }
 
         if (currentSource === 'bing' && backgroundSettings.frequency !== 'day') {
-            await patchBackgroundSettings({ frequency: 'day' }, 'mac-settings.appearance.bingDaily');
+            await patchBackgroundSettings({ frequency: 'day' });
         }
 
         _loadApiKeys(container, backgroundSettings.apiKeys || {});

@@ -6,15 +6,15 @@ describe('settings-repo', () => {
         resetMocks();
     });
 
-    it('getBackgroundSettings should return normalized nested objects', async () => {
+    it('patchBackgroundSettings should return normalized nested objects', async () => {
         setStorageData({
             backgroundSettings: {
                 type: 'files'
             }
         }, 'sync');
 
-        const { getBackgroundSettings } = await import('../scripts/platform/settings-repo.js');
-        const settings = await getBackgroundSettings();
+        const { patchBackgroundSettings } = await import('../scripts/platform/settings-repo.js');
+        const settings = await patchBackgroundSettings(null);
 
         expect(settings.type).toBe('files');
         expect(settings.texture).toEqual({});
@@ -31,14 +31,14 @@ describe('settings-repo', () => {
             }
         }, 'sync');
 
-        const { patchBackgroundSettings, getBackgroundSettings } = await import('../scripts/platform/settings-repo.js');
+        const { patchBackgroundSettings } = await import('../scripts/platform/settings-repo.js');
         await patchBackgroundSettings({
             frequency: 'day',
             texture: { opacity: 35 },
             apiKeys: { unsplash: 'u2' }
-        }, 'test');
+        });
 
-        const next = await getBackgroundSettings();
+        const next = await patchBackgroundSettings(null);
         expect(next.type).toBe('unsplash');
         expect(next.frequency).toBe('day');
         expect(next.texture).toEqual({ type: 'grid', opacity: 35 });
@@ -52,13 +52,13 @@ describe('settings-repo', () => {
         }, 'sync');
 
         const { patchBackgroundSettings } = await import('../scripts/platform/settings-repo.js');
-        const result = await patchBackgroundSettings(null, 'test');
+        const result = await patchBackgroundSettings(null);
 
         expect(result.type).toBe('color');
         expect(chrome.storage.sync.set).toHaveBeenCalledTimes(0);
     });
 
-    it('patchBackgroundSettings should handle storage errors without throw', async () => {
+    it('patchBackgroundSettings should surface storage errors', async () => {
         const err = new Error('quota');
         const originalSet = chrome.storage.sync.set;
         chrome.storage.sync.set = vi.fn(async () => {
@@ -66,28 +66,18 @@ describe('settings-repo', () => {
         });
 
         const { patchBackgroundSettings } = await import('../scripts/platform/settings-repo.js');
-        await expect(patchBackgroundSettings({ overlay: 20 }, 'test')).resolves.toBeTruthy();
+        await expect(patchBackgroundSettings({ overlay: 20 })).rejects.toThrow('quota');
         chrome.storage.sync.set = originalSet;
     });
 
-    it('patchSyncSettings should mark error when storage write fails', async () => {
+    it('patchSyncSettings should surface storage write errors', async () => {
         const originalSet = chrome.storage.sync.set;
         chrome.storage.sync.set = vi.fn(async () => {
             throw new Error('QUOTA_BYTES exceeded');
         });
 
-        const {
-            patchSyncSettings,
-            settingsUiState,
-            markSettingsPanelClosed
-        } = await import('../scripts/platform/settings-repo.js');
-
-        markSettingsPanelClosed('test-reset');
-        const result = await patchSyncSettings({ showSeconds: true }, 'test');
-
-        expect(settingsUiState.value).toBe('error');
-        expect(result.ok).toBe(false);
-        expect(result.updates).toEqual({ showSeconds: true });
+        const { patchSyncSettings } = await import('../scripts/platform/settings-repo.js');
+        await expect(patchSyncSettings({ showSeconds: true })).rejects.toThrow('QUOTA_BYTES exceeded');
         chrome.storage.sync.set = originalSet;
     });
 
@@ -98,7 +88,7 @@ describe('settings-repo', () => {
         }, 'sync');
 
         const { patchSyncSettings } = await import('../scripts/platform/settings-repo.js');
-        const result = await patchSyncSettings({ showSeconds: true, uiTheme: 'dark' }, 'test');
+        const result = await patchSyncSettings({ showSeconds: true, uiTheme: 'dark' });
 
         expect(chrome.storage.sync.set).toHaveBeenCalledWith({
             showSeconds: true,
@@ -124,7 +114,7 @@ describe('settings-repo', () => {
             quicklinksConfig: {
                 dockCount: 8
             }
-        }, 'test');
+        });
 
         expect(chrome.storage.sync.set).toHaveBeenCalledWith({
             quicklinksConfig: {
@@ -134,21 +124,4 @@ describe('settings-repo', () => {
         });
     });
 
-    it('settingsUiState should reflect open/saving/synced/closed transitions', async () => {
-        const {
-            settingsUiState,
-            markSettingsPanelOpen,
-            markSettingsPanelClosed,
-            patchSyncSettings
-        } = await import('../scripts/platform/settings-repo.js');
-
-        markSettingsPanelOpen('test');
-        expect(settingsUiState.value).toBe('open');
-
-        await patchSyncSettings({ showSearchBtn: true }, 'test');
-        expect(['saving', 'synced']).toContain(settingsUiState.value);
-
-        markSettingsPanelClosed('test');
-        expect(settingsUiState.value).toBe('closed');
-    });
 });

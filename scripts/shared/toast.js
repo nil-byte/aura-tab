@@ -1,41 +1,25 @@
-/**
- * Toast - Lightweight notification component (production-grade refactor)
- *
- * Improvements:
- * - Fixed memory leak when transitionend doesn't fire
- * - Use WeakSet to track elements being removed
- * - Added forced cleanup mechanism
- * - Double RAF for smooth animations
- * - Read transition time from CSS variables, eliminating magic numbers
- */
-
 import { readCssVarMs } from './dom.js';
 
-/** @type {HTMLElement | null} */
 let containerEl = null;
 
-/** @type {WeakSet<HTMLElement>} Track elements being removed */
+// WeakSet so duplicate-remove attempts on the same node are idempotent without
+// holding nodes alive after they leave the DOM.
 const removingElements = new WeakSet();
 
-/** @type {number} Max simultaneous display count */
 const MAX_TOASTS = 5;
 
-/** @type {number} Force cleanup timeout (ms) */
+// Safety-net cleanup if the transitionend never fires (prefers-reduced-motion, etc.)
 const FORCE_CLEANUP_TIMEOUT = 3000;
 
-/**
- * Get CSS transition time
- * @returns {number} Transition time (milliseconds)
- */
 function getTransitionDuration() {
-    // read from CSS variable, fallback to 150ms (--duration-fast default)
+    // Read from CSS variable, fallback to --duration-fast default (150ms)
     return readCssVarMs('--duration-fast', 150);
 }
 
 function ensureContainer() {
     if (containerEl && containerEl.isConnected) return containerEl;
 
-    // cleanup possible old containers
+    // Replace any stale container left over from a prior session
     const existing = document.querySelector('.toast-container');
     if (existing) {
         existing.remove();
@@ -47,12 +31,7 @@ function ensureContainer() {
     return containerEl;
 }
 
-/**
- * Safely remove toast element
- * @param {HTMLElement} el
- */
 function safeRemove(el) {
-    // prevent duplicate removal
     if (removingElements.has(el)) return;
     removingElements.add(el);
 
@@ -67,35 +46,28 @@ function safeRemove(el) {
             el.remove();
         }
 
-        // cleanup empty container
         if (containerEl && containerEl.isConnected && containerEl.childElementCount === 0) {
             containerEl.remove();
             containerEl = null;
         }
     };
 
-    // listen for transitionend
     const onTransitionEnd = () => {
         el.removeEventListener('transitionend', onTransitionEnd);
         cleanup();
     };
     el.addEventListener('transitionend', onTransitionEnd);
 
-    // force cleanup fallback (prevent transitionend not firing)
-    // read transition time from CSS variable, add 100ms buffer
+    // Safety net: force cleanup if transitionend never fires
     const transitionDuration = getTransitionDuration();
     setTimeout(cleanup, transitionDuration + 100);
 }
 
-/**
- * Limit toast count, remove oldest
- */
 function enforceLimit() {
     if (!containerEl) return;
 
     const toasts = containerEl.querySelectorAll('.toast');
     if (toasts.length >= MAX_TOASTS) {
-        // remove oldest (first)
         const oldest = toasts[0];
         if (oldest && !removingElements.has(oldest)) {
             safeRemove(oldest);
@@ -147,7 +119,6 @@ export function toast(message, options = {}) {
     el.setAttribute('role', 'alert');
     el.setAttribute('aria-live', 'polite');
 
-    // build Toast content (supports action button)
     const content = document.createElement('div');
     content.className = 'toast-content';
 
@@ -195,8 +166,8 @@ export function toast(message, options = {}) {
 
     container.appendChild(el);
 
-    // double RAF: first frame completes layout, second frame safely triggers animation
-    // this is the standard pattern to ensure CSS transition fires correctly
+    // Double RAF: first frame finishes layout, second frame triggers the CSS
+    // transition reliably across browsers
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             if (el.isConnected) {
@@ -205,13 +176,12 @@ export function toast(message, options = {}) {
         });
     });
 
-    // timed removal
     let forceCleanupTimer = null;
     const removeTimer = setTimeout(() => {
         safeRemove(el);
     }, Math.max(800, duration));
 
-    // force cleanup fallback (prevent extreme cases)
+    // Safety net for the safety net (extreme edge cases)
     forceCleanupTimer = setTimeout(() => {
         if (el.isConnected && !removingElements.has(el)) {
             console.warn('[Toast] Force cleanup triggered');
@@ -219,7 +189,6 @@ export function toast(message, options = {}) {
         }
     }, duration + FORCE_CLEANUP_TIMEOUT);
 
-    // return cancel function - cleanup all timers
     return () => {
         clearTimeout(removeTimer);
         clearTimeout(forceCleanupTimer);

@@ -2,7 +2,6 @@
 import { DisposableComponent } from './lifecycle.js';
 import { modalLayer } from './modal-layer.js';
 import { WindowDragController, WindowResizeController } from './window-interaction.js';
-import * as storageRepo from './storage-repo.js';
 import { SYNC_SETTINGS_DEFAULTS } from './settings-contract.js';
 
 export class MacWindowBase extends DisposableComponent {
@@ -31,6 +30,7 @@ export class MacWindowBase extends DisposableComponent {
 
         /** @type {(() => void) | null} */
         this._focusTrapRemover = null;
+        this._behaviorStorageHandler = null;
 
     }
 
@@ -128,7 +128,7 @@ export class MacWindowBase extends DisposableComponent {
             const fallback = Object.hasOwn(SYNC_SETTINGS_DEFAULTS, key)
                 ? SYNC_SETTINGS_DEFAULTS[key]
                 : false;
-            const value = await storageRepo.sync.get(key, fallback);
+            const { [key]: value = fallback } = await chrome.storage.sync.get({ [key]: fallback });
             this._dismissOnOutsideClick = value === true;
         } catch {
         }
@@ -136,10 +136,9 @@ export class MacWindowBase extends DisposableComponent {
 
     _setupBehaviorSettingsListener() {
         try {
+            if (this._behaviorStorageHandler) return;
             const key = this._getBehaviorSettingsKey();
-            const modalId = this._getModalId();
-
-            this._getStorageManager().register(`${modalId}.behavior`, (changes, areaName) => {
+            const handler = (changes, areaName) => {
                 if (areaName !== 'sync') return;
                 if (!changes[key]) return;
 
@@ -147,6 +146,15 @@ export class MacWindowBase extends DisposableComponent {
 
                 if (this._isOpen && this._overlay) {
                     this._registerModalLayer();
+                }
+            };
+            this._behaviorStorageHandler = handler;
+            chrome.storage.onChanged.addListener(handler);
+            this._addDisposable(() => {
+                if (!this._behaviorStorageHandler) return;
+                chrome.storage.onChanged.removeListener(handler);
+                if (this._behaviorStorageHandler === handler) {
+                    this._behaviorStorageHandler = null;
                 }
             });
         } catch {

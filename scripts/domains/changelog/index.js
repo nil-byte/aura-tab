@@ -1,48 +1,23 @@
-import * as storageRepo from '../../platform/storage-repo.js'
 import { normalizeLocaleForChangelog, loadChangelogData, pickChangelogItems } from './utils.js'
 import { mount, isVisible, updateContent } from './view.js'
-import { macSettingsWindow } from '../settings/index.js'
-import { runtimeBus } from '../../platform/runtime-bus.js'
-import { MSG } from '../../platform/runtime-bus.js'
+import { macSettingsWindow } from '../settings/window.js'
 
-const KEYS = {
-  lastSeenVersion: 'changelog:lastSeenVersion'
-}
-
-async function getLocal(key, defaultValue) {
-  return storageRepo.local.get(key, defaultValue)
-}
-
-async function setLocal(key, value) {
-  await storageRepo.local.setMultiple({ [key]: value })
-}
-
-export async function getLastSeenVersion() {
-  return getLocal(KEYS.lastSeenVersion, '')
-}
-
-export async function setLastSeenVersion(version) {
-  await setLocal(KEYS.lastSeenVersion, String(version || ''))
-}
+const LAST_SEEN_VERSION_KEY = 'changelog:lastSeenVersion'
+const SHOW_CHANGELOG_MESSAGE = 'showChangelog'
 
 async function shouldShowVersion(version) {
   const v = String(version || '')
   if (!v) return false
-  const lastSeen = await getLastSeenVersion()
+  const { [LAST_SEEN_VERSION_KEY]: lastSeen = '' } = await chrome.storage.local.get({ [LAST_SEEN_VERSION_KEY]: '' })
   return v !== lastSeen
 }
 
-const CHANGELOG_OWNER = 'feature.changelog'
-let runtimeUnsubscribe = null
+let runtimeHandler = null
 let languageBound = false
 
 function getVersion() {
-  try {
-    const m = chrome.runtime.getManifest()
-    return (m && m.version) || ''
-  } catch {
-    return ''
-  }
+  const m = chrome.runtime.getManifest()
+  return (m && m.version) || ''
 }
 
 function getUiLang() {
@@ -64,7 +39,7 @@ export async function initChangelog() {
       items,
       moreUrl,
       onClose: async () => {
-        await setLastSeenVersion(version)
+        await chrome.storage.local.set({ [LAST_SEEN_VERSION_KEY]: String(version || '') })
       },
       onMore: () => openChangelogTab()
     })
@@ -87,24 +62,30 @@ export async function initChangelog() {
     })
   }
 
-  runtimeUnsubscribe?.()
-  runtimeUnsubscribe = runtimeBus.register(MSG.SHOW_CHANGELOG, async (msg) => {
-    if (!msg || msg.type !== MSG.SHOW_CHANGELOG) return
-    const v = String(msg.version || version || '')
-    const shouldShowNow = await shouldShowVersion(v)
-    if (!shouldShowNow) return
-    const sel = pickChangelogItems(data, v, getUiLang())
-    mount({
-      title: chrome.i18n.getMessage('changelog_title') || "What's new",
-      version: v,
-      items: sel.items,
-      moreUrl: sel.moreUrl,
-      onClose: async () => {
-        await setLastSeenVersion(v)
-      },
-      onMore: () => openChangelogTab()
-    })
-  }, CHANGELOG_OWNER)
+  if (runtimeHandler) {
+    chrome.runtime.onMessage.removeListener(runtimeHandler)
+  }
+  runtimeHandler = (msg) => {
+    if (!msg || msg.type !== SHOW_CHANGELOG_MESSAGE) return false
+    void (async () => {
+      const v = String(msg.version || version || '')
+      const shouldShowNow = await shouldShowVersion(v)
+      if (!shouldShowNow) return
+      const sel = pickChangelogItems(data, v, getUiLang())
+      mount({
+        title: chrome.i18n.getMessage('changelog_title') || "What's new",
+        version: v,
+        items: sel.items,
+        moreUrl: sel.moreUrl,
+        onClose: async () => {
+          await chrome.storage.local.set({ [LAST_SEEN_VERSION_KEY]: String(v || '') })
+        },
+        onMore: () => openChangelogTab()
+      })
+    })()
+    return false
+  }
+  chrome.runtime.onMessage.addListener(runtimeHandler)
 }
 
 function openChangelogTab() {

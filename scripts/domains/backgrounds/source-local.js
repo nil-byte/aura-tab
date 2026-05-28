@@ -1,7 +1,5 @@
 import { idbRequest } from '../../shared/storage.js';
 import { t } from '../../platform/i18n.js';
-import { onStorageChange } from '../../platform/storage-runtime.js';
-import * as storageRepo from '../../platform/storage-repo.js';
 import {
     generateFileId,
     isImageFile,
@@ -94,7 +92,7 @@ class LocalFilesManager {
         this.files = new Map();
         this.initialized = false;
         this._storageListenerInitialized = false;
-        this._unsubscribeStorageChange = null;
+        this._storageChangeHandler = null;
         this._pendingSave = null;
         this._saveDebounceTimer = null;
     }
@@ -103,7 +101,7 @@ class LocalFilesManager {
         if (this.initialized) return;
 
         try {
-            const { backgroundFiles = {} } = await storageRepo.local.getMultiple({ backgroundFiles: {} });
+            const { backgroundFiles = {} } = await chrome.storage.local.get({ backgroundFiles: {} });
             for (const [id, file] of Object.entries(backgroundFiles)) {
                 this.files.set(id, file);
             }
@@ -120,7 +118,7 @@ class LocalFilesManager {
         if (this._storageListenerInitialized) return;
         this._storageListenerInitialized = true;
 
-        this._unsubscribeStorageChange = onStorageChange('background.local-files', (changes, areaName) => {
+        this._storageChangeHandler = (changes, areaName) => {
             if (areaName !== 'local' || !changes.backgroundFiles) return;
 
             if (this._pendingSave) return;
@@ -129,7 +127,8 @@ class LocalFilesManager {
             this.files = new Map(Object.entries(next));
 
             this._emitChanged({ reason: 'storage' });
-        });
+        };
+        chrome.storage.onChanged.addListener(this._storageChangeHandler);
     }
 
     _emitChanged(detail = {}) {
@@ -527,7 +526,7 @@ class LocalFilesManager {
         this._pendingSave = (async () => {
             try {
                 const backgroundFiles = Object.fromEntries(this.files);
-                await storageRepo.local.setMultiple({ backgroundFiles });
+                await chrome.storage.local.set({ backgroundFiles });
             } finally {
                 this._pendingSave = null;
             }

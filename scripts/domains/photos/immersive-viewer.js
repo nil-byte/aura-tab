@@ -359,7 +359,7 @@ export class ImmersiveViewer {
         return { primaryUrl, fallbackUrl, thumbnailUrl };
     }
 
-    async _preloadAndSwapImage(url, imageEl, seq, source) {
+    async _preloadAndSwapImage(url, imageEl, seq) {
         if (!url || !imageEl) return false;
 
         const preloader = new Image();
@@ -933,7 +933,6 @@ export class ImmersiveViewer {
         if (!this._currentDetailItem) return;
         if (this._applyInProgress) return;
 
-        const { toast } = await import('../../shared/toast.js');
         const applyBtn = this._host._window?.querySelector('#immersiveApply');
         const prevHtml = applyBtn?.innerHTML;
         const prevTitle = applyBtn?.title;

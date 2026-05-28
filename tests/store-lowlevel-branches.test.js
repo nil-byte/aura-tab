@@ -131,6 +131,19 @@ describe('Store low-level defensive branches', () => {
         expect(() => store.subscribe(() => {})).toThrow('[Store] Instance has been destroyed');
     });
 
+    it('should rethrow listener errors instead of swallowing them', async () => {
+        const store = await freshStore();
+        await store.init();
+
+        store.subscribe(() => {
+            throw new Error('listener failed');
+        });
+
+        expect(() => store._notify('test:event')).toThrow('listener failed');
+
+        store.destroy?.();
+    });
+
     it('should not reinitialize schema when quicklinks read fails', async () => {
         setStorageData({
             quicklinksItems: ['qlink_keep'],

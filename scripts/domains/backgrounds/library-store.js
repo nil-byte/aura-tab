@@ -1,6 +1,4 @@
-import { onStorageChange } from '../../platform/storage-runtime.js';
 import { clampNumber } from '../../shared/text.js';
-import * as storageRepo from '../../platform/storage-repo.js';
 
 const LIBRARY_ITEMS_KEY = 'libraryItems';
 const LIBRARY_ITEMS_WRITE_ID_KEY = 'libraryItemsWriteId';
@@ -25,7 +23,7 @@ class LibraryStore {
         this._initialized = false;
         this._pendingSave = null;
         this._storageListenerInitialized = false;
-        this._unsubscribeStorageChange = null;
+        this._storageChangeHandler = null;
         this._lastWriteId = null;
         this._processingQueue = false;
     }
@@ -81,7 +79,7 @@ class LibraryStore {
     }
 
     async _readStorageObject() {
-        const { [LIBRARY_ITEMS_KEY]: data = {} } = await storageRepo.local.getMultiple({ [LIBRARY_ITEMS_KEY]: {} });
+        const { [LIBRARY_ITEMS_KEY]: data = {} } = await chrome.storage.local.get({ [LIBRARY_ITEMS_KEY]: {} });
         return isPlainObject(data) ? data : {};
     }
 
@@ -95,7 +93,7 @@ class LibraryStore {
         this._lastWriteId = writeId;
         this._pendingSave = (async () => {
             try {
-                await storageRepo.local.setMultiple({
+                await chrome.storage.local.set({
                     [LIBRARY_ITEMS_KEY]: data,
                     [LIBRARY_ITEMS_WRITE_ID_KEY]: writeId
                 });
@@ -109,7 +107,7 @@ class LibraryStore {
 
     async init({ scheduleDownloads = true } = {}) {
         if (this._initialized) return;
-        const { [LIBRARY_ITEMS_KEY]: data = {} } = await storageRepo.local.getMultiple({ [LIBRARY_ITEMS_KEY]: {} });
+        const { [LIBRARY_ITEMS_KEY]: data = {} } = await chrome.storage.local.get({ [LIBRARY_ITEMS_KEY]: {} });
         this._items = this._toValidatedMap(isPlainObject(data) ? data : {});
         this._initialized = true;
         this._initStorageListener();
@@ -123,14 +121,15 @@ class LibraryStore {
         if (this._storageListenerInitialized) return;
         this._storageListenerInitialized = true;
 
-        this._unsubscribeStorageChange = onStorageChange('background.library-store', (changes, areaName) => {
+        this._storageChangeHandler = (changes, areaName) => {
             if (areaName !== 'local' || !changes[LIBRARY_ITEMS_KEY]) return;
             const next = changes[LIBRARY_ITEMS_KEY].newValue || {};
             this._items = this._toValidatedMap(next);
             const writeId = changes[LIBRARY_ITEMS_WRITE_ID_KEY]?.newValue;
             if (writeId && this._lastWriteId && writeId === this._lastWriteId) return;
             this._schedulePendingDownloads();
-        });
+        };
+        chrome.storage.onChanged.addListener(this._storageChangeHandler);
     }
 
     get(id) {
@@ -241,13 +240,13 @@ class LibraryStore {
         await this.init({ scheduleDownloads: false });
 
         await this._withQueueLock(async () => {
-            const { [LIBRARY_DOWNLOAD_QUEUE_KEY]: raw = {} } = await storageRepo.local.getMultiple({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: {} });
+            const { [LIBRARY_DOWNLOAD_QUEUE_KEY]: raw = {} } = await chrome.storage.local.get({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: {} });
             const queue = isPlainObject(raw) ? raw : {};
             const now = Date.now();
             const entry = isPlainObject(queue[id]) ? queue[id] : {};
             const attempts = clampNumber(entry.attempts || 0, 0, 20);
             queue[id] = { attempts, nextAt: now };
-            await storageRepo.local.setMultiple({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
+            await chrome.storage.local.set({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
         });
 
         this._scheduleQueuePump();
@@ -289,7 +288,7 @@ class LibraryStore {
         try {
             await this.init({ scheduleDownloads: false });
             await this._withQueueLock(async () => {
-                const state = await storageRepo.local.getMultiple({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: {} });
+                const state = await chrome.storage.local.get({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: {} });
                 const queue = isPlainObject(state[LIBRARY_DOWNLOAD_QUEUE_KEY]) ? state[LIBRARY_DOWNLOAD_QUEUE_KEY] : {};
                 const now = Date.now();
                 const entries = Object.entries(queue)
@@ -318,7 +317,7 @@ class LibraryStore {
                 const item = this._items.get(id);
                 if (!item || item.kind !== 'remote') {
                     delete queue[id];
-                    await storageRepo.local.setMultiple({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
+                    await chrome.storage.local.set({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
                     nextScheduleDelayMs = computeNextDelayMs();
                     return;
                 }
@@ -329,7 +328,7 @@ class LibraryStore {
                     const updated = { ...item, downloadState: 'invalid_source', lastError: 'invalid_url' };
                     await this.upsert(updated);
                     delete queue[id];
-                    await storageRepo.local.setMultiple({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
+                    await chrome.storage.local.set({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
                     nextScheduleDelayMs = computeNextDelayMs();
                     return;
                 }
@@ -369,7 +368,7 @@ class LibraryStore {
                     const attempts = clampNumber(Number(next.meta.attempts) || 0, 0, 20) + 1;
                     const backoffMs = Math.min(24 * 60 * 60 * 1000, Math.max(60 * 1000, 2 ** Math.min(12, attempts) * 1000));
                     queue[id] = { attempts, nextAt: now + backoffMs };
-                    await storageRepo.local.setMultiple({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
+                    await chrome.storage.local.set({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
                     const updated = { ...item, downloadState: 'failed', lastError: safeString(e?.message, 'failed') };
                     await this.upsert(updated);
                     nextScheduleDelayMs = computeNextDelayMs();
@@ -378,7 +377,7 @@ class LibraryStore {
 
                 if (ok) {
                     delete queue[id];
-                    await storageRepo.local.setMultiple({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
+                    await chrome.storage.local.set({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
                     const updated = { ...item, downloadState: 'ready', lastError: '' };
                     await this.upsert(updated);
                 }

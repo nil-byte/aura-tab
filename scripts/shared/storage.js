@@ -83,7 +83,8 @@ export async function idbCursorEach(db, storeName, onValue, getCursor) {
                     try {
                         onValue(cursor.value);
                     } catch (error) {
-                        console.warn('[IDB] Cursor callback error:', error);
+                        reject(error);
+                        return;
                     }
                     cursor.continue();
                 } else {

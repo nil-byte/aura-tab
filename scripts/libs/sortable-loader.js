@@ -12,10 +12,6 @@ function captureAndCleanupGlobalSortable() {
     return Sortable || null;
 }
 
-/**
- * Load SortableJS on demand without keeping a long-lived global.
- * @returns {Promise<any>} Sortable constructor
- */
 export function getSortable() {
     if (sortablePromise) return sortablePromise;
 

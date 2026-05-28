@@ -1,5 +1,4 @@
 import { idbRequest, idbBatch, idbCursorAll, idbCursorEach } from '../../shared/storage.js';
-import * as storageRepo from '../../platform/storage-repo.js';
 export const ASSETS_CONFIG = Object.freeze({
     DB_NAME: 'aura-tab-assets',
     DB_VERSION: 1,
@@ -172,7 +171,7 @@ class AssetsStore {
             );
             this._resetDegradedState();
             return Boolean(entry?.thumbnailBlob);
-        } catch (error) {
+        } catch {
             this._recordFailure();
             return false;
         }
@@ -236,7 +235,7 @@ class AssetsStore {
             );
             this._resetDegradedState();
             return Boolean(entry?.fullBlob);
-        } catch (error) {
+        } catch {
             this._recordFailure();
             return false;
         }
@@ -273,7 +272,7 @@ class AssetsStore {
             );
             this._resetDegradedState();
             return Boolean(entry?.isUserPinned);
-        } catch (error) {
+        } catch {
             this._recordFailure();
             return false;
         }
@@ -309,7 +308,7 @@ class AssetsStore {
             );
             this._resetDegradedState();
             return entry?.status || null;
-        } catch (error) {
+        } catch {
             this._recordFailure();
             return null;
         }
@@ -495,7 +494,7 @@ class AssetsStore {
         if (!ASSETS_CONFIG.healthCheck.enabled) return false;
         try {
             const { storageKey, intervalDays } = ASSETS_CONFIG.healthCheck;
-            const lastRun = await storageRepo.local.get(storageKey, null);
+            const { [storageKey]: lastRun = null } = await chrome.storage.local.get({ [storageKey]: null });
             if (!lastRun) return true;
             const daysSinceLastRun = (Date.now() - lastRun) / (24 * 60 * 60 * 1000);
             return daysSinceLastRun >= intervalDays;
@@ -506,7 +505,7 @@ class AssetsStore {
     async markHealthCheckRun() {
         try {
             const { storageKey } = ASSETS_CONFIG.healthCheck;
-            await storageRepo.local.setMultiple({ [storageKey]: Date.now() });
+            await chrome.storage.local.set({ [storageKey]: Date.now() });
         } catch {
         }
     }

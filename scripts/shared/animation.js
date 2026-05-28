@@ -1,76 +1,11 @@
-/**
- * Animation Utilities
- *
- * Extracted from dock.js for reusability and testability.
- * Contains piecewise interpolation and spring physics functions.
- */
-
-/**
- * Convert value to finite number, defaulting to 0 for NaN/Infinity
- * @param {number} value
- * @returns {number}
- */
-export function toFinite(value) {
+function toFinite(value) {
     return Number.isFinite(value) ? value : 0;
 }
 
 /**
- * Linear interpolation between two values
- * @param {number} t - Interpolation factor (0-1)
- * @param {number} a - Start value
- * @param {number} b - End value
- * @returns {number}
- */
-export function lerp(t, a, b) {
-    return a + (b - a) * t;
-}
-
-/**
- * Create a piecewise linear interpolator
- * @param {number[]} input - Input breakpoints (must be sorted ascending)
- * @param {number[]} output - Output values at each breakpoint
- * @param {{clamp?: boolean}} options - Options (clamp defaults to true)
- * @returns {(x: number) => number} Interpolation function
- */
-export function createPiecewiseInterpolator(input, output, options = {}) {
-    if (!Array.isArray(input) || !Array.isArray(output) || input.length !== output.length || input.length < 2) {
-        throw new Error('createPiecewiseInterpolator: input/output must be arrays of same length >= 2');
-    }
-    const clamp = options?.clamp !== false;
-    return function interpolate(x) {
-        const value = toFinite(x);
-        const firstIn = input[0];
-        const lastIn = input[input.length - 1];
-        if (value <= firstIn) {
-            if (clamp) return output[0];
-            const x0 = input[0], x1 = input[1], y0 = output[0], y1 = output[1];
-            const span = x1 - x0;
-            return lerp(span === 0 ? 0 : (value - x0) / span, y0, y1);
-        }
-        if (value >= lastIn) {
-            if (clamp) return output[output.length - 1];
-            const n = input.length;
-            const x0 = input[n - 2], x1 = input[n - 1], y0 = output[n - 2], y1 = output[n - 1];
-            const span = x1 - x0;
-            return lerp(span === 0 ? 0 : (value - x0) / span, y0, y1);
-        }
-        for (let i = 0; i < input.length - 1; i++) {
-            const x0 = input[i], x1 = input[i + 1];
-            if (value >= x0 && value <= x1) {
-                const y0 = output[i], y1 = output[i + 1];
-                const span = x1 - x0;
-                return lerp(span === 0 ? 0 : (value - x0) / span, y0, y1);
-            }
-        }
-        return output[output.length - 1];
-    };
-}
-
-/**
- * Create a spring-based animation controller (Svelte-style physics)
- * @param {number} initial - Initial value
+ * Svelte-style spring animation controller.
+ * @param {number} initial
  * @param {{stiffness?: number, damping?: number, precision?: number}} options
- * @returns {{value: number, target: number, setTarget: (v: number) => void, snap: (v: number, now?: number) => void, tick: (nowMs: number) => {value: number, settled: boolean}}}
  */
 export function createSvelteSpring(initial, options = {}) {
     const stiffness = toFinite(options.stiffness ?? 0.15);

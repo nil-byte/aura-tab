@@ -1,13 +1,4 @@
-/**
- * Icon Fetch Bridge
- *
- * Single source for:
- * - background fetch transport (chrome.runtime.sendMessage)
- * - URL allowlist for fetchIcon
- * - binary payload normalization (ArrayBuffer / TypedArray / number[])
- */
-
-import { MSG } from './runtime-bus.js';
+const FETCH_ICON_MESSAGE = 'fetchIcon';
 
 function _getOwnFaviconApiPrefixes() {
     if (typeof chrome === 'undefined' || !chrome?.runtime?.getURL) return [];
@@ -70,31 +61,15 @@ export function normalizeIconBinaryPayload(data) {
     return null;
 }
 
-export function sendRuntimeMessageSafe(message) {
-    return new Promise((resolve) => {
-        if (typeof chrome === 'undefined' || !chrome?.runtime?.sendMessage) {
-            resolve(null);
-            return;
-        }
-
-        try {
-            chrome.runtime.sendMessage(message, (response) => {
-                if (chrome.runtime?.lastError) {
-                    resolve(null);
-                    return;
-                }
-                resolve(response ?? null);
-            });
-        } catch {
-            resolve(null);
-        }
-    });
-}
-
 export async function fetchIconPayloadViaBackground(url) {
     if (!isAllowedIconFetchUrl(url)) return null;
 
-    const response = await sendRuntimeMessageSafe({ type: MSG.FETCH_ICON, url });
+    let response = null;
+    try {
+        response = await chrome.runtime.sendMessage({ type: FETCH_ICON_MESSAGE, url });
+    } catch {
+        return null;
+    }
     if (!response?.success || !response.data) return null;
 
     const bytes = normalizeIconBinaryPayload(response.data);

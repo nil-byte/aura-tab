@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     t: vi.fn((key) => `i18n:${key}`),
-    setSyncSetting: vi.fn(async () => ({})),
-    syncGetMultiple: vi.fn(async () => ({})),
-    localGetMultiple: vi.fn(async () => ({})),
+    patchSyncSettings: vi.fn(async () => ({})),
+    syncGet: vi.fn(async () => ({})),
+    localGet: vi.fn(async () => ({})),
     localSet: vi.fn(async () => true)
 }));
 
@@ -13,17 +13,7 @@ vi.mock('../scripts/platform/i18n.js', () => ({
 }));
 
 vi.mock('../scripts/platform/settings-repo.js', () => ({
-    setSyncSetting: mocks.setSyncSetting
-}));
-
-vi.mock('../scripts/platform/storage-repo.js', () => ({
-    sync: {
-        getMultiple: mocks.syncGetMultiple
-    },
-    local: {
-        getMultiple: mocks.localGetMultiple,
-        set: mocks.localSet
-    }
+    patchSyncSettings: mocks.patchSyncSettings
 }));
 
 import { SettingsBuilder } from '../scripts/domains/settings/builder.js';
@@ -46,17 +36,20 @@ describe('settings-builder', () => {
         mocks.t.mockReset();
         mocks.t.mockImplementation((key) => `i18n:${key}`);
 
-        mocks.setSyncSetting.mockReset();
-        mocks.setSyncSetting.mockResolvedValue({});
+        mocks.patchSyncSettings.mockReset();
+        mocks.patchSyncSettings.mockResolvedValue({});
 
-        mocks.syncGetMultiple.mockReset();
-        mocks.syncGetMultiple.mockResolvedValue({});
+        mocks.syncGet.mockReset();
+        mocks.syncGet.mockResolvedValue({});
 
-        mocks.localGetMultiple.mockReset();
-        mocks.localGetMultiple.mockResolvedValue({});
+        mocks.localGet.mockReset();
+        mocks.localGet.mockResolvedValue({});
 
         mocks.localSet.mockReset();
         mocks.localSet.mockResolvedValue(true);
+        chrome.storage.sync.get = mocks.syncGet;
+        chrome.storage.local.get = mocks.localGet;
+        chrome.storage.local.set = mocks.localSet;
     });
 
     it('render should output section rows for toggle/select/slider controls', () => {
@@ -112,12 +105,12 @@ describe('settings-builder', () => {
     });
 
     it('load should read values from sync/local storage and apply control state', async () => {
-        mocks.syncGetMultiple.mockResolvedValue({
+        mocks.syncGet.mockResolvedValue({
             showSeconds: false,
             layoutMode: 'list',
             magnifyScale: 40
         });
-        mocks.localGetMultiple.mockResolvedValue({
+        mocks.localGet.mockResolvedValue({
             dismissOutside: true
         });
 
@@ -169,12 +162,12 @@ describe('settings-builder', () => {
 
         await builder.init();
 
-        expect(mocks.syncGetMultiple).toHaveBeenCalledWith({
+        expect(mocks.syncGet).toHaveBeenCalledWith({
             showSeconds: true,
             layoutMode: 'grid',
             magnifyScale: 20
         });
-        expect(mocks.localGetMultiple).toHaveBeenCalledWith({
+        expect(mocks.localGet).toHaveBeenCalledWith({
             dismissOutside: false
         });
 
@@ -192,11 +185,11 @@ describe('settings-builder', () => {
         expect(sliderFill?.style.width).toBe('40%');
     });
 
-    it('change should persist sync/local values via settings-repo or storage-repo', async () => {
-        mocks.syncGetMultiple.mockResolvedValue({
+    it('change should persist sync/local values via settings-repo or chrome.storage', async () => {
+        mocks.syncGet.mockResolvedValue({
             showSeconds: false
         });
-        mocks.localGetMultiple.mockResolvedValue({
+        mocks.localGet.mockResolvedValue({
             localMode: 'grid'
         });
 
@@ -210,8 +203,7 @@ describe('settings-builder', () => {
                             type: 'toggle',
                             id: 'showSeconds',
                             storageKey: 'showSeconds',
-                            defaultValue: false,
-                            source: 'test.settings.toggle'
+                            defaultValue: false
                         },
                         {
                             type: 'select',
@@ -242,15 +234,15 @@ describe('settings-builder', () => {
 
         await flushAsync();
 
-        expect(mocks.setSyncSetting).toHaveBeenCalledTimes(1);
-        expect(mocks.setSyncSetting).toHaveBeenCalledWith('showSeconds', true, 'test.settings.toggle');
+        expect(mocks.patchSyncSettings).toHaveBeenCalledTimes(1);
+        expect(mocks.patchSyncSettings).toHaveBeenCalledWith({ showSeconds: true });
 
         expect(mocks.localSet).toHaveBeenCalledTimes(1);
-        expect(mocks.localSet).toHaveBeenCalledWith('localMode', 'compact');
+        expect(mocks.localSet).toHaveBeenCalledWith({ localMode: 'compact' });
     });
 
     it('slider input should update percent/value UI and change should persist value', async () => {
-        mocks.syncGetMultiple.mockResolvedValue({
+        mocks.syncGet.mockResolvedValue({
             zoomScale: 100
         });
 
@@ -270,8 +262,7 @@ describe('settings-builder', () => {
                             step: 5,
                             fillId: 'zoomScaleFill',
                             valueId: 'zoomScaleValue',
-                            formatValue: (value) => `${value}px`,
-                            source: 'test.settings.slider'
+                            formatValue: (value) => `${value}px`
                         }
                     ]
                 }
@@ -298,7 +289,7 @@ describe('settings-builder', () => {
         slider.dispatchEvent(new Event('change'));
         await flushAsync();
 
-        expect(mocks.setSyncSetting).toHaveBeenCalledTimes(1);
-        expect(mocks.setSyncSetting).toHaveBeenCalledWith('zoomScale', 140, 'test.settings.slider');
+        expect(mocks.patchSyncSettings).toHaveBeenCalledTimes(1);
+        expect(mocks.patchSyncSettings).toHaveBeenCalledWith({ zoomScale: 140 });
     });
 });

@@ -1,195 +1,47 @@
-/**
- * Settings repository for backgroundSettings.
- *
- * Keep storage I/O centralized and stable:
- * - Single read path
- * - Single patch merge path
- * - Deep merge for nested texture/apiKeys
- */
-
-import { createMachine } from './ui-state-machine.js';
-import * as storageRepo from './storage-repo.js';
-
-const settingsUiMachine = createMachine('closed', {
-    closed: ['open'],
-    open: ['saving', 'closed'],
-    saving: ['synced', 'error', 'closed'],
-    synced: ['saving', 'open', 'closed'],
-    error: ['saving', 'open', 'closed']
-});
-
 function isPlainObject(value) {
     return value && typeof value === 'object' && !Array.isArray(value);
 }
 
-function mergeOneLevel(current, patch) {
-    if (!isPlainObject(patch)) return isPlainObject(current) ? { ...current } : {};
+function mergeOneLevel(current, patch, nestedKeys = []) {
     const base = isPlainObject(current) ? current : {};
-    const next = { ...base };
-    for (const [key, value] of Object.entries(patch)) {
-        if (isPlainObject(base[key]) && isPlainObject(value)) {
-            next[key] = { ...base[key], ...value };
-        } else {
-            next[key] = value;
-        }
+    const next = isPlainObject(patch) ? { ...base, ...patch } : { ...base };
+    for (const key of nestedKeys) {
+        next[key] = {
+            ...(isPlainObject(base[key]) ? base[key] : {}),
+            ...(isPlainObject(patch?.[key]) ? patch[key] : {})
+        };
     }
     return next;
 }
 
-function markPanelOpenIfNeeded() {
-    if (settingsUiMachine.state === 'closed') {
-        settingsUiMachine.transition('open', { source: 'settings-repo' });
-    }
-}
-
-function markSaving(source) {
-    markPanelOpenIfNeeded();
-    settingsUiMachine.transition('saving', { source });
-}
-
-function markSynced(source) {
-    settingsUiMachine.transition('synced', { source });
-}
-
-function markError(source, error) {
-    settingsUiMachine.transition('error', { source, error });
-}
-
-export const settingsUiState = {
-    get value() {
-        return settingsUiMachine.state;
-    },
-    subscribe(listener) {
-        return settingsUiMachine.subscribe(listener);
-    }
-};
-
-export function markSettingsPanelOpen(source = 'unknown') {
-    settingsUiMachine.transition('open', { source });
-}
-
-export function markSettingsPanelClosed(source = 'unknown') {
-    settingsUiMachine.transition('closed', { source });
-}
-
-/**
- * @returns {Promise<object>}
- */
-export async function getBackgroundSettings() {
-    try {
-        const { backgroundSettings = {} } = await storageRepo.sync.getMultiple({ backgroundSettings: {} });
-        if (!backgroundSettings || typeof backgroundSettings !== 'object') return {};
-        return {
-            ...backgroundSettings,
-            texture: { ...(backgroundSettings.texture || {}) },
-            apiKeys: { ...(backgroundSettings.apiKeys || {}) }
-        };
-    } catch (error) {
-        console.error('[settings-repo] getBackgroundSettings failed:', error);
-        return {};
-    }
-}
-
-/**
- * @param {object} next
- * @param {string} [source]
- * @returns {Promise<object>}
- */
-export async function setBackgroundSettings(next, source = 'unknown') {
-    const safe = mergeOneLevel({}, next);
-    if (isPlainObject(safe.texture)) {
-        safe.texture = { ...safe.texture };
-    }
-    if (isPlainObject(safe.apiKeys)) {
-        safe.apiKeys = { ...safe.apiKeys };
+export async function patchBackgroundSettings(patch) {
+    const { backgroundSettings = {} } = await chrome.storage.sync.get({ backgroundSettings: {} });
+    const current = mergeOneLevel(backgroundSettings, null, ['texture', 'apiKeys']);
+    if (!isPlainObject(patch)) {
+        return current;
     }
 
-    markSaving(source);
-    try {
-        await storageRepo.sync.setMultiple({ backgroundSettings: safe });
-        markSynced(source);
-    } catch (error) {
-        markError(source, error);
-        console.error('[settings-repo] setBackgroundSettings failed:', { source, error });
-    }
-
-    return safe;
+    const next = mergeOneLevel(current, patch, ['texture', 'apiKeys']);
+    await chrome.storage.sync.set({ backgroundSettings: next });
+    return next;
 }
 
-/**
- * @param {object} patch
- * @param {string} [source]
- * @returns {Promise<object>} next settings snapshot
- */
-export async function patchBackgroundSettings(patch, source = 'unknown') {
-    if (!patch || typeof patch !== 'object') {
-        return getBackgroundSettings();
-    }
-
-    const current = await getBackgroundSettings();
-    const next = {
-        ...current,
-        ...patch,
-        texture: {
-            ...(current.texture || {}),
-            ...((patch.texture && typeof patch.texture === 'object') ? patch.texture : {})
-        },
-        apiKeys: {
-            ...(current.apiKeys || {}),
-            ...((patch.apiKeys && typeof patch.apiKeys === 'object') ? patch.apiKeys : {})
-        }
-    };
-
-    return setBackgroundSettings(next, source);
-}
-
-/**
- * @param {object} patch
- * @param {string} [source]
- * @returns {Promise<{ ok: boolean, updates: object }>}
- */
-export async function patchSyncSettings(patch, source = 'unknown') {
+export async function patchSyncSettings(patch) {
     if (!isPlainObject(patch) || Object.keys(patch).length === 0) {
         return { ok: true, updates: {} };
     }
 
     const keys = Object.keys(patch);
-    const currentDefaults = Object.fromEntries(keys.map((key) => [key, undefined]));
-
-    let current = {};
-    try {
-        current = await storageRepo.sync.getMultiple(currentDefaults);
-    } catch (error) {
-        console.error('[settings-repo] patchSyncSettings read failed:', { source, error });
-    }
-
+    const defaults = Object.fromEntries(keys.map((key) => [key, undefined]));
+    const current = await chrome.storage.sync.get(defaults);
     const updates = {};
+
     for (const key of keys) {
-        updates[key] = mergeOneLevel(current?.[key], patch[key]);
-        if (!isPlainObject(patch[key])) {
-            updates[key] = patch[key];
-        }
+        updates[key] = isPlainObject(patch[key])
+            ? mergeOneLevel(current?.[key], patch[key])
+            : patch[key];
     }
 
-    markSaving(source);
-    try {
-        await storageRepo.sync.setMultiple(updates);
-        markSynced(source);
-        return { ok: true, updates };
-    } catch (error) {
-        markError(source, error);
-        console.error('[settings-repo] patchSyncSettings write failed:', { source, error });
-        return { ok: false, updates };
-    }
-}
-
-/**
- * @param {string} key
- * @param {any} value
- * @param {string} [source]
- * @returns {Promise<object>}
- */
-export async function setSyncSetting(key, value, source = 'unknown') {
-    if (typeof key !== 'string' || !key) return {};
-    return patchSyncSettings({ [key]: value }, source);
+    await chrome.storage.sync.set(updates);
+    return { ok: true, updates };
 }

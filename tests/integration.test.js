@@ -130,7 +130,8 @@ describe('Complete Drag Flow Integration', () => {
         ];
 
         expect(ctx.endDrag(newOrder)).toBe(true);
-        expect(ctx.dragState.isInCooldown).toBe(true);
+        expect(ctx.dragState.isDragging).toBe(false);
+        expect(ctx.dragState.canOperate).toBe(false);
 
         // Wait for cooldown
         vi.advanceTimersByTime(150);
@@ -233,7 +234,7 @@ describe('Complete Drag Flow Integration', () => {
         ctx.startDrag('item1');
         ctx.endDrag();
 
-        expect(ctx.dragState.isInCooldown).toBe(true);
+        expect(ctx.dragState.isDragging).toBe(false);
         expect(ctx.dragState.canOperate).toBe(false);
 
         // Try to start another drag during cooldown
@@ -613,7 +614,8 @@ describe('Concurrent Scenarios', () => {
         // End drag
         dragState.endDrag();
 
-        expect(dragState.isInCooldown).toBe(true);
+        expect(dragState.isDragging).toBe(false);
+        expect(dragState.canOperate).toBe(false);
 
         timers.destroy();
         dragState.destroy();

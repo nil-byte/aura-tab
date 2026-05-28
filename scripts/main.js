@@ -1,25 +1,12 @@
-/**
- * Single ESM entrypoint for newtab.
- *
- * Responsibilities:
- * - Initialize background system
- * - Initialize UI modules (layout/clock/search)
- * - Initialize quick links feature
- * - Initialize Mac-style settings window
- * - Initialize HTML i18n attributes
- */
-
 import { initBackgroundSystem, backgroundSystem } from './domains/backgrounds/controller.js';
 import { initLayout } from './domains/layout.js';
 import { initClock } from './domains/clock.js';
 import { initSearch } from './domains/search.js';
 import { initQuickLinks } from './domains/quicklinks/index.js';
 import { initHtmlI18n, initLanguage } from './platform/i18n.js';
-import { initMacSettings } from './domains/settings/index.js';
-import { runStorageBootstrap } from './platform/storage-runtime.js';
+import { initMacSettings } from './domains/settings/window.js';
 import { libraryStore } from './domains/backgrounds/library-store.js';
 import { initChangelog } from './domains/changelog/index.js';
-import { onStorageChange } from './platform/storage-runtime.js';
 import { getSyncSettings } from './platform/settings-contract.js';
 
 const FIRST_PAINT_API_KEY = '__AURA_FIRST_PAINT__';
@@ -42,7 +29,7 @@ async function initTheme() {
         console.warn('[Aura Tab] theme init failed:', error);
     }
 
-    onStorageChange('main.theme', (changes, areaName) => {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== 'sync') return;
         if (!changes.uiTheme) return;
         apply(changes.uiTheme.newValue);
@@ -58,19 +45,13 @@ function whenDomReady() {
 
 async function main() {
     const firstPaintApi = getFirstPaintApi();
-    try {
-        firstPaintApi?.armFirstPaint?.();
-    } catch {
-    }
+    firstPaintApi?.armFirstPaint?.();
 
     let firstPaintDisarmed = false;
     const disarmFirstPaint = () => {
         if (firstPaintDisarmed) return;
         firstPaintDisarmed = true;
-        try {
-            firstPaintApi?.disarmFirstPaint?.();
-        } catch {
-        }
+        firstPaintApi?.disarmFirstPaint?.();
     };
     const disarmAfterBackgroundPaint = () => {
         if (typeof requestAnimationFrame !== 'function') {
@@ -86,36 +67,18 @@ async function main() {
 
     await whenDomReady();
 
-    // Initialize language settings first (load user preference from storage)
     await initLanguage();
-
-    // Apply theme before first paint-sensitive UI init
     await initTheme();
-
-    // Initialize HTML i18n attributes
     initHtmlI18n();
-
-    // Initialize changelog popover
     void initChangelog();
-
-    // Keep a stable async checkpoint in bootstrap ordering.
-    const bootstrapReady = runStorageBootstrap().catch((error) => {
-        console.warn('[Aura Tab] storage bootstrap failed:', error);
+    void initBackgroundSystem().catch((error) => {
+        console.error('[Aura Tab] background init failed:', error);
+        disarmFirstPaint();
     });
 
-    // Keep order deterministic (bootstrap -> background init) without blocking first paint.
-    void bootstrapReady.finally(() => {
-        void initBackgroundSystem().catch((error) => {
-            console.error('[Aura Tab] background init failed:', error);
-            disarmFirstPaint();
-        });
-    });
-
-    // Critical: render UI ASAP. Background and data-heavy features are deferred.
     initLayout({ backgroundSystem });
     initClock();
     initSearch();
-    // Quick Links store init can be non-trivial (storage). Defer to idle.
     const schedule = (fn) => {
         if (typeof requestIdleCallback === 'function') {
             requestIdleCallback(fn, { timeout: 1200 });
@@ -126,14 +89,9 @@ async function main() {
 
     schedule(() => {
         void (async () => {
-            await bootstrapReady;
             await initQuickLinks();
-            void libraryStore.init().catch(() => { });
-
-            // Initialize Mac-style settings window
+            void libraryStore.init().catch(() => {});
             const macWindow = initMacSettings();
-
-            // Bind settings button to Mac settings window
             const settingsBtn = document.getElementById('settingsBtn');
             settingsBtn?.addEventListener('click', (e) => {
                 e.preventDefault();

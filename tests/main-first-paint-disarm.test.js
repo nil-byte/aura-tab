@@ -26,13 +26,8 @@ vi.mock('../scripts/platform/i18n.js', () => ({
     initLanguage: vi.fn(async () => {})
 }));
 
-vi.mock('../scripts/domains/settings/index.js', () => ({
+vi.mock('../scripts/domains/settings/window.js', () => ({
     initMacSettings: vi.fn(() => ({ toggle: vi.fn() }))
-}));
-
-vi.mock('../scripts/platform/storage-runtime.js', () => ({
-    runStorageBootstrap: vi.fn(() => Promise.resolve()),
-    onStorageChange: vi.fn()
 }));
 
 vi.mock('../scripts/domains/backgrounds/library-store.js', () => ({
@@ -43,12 +38,6 @@ vi.mock('../scripts/domains/backgrounds/library-store.js', () => ({
 
 vi.mock('../scripts/domains/changelog/index.js', () => ({
     initChangelog: vi.fn(async () => {})
-}));
-
-vi.mock('../scripts/platform/storage-repo.js', () => ({
-    sync: {
-        getMultiple: vi.fn(async () => ({ uiTheme: 'light' }))
-    }
 }));
 
 describe('main first paint disarm timing', () => {

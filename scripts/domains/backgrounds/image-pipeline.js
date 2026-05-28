@@ -285,7 +285,7 @@ export const blobUrlManager = new BlobUrlManager();
 
 // ============ Hash and ID Generation ============
 
-export function hashCode(str) {
+function hashCode(str) {
     let hash = 2166136261;
     for (let i = 0; i < str.length; i++) {
         hash ^= str.charCodeAt(i);
@@ -590,7 +590,7 @@ async function runCacheCleanup() {
     return _cacheCleanupTask;
 }
 
-export function getCache() {
+function getCache() {
     if (!_cachePromise) {
         _cachePromise = caches.open(CACHE_CONFIG.name);
         if (!_cacheStartupCleanupPlanned) {
@@ -1376,7 +1376,6 @@ export const backgroundApplyMethods = {
         if (this.settings.type !== 'color' && this.nextBackground) {
             const { background, type } = this.nextBackground;
             if (type === this.settings.type) {
-                this._stateMachine.transition('loading', { reason: 'refresh' });
                 await this._loadMutex.acquire();
                 try {
                     this.nextBackground = null;
@@ -1388,11 +1387,9 @@ export const backgroundApplyMethods = {
                         save: true,
                         preload: true
                     });
-                    this._stateMachine.transition('applied', { type: this.settings.type });
                 } catch (error) {
                     console.error('[Background] Refresh failed:', error);
                     showNotification(error.message || t('bgRefreshFailed'), 'error');
-                    this._stateMachine.transition('error', { error });
                 } finally {
                     this._loadMutex.release();
                 }

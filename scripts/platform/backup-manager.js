@@ -2,7 +2,6 @@ import { strToU8, Zip, ZipDeflate, ZipPassThrough, Unzip, UnzipInflate } from '.
 import { idbCursorAll } from '../shared/storage.js';
 import { setStorageInChunks } from '../shared/storage.js';
 import { buildIconCacheKey, normalizeIconCacheUrl } from '../shared/text.js';
-import * as storageRepo from './storage-repo.js';
 const SCHEMA_VERSION = 1;
 const SCHEMA_NAME = 'aura-tab-webdav-backup';
 const MAX_IN_MEMORY_BACKUP_SIZE = 500 * 1024 * 1024;
@@ -420,8 +419,8 @@ export class BackupManager {
         };
         onProgress?.({ stage: 'storage', percent: 0 });
         const [syncData, localData] = await Promise.all([
-            storageRepo.sync.getAll(),
-            storageRepo.local.getAll()
+            chrome.storage.sync.get(null),
+            chrome.storage.local.get(null)
         ]);
         const filteredLocalData = { ...localData };
         delete filteredLocalData.webdavConfig;
@@ -576,15 +575,15 @@ export class BackupManager {
     }
     async _getCurrentWebdavConfig() {
         try {
-            const webdavConfig = await storageRepo.local.get('webdavConfig', null);
+            const { webdavConfig = null } = await chrome.storage.local.get({ webdavConfig: null });
             return webdavConfig || null;
         } catch {
             return null;
         }
     }
     async _smartRestoreStorage(areaName, newData, preservedKeys = []) {
-        const repo = areaName === 'sync' ? storageRepo.sync : storageRepo.local;
-        const currentData = await repo.getAll();
+        const area = areaName === 'sync' ? chrome.storage.sync : chrome.storage.local;
+        const currentData = await area.get(null);
         const currentKeys = Object.keys(currentData);
         await setStorageInChunks(areaName, newData);
         const newKeysSet = new Set(Object.keys(newData));
@@ -593,7 +592,7 @@ export class BackupManager {
             !newKeysSet.has(key) && !preservedSet.has(key)
         );
         if (keysToRemove.length > 0) {
-            await repo.removeMultiple(keysToRemove);
+            await area.remove(keysToRemove);
         }
     }
     async _streamUnzipToStaging(zipBlob, stagingDb, onProgress) {

@@ -98,8 +98,8 @@ class Dock extends DisposableComponent {
                 this.container.classList.add('show');
             }
         });
-        this._unsubscribeStore = store.subscribe((event, data) => {
-            this._handleStoreEvent(event, data);
+        this._unsubscribeStore = store.subscribe((event) => {
+            this._handleStoreEvent(event);
         });
         this._addDisposable(() => this._unsubscribeStore?.());
         this._markInitialized();
@@ -144,7 +144,7 @@ class Dock extends DisposableComponent {
         if (this.macSettingsDockBtn) {
             this._events.add(this.macSettingsDockBtn, 'click', () => {
                 this._resetMagnifierImmediate();
-                import('../settings/index.js').then(m => {
+                import('../settings/window.js').then(m => {
                     m.macSettingsWindow?.open();
                 }).catch(err => {
                     console.error('[Dock] Failed to open Mac settings:', err);
@@ -160,7 +160,7 @@ class Dock extends DisposableComponent {
             this._events.add(this.list, 'contextmenu', (e) => this._handleContextMenu(e));
         }
     }
-    _handleStoreEvent(event, data) {
+    _handleStoreEvent(event) {
         if (this.isDestroyed) return;
         switch (event) {
             case 'settingsChanged':
@@ -207,7 +207,7 @@ class Dock extends DisposableComponent {
         }
         const dockItems = store.getDockItems();
         const newState = new Map(dockItems.map(item => [item._id, itemHash(item)]));
-        const changes = this._computeChanges(newState, dockItems);
+        const changes = this._computeChanges(newState);
         if (changes.type === 'none') {
             return; // Nothing to do
         }
@@ -219,7 +219,7 @@ class Dock extends DisposableComponent {
         this._renderedState = newState;
         this._scheduleMagnifierAnchorRefresh();
     }
-    _computeChanges(newState, dockItems) {
+    _computeChanges(newState) {
         const oldIds = [...this._renderedState.keys()];
         const newIds = [...newState.keys()];
         const oldSet = new Set(oldIds);
@@ -804,7 +804,7 @@ class Dock extends DisposableComponent {
         if (!this._dragState?.canOperate) return;
         this._bounceIcon(id);
         if (item._id === '__SYSTEM_SETTINGS__') {
-            import('../settings/index.js').then(m => {
+            import('../settings/window.js').then(m => {
                 m.macSettingsWindow?.open();
             }).catch(err => {
                 console.error('[Dock] Failed to open Mac settings:', err);

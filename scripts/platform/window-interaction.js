@@ -1,19 +1,31 @@
-/**
- * WindowInteraction - macOS-style Window Interaction System
- *
- * Notes:
- * - This is a thin adapter layer for interact.js: maintains the same controller API externally (create/destroy/reset),
- *   internally maps displacement to CSS variables (--mac-window-drag-x/y) to ensure compositor-friendly transform path.
- * - interact.js is loaded on-demand to avoid blocking new tab first paint.
- */
+let interactPromise = null;
 
-import { getInteract } from '../libs/interact-loader.js';
+function getInteract() {
+    if (interactPromise) return interactPromise;
 
-// ========== Constants ==========
+    interactPromise = new Promise((resolve, reject) => {
+        if (globalThis.interact) {
+            resolve(globalThis.interact);
+            return;
+        }
 
+        const script = document.createElement('script');
+        script.src = chrome.runtime.getURL('scripts/libs/interact.min.js');
+        script.async = true;
+        script.onload = () => {
+            if (globalThis.interact) {
+                resolve(globalThis.interact);
+                return;
+            }
+            reject(new Error('interact.js loaded but global interact was not found'));
+        };
+        script.onerror = () => reject(new Error('Failed to load interact.js'));
+        document.head.appendChild(script);
+    });
+
+    return interactPromise;
+}
 const MIN_VISIBLE_AREA = 100;
-
-/** Resize direction mapping */
 const RESIZE_DIRECTIONS = {
     n: { cursor: 'ns-resize', vertical: -1, horizontal: 0 },
     s: { cursor: 'ns-resize', vertical: 1, horizontal: 0 },
@@ -25,11 +37,6 @@ const RESIZE_DIRECTIONS = {
     sw: { cursor: 'nesw-resize', vertical: 1, horizontal: -1 }
 };
 
-// ========== Utility Functions ==========
-
-/**
- * Parse CSS translate value (fallback for CSS variables)
- */
 function parseTranslate(value) {
     if (!value || typeof value !== 'string') return { x: 0, y: 0 };
     const parts = value.trim().split(/\s+/);
@@ -66,8 +73,6 @@ function resetDragVars(el) {
     el.style.removeProperty('--mac-window-drag-y');
 }
 
-// ========== WindowDragController (based on interact.js) ==========
-
 export class WindowDragController {
     constructor(options) {
         this._window = options.window;
@@ -97,11 +102,7 @@ export class WindowDragController {
 
         try {
             const interact = await getInteract();
-
-            // Stop if already destroyed
             if (!this._window || this._destroyed) return;
-
-            // Get current position as initial state
             const initialVars = parseDragVars(this._window);
             const initialTranslate = parseTranslate(this._window.style.translate);
             const startX = initialVars.x || initialTranslate.x;
@@ -111,22 +112,13 @@ export class WindowDragController {
             this._y = startY;
             setDragVars(this._window, this._x, this._y);
             this._window.style.translate = '';
-
-            // Configure interact.js
             this._interactable = interact(this._window).draggable({
-                // Only allow dragging from handle
                 allowFrom: this._handle,
                 ignoreFrom: this._excludeSelector,
-
-                // macOS window dragging has no inertia by default; enable via options.inertia if needed
                 inertia: this._inertia,
-
-                // Keep element size unchanged
                 autoScroll: false,
-
-                // Listeners
                 listeners: {
-                    start: (event) => {
+                    start: () => {
                         if (!this._window || this._destroyed) return;
                         this._onBringToFront?.();
                         const current = parseDragVars(this._window);
@@ -147,12 +139,10 @@ export class WindowDragController {
                         this._y += event.dy;
                         setDragVars(this._window, this._x, this._y);
                     },
-                    end: (event) => {
+                    end: () => {
                         if (!this._window || this._destroyed) return;
                         this._cleanupDragState();
                         this._onDragEnd?.();
-
-                        // Apply boundary correction after drag ends (avoid per-move layout read)
                         if (this._clampToViewport) {
                             this._applyClamping();
                         }
@@ -432,5 +422,3 @@ export function createWindowInteraction(options) {
         }
     };
 }
-
-
