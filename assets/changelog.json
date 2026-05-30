@@ -1,4 +1,22 @@
 {
+  "3.4.9": {
+    "en": [
+      "App Icons: Redesigned all app icons with a fresh new look",
+      "Architecture: Simplified platform layers by replacing abstraction wrappers (runtime-bus, storage-repo, ui-state-machine) with direct chrome.* API calls",
+      "Code Cleanup: Removed orphaned assets, planning files (.sisyphus), and legacy test suites"
+    ],
+    "zh_CN": [
+      "应用图标：全新设计了所有应用图标",
+      "架构简化：移除 runtime-bus、storage-repo、ui-state-machine 等中间抽象层，改为直接调用 chrome.* API",
+      "代码清理：移除废弃的资产文件、.sisyphus 规划目录及遗留测试套件"
+    ],
+    "zh_TW": [
+      "應用圖示：全新設計了所有應用圖示",
+      "架構簡化：移除 runtime-bus、storage-repo、ui-state-machine 等中間抽象層，改為直接呼叫 chrome.* API",
+      "程式碼清理：移除廢棄的資產檔案、.sisyphus 規劃目錄及遺留測試套件"
+    ],
+    "moreUrl": ""
+  },
   "3.4.8": {
     "en": [
       "Accessibility: Stronger ARIA labeling, modal focus management, and screen reader support across the new tab experience",
