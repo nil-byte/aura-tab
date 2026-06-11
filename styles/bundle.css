@@ -583,11 +583,10 @@ a {
     transition: opacity var(--transition-fast);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    a:hover {
-        opacity: var(--opacity-hover);
-    }
+a:hover {
+    opacity: var(--opacity-hover);
 }
+
 
 button {
     font-family: inherit;
@@ -907,21 +906,20 @@ html[data-first-paint='disarming'] #background-media .background-image {
         opacity var(--duration-normal) var(--ease-default);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .clock-wrapper:hover {
-        transform: translateY(-2px);
-    }
-
-    .clock:hover {
-        filter:
-            drop-shadow(0 0 80px var(--border-default)) drop-shadow(0 0 140px rgba(255, 255, 255, 0.06));
-    }
-
-    .date:hover {
-        opacity: 0.8;
-        transform: translateY(-3px);
-    }
+.clock-wrapper:hover {
+    transform: translateY(-2px);
 }
+
+.clock:hover {
+    filter:
+        drop-shadow(0 0 80px var(--border-default)) drop-shadow(0 0 140px rgba(255, 255, 255, 0.06));
+}
+
+.date:hover {
+    opacity: 0.8;
+    transform: translateY(-3px);
+}
+
 
 .date-switch {
     animation: dateSwitch var(--duration-normal) var(--ease-default);
@@ -1020,42 +1018,40 @@ html[data-first-paint='disarming'] #background-media .background-image {
     transition: opacity var(--duration-fast) var(--ease-default);
 }
 
-@media (hover: hover) and (pointer: fine) {
-
-    .search-toggle-btn:hover,
-    .refresh-bg-btn:hover,
-    .settings-btn:hover {
-        opacity: 1;
-        background: var(--glass-tier-2-bg-hover);
-        border-color: var(--glass-tier-2-border-hover);
-        box-shadow:
-            var(--shadow-elevation-2),
-            var(--shadow-glass-inset);
-        transform: scale(var(--scale-lift)) translateZ(0);
-    }
-
-    .search-toggle-btn:hover::before,
-    .refresh-bg-btn:hover::before,
-    .settings-btn:hover::before {
-        opacity: 0.9;
-    }
-
-    .search-toggle-btn:hover::after,
-    .refresh-bg-btn:hover::after,
-    .settings-btn:hover::after {
-        opacity: 0.75;
-    }
-
-    .search-toggle-btn:hover svg,
-    .refresh-bg-btn:hover svg,
-    .settings-btn:hover svg {
-        opacity: 1;
-    }
-
-    .settings-btn:hover svg {
-        transform: rotate(90deg);
-    }
+.search-toggle-btn:hover,
+.refresh-bg-btn:hover,
+.settings-btn:hover {
+    opacity: 1;
+    background: var(--glass-tier-2-bg-hover);
+    border-color: var(--glass-tier-2-border-hover);
+    box-shadow:
+        var(--shadow-elevation-2),
+        var(--shadow-glass-inset);
+    transform: scale(var(--scale-lift)) translateZ(0);
 }
+
+.search-toggle-btn:hover::before,
+.refresh-bg-btn:hover::before,
+.settings-btn:hover::before {
+    opacity: 0.9;
+}
+
+.search-toggle-btn:hover::after,
+.refresh-bg-btn:hover::after,
+.settings-btn:hover::after {
+    opacity: 0.75;
+}
+
+.search-toggle-btn:hover svg,
+.refresh-bg-btn:hover svg,
+.settings-btn:hover svg {
+    opacity: 1;
+}
+
+.settings-btn:hover svg {
+    transform: rotate(90deg);
+}
+
 
 .search-toggle-btn:active,
 .refresh-bg-btn:active,
@@ -1093,26 +1089,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
 
     .layout-container {
         width: calc(100% - var(--space-8));
-    }
-}
-
-@media screen and (max-height: 500px) {
-    .clock {
-        font-size: 72px;
-    }
-
-    .date {
-        font-size: var(--text-lg);
-    }
-}
-
-@media screen and (max-height: 400px) {
-
-    .corner-top-left,
-    .corner-top-right,
-    .corner-bottom-left,
-    .corner-bottom-right {
-        padding: var(--space-4);
     }
 }
 
@@ -1189,28 +1165,27 @@ html[data-first-paint='disarming'] #background-media .background-image {
     transition: opacity var(--duration-fast) var(--ease-default);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .search-container.show:hover:not(.focused) {
-        background: var(--spotlight-glass-bg-hover);
-        border-color: var(--spotlight-glass-border-hover);
-        box-shadow:
-            var(--shadow-elevation-3),
-            var(--shadow-glass-inset);
-        transform: translateY(-1px) scale(1);
-    }
-
-    .search-container:hover:not(.focused)::before {
-        opacity: 0.9;
-    }
-
-    .search-container:hover:not(.focused)::after {
-        opacity: 0.75;
-    }
-
-    .search-container:hover .search-input::placeholder {
-        color: rgba(255, 255, 255, 0.4);
-    }
+.search-container.show:hover:not(.focused) {
+    background: var(--spotlight-glass-bg-hover);
+    border-color: var(--spotlight-glass-border-hover);
+    box-shadow:
+        var(--shadow-elevation-3),
+        var(--shadow-glass-inset);
+    transform: translateY(-1px) scale(1);
 }
+
+.search-container:hover:not(.focused)::before {
+    opacity: 0.9;
+}
+
+.search-container:hover:not(.focused)::after {
+    opacity: 0.75;
+}
+
+.search-container:hover .search-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
 
 .search-container.focused {
     background: var(--spotlight-glass-bg-focus);
@@ -1310,16 +1285,15 @@ html[data-first-paint='disarming'] #background-media .background-image {
     transition: transform var(--duration-fast) var(--ease-default);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .search-engine-btn:hover {
-        background: var(--surface-glass);
-        color: var(--text-secondary);
-    }
-
-    .search-engine-btn:hover svg {
-        transform: scale(1.05);
-    }
+.search-engine-btn:hover {
+    background: var(--surface-glass);
+    color: var(--text-secondary);
 }
+
+.search-engine-btn:hover svg {
+    transform: scale(1.05);
+}
+
 
 .search-engine-btn:active {
     transform: scale(var(--scale-press));
@@ -1413,12 +1387,11 @@ html[data-first-paint='disarming'] #background-media .background-image {
     white-space: nowrap;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .engine-btn:hover {
-        background: var(--overlay-highlight);
-        color: rgba(255, 255, 255, 0.9);
-    }
+.engine-btn:hover {
+    background: var(--overlay-highlight);
+    color: rgba(255, 255, 255, 0.9);
 }
+
 
 .engine-btn:active {
     transform: scale(var(--scale-press));
@@ -1451,26 +1424,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
     .search-engine-btn svg {
         width: 18px;
         height: 18px;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .search-container {
-        max-width: calc(100% - var(--space-6));
-        height: 48px;
-        padding: 0 var(--space-4);
-        gap: var(--space-3);
-        border-radius: var(--radius-lg);
-    }
-
-    .search-container .search-input {
-        font-size: var(--text-base);
-    }
-
-    .search-engine-btn {
-        width: 32px;
-        height: 32px;
-        margin-left: calc(-1 * var(--space-1));
     }
 }
 
@@ -1510,12 +1463,11 @@ html[data-first-paint='disarming'] #background-media .background-image {
         transform var(--transition-fast);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .close-btn:hover {
-        background: var(--surface-glass-hover);
-        color: var(--text-primary);
-    }
+.close-btn:hover {
+    background: var(--surface-glass-hover);
+    color: var(--text-primary);
 }
+
 
 .close-btn:active {
     transform: scale(var(--scale-pressed));
@@ -1682,7 +1634,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
     margin: 0;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: manipulation;
 
     --fisheye-scale: 1;
     --fisheye-translate-y: 0px;
@@ -1947,46 +1898,45 @@ html[data-first-paint='disarming'] #background-media .background-image {
     opacity: 0.6;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .quicklink-item:hover .quicklink-icon {
-        transform: translateY(calc(var(--ql-icon-size) * -0.2)) scale(1.06);
-        filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)) brightness(1.03);
-    }
-
-    .quicklink-item:hover .quicklink-icon::after {
-        opacity: 0.8;
-    }
-
-    .quicklink-item:hover .quicklink-title {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-50%) translateY(0);
-    }
-
-    .launchpad-btn:hover {
-        background: var(--overlay-medium);
-        color: var(--text-primary);
-        transform: translateY(calc(var(--ql-icon-size) * -0.15)) scale(1.05);
-        box-shadow:
-            0 8px 20px rgba(0, 0, 0, 0.25),
-            0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .quicklinks-add-btn:hover {
-        background: var(--surface-glass-hover);
-        border-color: rgba(255, 255, 255, 0.35);
-        border-style: solid;
-        color: var(--text-secondary);
-        transform: translateY(calc(var(--ql-icon-size) * -0.15)) scale(1.05);
-        box-shadow:
-            0 8px 20px rgba(0, 0, 0, 0.25),
-            0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .quicklinks-add-btn:hover svg {
-        opacity: 0.9;
-    }
+.quicklink-item:hover .quicklink-icon {
+    transform: translateY(calc(var(--ql-icon-size) * -0.2)) scale(1.06);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)) brightness(1.03);
 }
+
+.quicklink-item:hover .quicklink-icon::after {
+    opacity: 0.8;
+}
+
+.quicklink-item:hover .quicklink-title {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.launchpad-btn:hover {
+    background: var(--overlay-medium);
+    color: var(--text-primary);
+    transform: translateY(calc(var(--ql-icon-size) * -0.15)) scale(1.05);
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.25),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.quicklinks-add-btn:hover {
+    background: var(--surface-glass-hover);
+    border-color: rgba(255, 255, 255, 0.35);
+    border-style: solid;
+    color: var(--text-secondary);
+    transform: translateY(calc(var(--ql-icon-size) * -0.15)) scale(1.05);
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.25),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.quicklinks-add-btn:hover svg {
+    opacity: 0.9;
+}
+
 
 @keyframes dock-bounce {
 
@@ -2017,7 +1967,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
 }
 
 .quicklinks-list.in-drag {
-    touch-action: none;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -2073,42 +2022,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
 
 .quicklinks-list.in-drag .quicklink-item:not(.sortable-fallback):hover {
     transform: none !important;
-}
-
-@media (max-width: 480px) {
-    .quicklinks-container {
-        max-width: 95vw;
-        bottom: var(--space-6);
-    }
-
-    .quicklinks-container[data-style="large"] {
-        --ql-icon-size: 40px;
-    }
-
-    .quicklinks-container[data-style="medium"] {
-        --ql-icon-size: 36px;
-    }
-
-    .quicklink-title {
-        font-size: var(--text-xs);
-        padding: var(--space-1) var(--space-2);
-    }
-
-    .quicklink-dialog {
-        width: 95%;
-        max-width: none;
-    }
-}
-
-@media (max-width: 480px) and (hover: hover) and (pointer: fine) {
-    .quicklink-item:hover .quicklink-icon {
-        transform: translateY(calc(var(--ql-icon-size) * -0.12)) scale(1.04);
-    }
-
-    .quicklinks-add-btn:hover,
-    .launchpad-btn:hover {
-        transform: translateY(calc(var(--ql-icon-size) * -0.1)) scale(1.04);
-    }
 }
 
 .launchpad-overlay {
@@ -2329,16 +2242,15 @@ body.launchpad-dragging .launchpad-pages {
     contain: layout style paint;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .launchpad-item:hover {
-        transform: scale(1.02);
-    }
-
-    .launchpad-item:hover .launchpad-icon {
-        background: var(--surface-glass-hover);
-        box-shadow: none;
-    }
+.launchpad-item:hover {
+    transform: scale(1.02);
 }
+
+.launchpad-item:hover .launchpad-icon {
+    background: var(--surface-glass-hover);
+    box-shadow: none;
+}
+
 
 .launchpad-item:active {
     transform: scale(var(--scale-pressed));
@@ -2448,11 +2360,10 @@ body.launchpad-dragging .launchpad-pages {
         transform var(--duration-fast) var(--ease-spring);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .launchpad-indicator .page-dot:hover {
-        background: rgba(255, 255, 255, 0.5);
-    }
+.launchpad-indicator .page-dot:hover {
+    background: rgba(255, 255, 255, 0.5);
 }
+
 
 .launchpad-indicator .page-dot.active {
     background: rgba(255, 255, 255, 0.9);
@@ -2522,8 +2433,6 @@ body.launchpad-dragging .launchpad-pages {
 }
 
 .launchpad-page.in-drag {
-    touch-action: none;
-
     user-select: none;
     -webkit-user-select: none;
 
@@ -3071,18 +2980,16 @@ body.launchpad-dragging .launchpad-container {
     border: none;
 }
 
-@media (hover: hover) and (pointer: fine) {
+.context-menu-item:hover,
+.quicklink-context-menu-item:hover {
 
-    .context-menu-item:hover,
-    .quicklink-context-menu-item:hover {
+    background: var(--surface-glass-hover);
 
-        background: var(--surface-glass-hover);
-
-        outline: none;
-        box-shadow: none;
-        border: none;
-    }
+    outline: none;
+    box-shadow: none;
+    border: none;
 }
+
 
 .context-menu-item:active,
 .quicklink-context-menu-item:active {
@@ -3095,13 +3002,11 @@ body.launchpad-dragging .launchpad-container {
     color: var(--color-red);
 }
 
-@media (hover: hover) and (pointer: fine) {
-
-    .context-menu-item.danger:hover,
-    .quicklink-context-menu-item.danger:hover {
-        background: rgba(255, 105, 97, 0.12);
-    }
+.context-menu-item.danger:hover,
+.quicklink-context-menu-item.danger:hover {
+    background: rgba(255, 105, 97, 0.12);
 }
+
 
 .context-menu-item.danger:active,
 .quicklink-context-menu-item.danger:active {
@@ -3119,13 +3024,11 @@ body.launchpad-dragging .launchpad-container {
     transition: opacity 100ms ease-out;
 }
 
-@media (hover: hover) and (pointer: fine) {
-
-    .context-menu-item:hover svg,
-    .quicklink-context-menu-item:hover svg {
-        opacity: 0.9;
-    }
+.context-menu-item:hover svg,
+.quicklink-context-menu-item:hover svg {
+    opacity: 0.9;
 }
+
 
 .context-menu-item.danger svg,
 .quicklink-context-menu-item.danger svg {
@@ -3176,33 +3079,6 @@ body.launchpad-dragging .launchpad-container {
     100% {
         opacity: 1;
         transform: scale(1);
-    }
-}
-
-@media (hover: none) and (pointer: coarse) {
-
-    .context-menu,
-    .quicklink-context-menu {
-        min-width: 220px;
-        padding: 6px;
-    }
-
-    .context-menu-item,
-    .quicklink-context-menu-item {
-        min-height: 40px;
-        padding: 10px 14px;
-        gap: var(--space-3);
-        font-size: var(--text-base);
-    }
-
-    .context-menu-item svg,
-    .quicklink-context-menu-item svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .context-menu-separator {
-        margin: 6px 14px;
     }
 }
 
@@ -3297,12 +3173,11 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
         color var(--duration-fast) var(--ease-default);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .quicklink-dialog-header .close-btn:hover {
-        background: var(--surface-glass-hover);
-        color: var(--text-primary);
-    }
+.quicklink-dialog-header .close-btn:hover {
+    background: var(--surface-glass-hover);
+    color: var(--text-primary);
 }
+
 
 .quicklink-dialog-content {
     padding: var(--space-4);
@@ -3945,28 +3820,15 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     opacity: 0.78;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .toast-action:hover {
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    .toast-action:focus-visible {
-        outline: 2px solid color-mix(in srgb, var(--toast-accent) 65%, transparent);
-        outline-offset: 2px;
-    }
+.toast-action:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
 
-@media (hover: none) and (pointer: coarse) {
-    .toast {
-        padding: var(--space-3) var(--space-4);
-        font-size: var(--text-sm);
-        min-height: 44px;
-    }
-
-    .toast-container {
-        bottom: calc(var(--space-10) + 100px);
-    }
+.toast-action:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--toast-accent) 65%, transparent);
+    outline-offset: 2px;
 }
+
 
 .corner-zone {
     position: fixed;
@@ -4006,22 +3868,20 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     pointer-events: auto;
 }
 
-@media (hover: hover) and (pointer: fine) {
-
-    .corner-zone:hover .refresh-bg-btn:hover,
-    .corner-zone:hover .settings-btn:hover,
-    .corner-zone:hover .search-toggle-btn:hover {
-        opacity: 1;
-        transform: scale(var(--scale-lift));
-    }
-
-    .corner-zone.always-visible .refresh-bg-btn:hover,
-    .corner-zone.always-visible .settings-btn:hover,
-    .corner-zone.always-visible .search-toggle-btn:hover {
-        opacity: 1;
-        transform: scale(var(--scale-lift));
-    }
+.corner-zone:hover .refresh-bg-btn:hover,
+.corner-zone:hover .settings-btn:hover,
+.corner-zone:hover .search-toggle-btn:hover {
+    opacity: 1;
+    transform: scale(var(--scale-lift));
 }
+
+.corner-zone.always-visible .refresh-bg-btn:hover,
+.corner-zone.always-visible .settings-btn:hover,
+.corner-zone.always-visible .search-toggle-btn:hover {
+    opacity: 1;
+    transform: scale(var(--scale-lift));
+}
+
 
 .corner-zone.disabled {
     pointer-events: none;
@@ -4115,23 +3975,22 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     max-width: 200px;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .photo-author:hover {
-        opacity: 1;
-    }
-
-    .download-bg-btn:hover {
-        opacity: 1;
-        background: var(--overlay-medium);
-        transform: scale(var(--scale-lift));
-    }
-
-    .favorite-bg-btn:hover {
-        opacity: 1;
-        background: var(--overlay-medium);
-        transform: scale(var(--scale-lift));
-    }
+.photo-author:hover {
+    opacity: 1;
 }
+
+.download-bg-btn:hover {
+    opacity: 1;
+    background: var(--overlay-medium);
+    transform: scale(var(--scale-lift));
+}
+
+.favorite-bg-btn:hover {
+    opacity: 1;
+    background: var(--overlay-medium);
+    transform: scale(var(--scale-lift));
+}
+
 
 .photo-author:not([href]) {
     pointer-events: none;
@@ -4226,37 +4085,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     }
     100% {
         transform: scale(1);
-    }
-}
-
-@media screen and (max-height: 400px) {
-
-    .corner-top-left,
-    .corner-top-right {
-        padding: var(--space-4);
-        padding-bottom: var(--space-8);
-    }
-
-    .corner-bottom-left,
-    .corner-bottom-right {
-        padding: var(--space-4);
-        padding-top: var(--space-8);
-    }
-
-    .corner-top-left {
-        padding-right: var(--space-8);
-    }
-
-    .corner-top-right {
-        padding-left: var(--space-8);
-    }
-
-    .corner-bottom-left {
-        padding-right: var(--space-8);
-    }
-
-    .corner-bottom-right {
-        padding-left: var(--space-8);
     }
 }
 
@@ -4382,8 +4210,10 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 }
 
 .bookmark-import-btn {
-    padding: var(--space-2) var(--space-5);
-    border-radius: var(--radius-button);
+    width: var(--mac-action-button-width);
+    height: var(--mac-control-height);
+    padding: 0 16px;
+    border-radius: var(--mac-select-radius);
     border: none;
     font-size: var(--text-sm);
     font-weight: var(--font-medium);
@@ -4392,6 +4222,13 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
         background var(--duration-fast) var(--ease-default),
         transform var(--duration-fast) var(--ease-spring),
         opacity var(--duration-fast) var(--ease-default);
+}
+
+.bookmark-import-btn.primary,
+.bookmark-import-btn.secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .bookmark-import-btn.primary {
@@ -4665,13 +4502,17 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 }
 
 .bookmark-option select {
-    padding: var(--space-2) var(--space-3);
+    width: var(--mac-control-width);
+    height: var(--mac-control-height);
+    padding: 0 32px 0 14px;
     background: var(--surface-glass);
     border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
+    border-radius: var(--mac-select-radius);
     color: var(--text-primary);
     font-size: var(--text-sm);
     cursor: pointer;
+    text-align: left;
+    text-align-last: left;
 }
 
 .bookmark-option select:focus {
@@ -5005,8 +4846,11 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     --mac-slider-track-bg: var(--shadow-color-light);
     --mac-slider-fill-bg: var(--mac-accent-color);
     --mac-slider-track-blur: blur(var(--blur-2xs));
-    --mac-select-height: 32px;
-    --mac-select-radius: 8px;
+    --mac-control-height: 34px;
+    --mac-control-width: 104px;
+    --mac-action-button-width: 104px;
+    --mac-select-height: var(--mac-control-height);
+    --mac-select-radius: 10px;
     --mac-select-bg: rgba(0, 0, 0, 0.05);
 
     --mac-transition-fast: 0.15s ease;
@@ -5309,11 +5153,10 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     text-align: left;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .mac-menu-item:hover {
-        background: var(--mac-menu-item-hover-bg);
-    }
+.mac-menu-item:hover {
+    background: var(--mac-menu-item-hover-bg);
 }
+
 
 .mac-menu-item.active {
     background: var(--mac-menu-item-active-bg);
@@ -5526,6 +5369,239 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     min-width: var(--mac-toggle-width);
 }
 
+.mac-about-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.mac-about-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-2) 0 var(--space-5);
+}
+
+.mac-about-header--hero {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: var(--space-3);
+    padding: var(--space-3) 0 var(--space-6);
+}
+
+.mac-about-icon {
+    width: 84px;
+    height: 84px;
+    border-radius: 22%;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+}
+
+.mac-about-header--hero .mac-about-icon {
+    width: 112px;
+    height: 112px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+}
+
+.mac-about-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mac-about-header-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mac-about-header--hero .mac-about-header-copy {
+    align-items: center;
+    gap: 6px;
+}
+
+.mac-about-name {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--mac-text-primary);
+}
+
+.mac-about-header--hero .mac-about-name {
+    font-size: 40px;
+    font-weight: 700;
+}
+
+.mac-about-version {
+    margin: 0;
+    font-size: var(--mac-font-size-sm);
+    color: var(--mac-text-secondary);
+}
+
+.mac-about-sections,
+.mac-about-content .mac-settings-section {
+    width: 100%;
+}
+
+.mac-about-copy-row {
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 0;
+}
+
+.mac-about-description {
+    margin: 0;
+    font-size: var(--mac-font-size-sm);
+    line-height: 1.65;
+    color: var(--mac-text-secondary);
+}
+
+.mac-about-description {
+    text-align: center;
+}
+
+.mac-about-links {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.mac-about-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: var(--mac-text-primary);
+    font-size: var(--mac-font-size-md);
+    border-bottom: 0.5px solid var(--mac-divider-color);
+    transition: background var(--mac-transition-fast);
+}
+
+.mac-about-link-btn:last-child {
+    border-bottom: none;
+}
+
+.mac-about-link-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .mac-about-link-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+
+.mac-about-link-icon {
+    display: block;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--mac-text-secondary);
+}
+
+.mac-about-link-btn span {
+    flex: 1;
+}
+
+.mac-about-link-arrow {
+    flex-shrink: 0;
+    color: var(--mac-text-tertiary);
+}
+
+.mac-keycap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 82px;
+    height: 30px;
+    padding: 0 10px;
+    background: color-mix(in srgb, var(--mac-select-bg) 92%, transparent);
+    border: none;
+    border-radius: 10px;
+    font-family: var(--mac-font-family);
+    font-size: 13px;
+    line-height: 1;
+    font-weight: 550;
+    color: var(--mac-text-primary);
+    box-shadow:
+        inset 0 0 0 0.5px var(--mac-divider-color),
+        0 6px 14px rgba(0, 0, 0, 0.07);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.mac-shortcut-btn {
+    cursor: pointer;
+    transition:
+        background var(--mac-transition-fast),
+        box-shadow var(--mac-transition-fast),
+        transform var(--mac-transition-fast);
+}
+
+.mac-shortcut-btn:hover {
+    background: color-mix(
+        in srgb,
+        var(--mac-select-bg) 84%,
+        var(--mac-accent-color) 16%
+    );
+    transform: translateY(-1px);
+}
+
+
+.mac-shortcut-btn.recording {
+    box-shadow:
+        inset 0 0 0 1px var(--mac-accent-color),
+        0 0 0 3px color-mix(in srgb, var(--mac-accent-color) 18%, transparent);
+}
+
+.mac-about-footer {
+    margin-top: auto;
+    padding-top: var(--space-5);
+    padding-bottom: var(--space-5);
+    border-top: 1px solid var(--mac-divider-color);
+    text-align: center;
+}
+
+.mac-about-footer p {
+    margin: 0;
+    font-size: 11px;
+    color: var(--mac-text-tertiary);
+}
+
+@media (max-width: 640px) {
+    .mac-about-header {
+        align-items: center;
+    }
+
+    .mac-about-icon {
+        width: 72px;
+        height: 72px;
+    }
+
+    .mac-about-header--hero .mac-about-icon {
+        width: 96px;
+        height: 96px;
+    }
+
+    .mac-about-name {
+        font-size: 22px;
+    }
+
+    .mac-about-header--hero .mac-about-name {
+        font-size: 32px;
+    }
+}
+
 .mac-toggle {
     position: relative;
     display: inline-flex;
@@ -5656,11 +5732,10 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .mac-slider-input::-webkit-slider-thumb:hover {
-        transform: scale(1.05);
-    }
+.mac-slider-input::-webkit-slider-thumb:hover {
+    transform: scale(1.05);
 }
+
 
 .mac-slider-input::-webkit-slider-thumb:active {
     cursor: grabbing;
@@ -5684,19 +5759,23 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     position: relative;
     display: inline-flex;
     align-items: center;
+    width: var(--mac-control-width);
 }
 
 .mac-select-input {
     -webkit-appearance: none;
     appearance: none;
+    width: 100%;
     height: var(--mac-select-height);
-    padding: 0 26px 0 10px;
+    padding: 0 32px 0 14px;
     background: var(--mac-select-bg);
     border: none;
     border-radius: var(--mac-select-radius);
     font-family: inherit;
     font-size: var(--mac-font-size-sm);
     color: var(--mac-text-primary);
+    text-align: left;
+    text-align-last: left;
     cursor: pointer;
     transition:
         background-color var(--mac-transition-fast),
@@ -5718,15 +5797,14 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     background-color: #1c1c1e;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .mac-select-input:hover {
-        background: var(--shadow-color-light);
-    }
-
-    [data-theme="dark"] .mac-select-input:hover {
-        background: var(--overlay-highlight);
-    }
+.mac-select-input:hover {
+    background: var(--shadow-color-light);
 }
+
+[data-theme="dark"] .mac-select-input:hover {
+    background: var(--overlay-highlight);
+}
+
 
 .mac-select-input:focus {
     outline: none;
@@ -5756,6 +5834,8 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 .mac-stepper {
     display: flex;
     align-items: center;
+    width: var(--mac-control-width);
+    height: var(--mac-control-height);
     gap: 1px;
     background: var(--mac-select-bg);
     border-radius: var(--mac-select-radius);
@@ -5765,8 +5845,9 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 }
 
 .mac-stepper-btn {
-    width: 26px;
-    height: 24px;
+    width: 28px;
+    height: 100%;
+    flex: 0 0 28px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5810,11 +5891,12 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    height: 28px;
-    padding: 0 14px;
+    height: var(--mac-control-height);
+    min-width: var(--mac-action-button-width);
+    padding: 0 16px;
     background: var(--mac-select-bg);
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--mac-select-radius);
     font-family: inherit;
     font-size: var(--text-sm);
     font-weight: var(--mac-font-weight-medium);
@@ -5868,6 +5950,16 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 [data-theme="dark"] .mac-button--danger:hover {
     background: var(--color-red);
     filter: brightness(1.1);
+}
+
+.mac-button-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.mac-button-group--fixed .mac-button {
+    width: var(--mac-action-button-width);
 }
 
 .mac-color-picker {
@@ -6832,5 +6924,304 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     .refresh-bg-btn.refreshing svg,
     .webdav-sync-status-icon.syncing svg {
         animation: spin 2s linear infinite !important;
+    }
+}
+
+
+.confirm-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+    background: color-mix(in srgb, var(--mac-overlay-bg) 82%, transparent);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity var(--duration-normal) var(--ease-default),
+        visibility var(--duration-normal) var(--ease-default);
+}
+
+.confirm-dialog-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.confirm-dialog {
+    width: min(100%, 460px);
+    background: var(--mac-window-bg);
+    border: 1px solid var(--mac-divider-color);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-elevation-4);
+    color: var(--mac-text-primary);
+    overflow: hidden;
+    transform: translateY(12px) scale(0.98);
+    transition:
+        transform var(--duration-normal) var(--ease-spring),
+        opacity var(--duration-normal) var(--ease-default);
+    opacity: 0;
+}
+
+.confirm-dialog-overlay.active .confirm-dialog {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.confirm-dialog__header,
+.confirm-dialog__content,
+.confirm-dialog__footer {
+    padding-inline: clamp(20px, 4vw, 24px);
+}
+
+.confirm-dialog__header {
+    padding-top: 22px;
+}
+
+.confirm-dialog__header h3 {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--mac-text-primary);
+}
+
+.confirm-dialog__content {
+    padding-top: 18px;
+    padding-bottom: 20px;
+}
+
+.confirm-dialog__message {
+    margin: 0;
+    font-size: var(--text-base);
+    line-height: 1.55;
+    color: var(--mac-text-primary);
+}
+
+.confirm-dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 14px;
+    padding-bottom: 18px;
+    border-top: 1px solid var(--mac-divider-color);
+}
+
+
+.data-page-layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.data-settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.data-settings-section__title {
+    margin: 0;
+    font-size: var(--mac-font-size-xs);
+    font-weight: var(--mac-font-weight-semibold);
+    color: var(--mac-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-settings-section__desc,
+.data-settings-meta {
+    margin: var(--space-1) 0 0;
+    font-size: var(--mac-font-size-sm);
+    line-height: 1.5;
+    color: var(--mac-text-secondary);
+}
+
+.data-settings-section__body {
+    background: color-mix(in srgb, var(--mac-select-bg) 96%, transparent);
+    border-radius: var(--radius-md);
+    box-shadow:
+        inset 0 0 0 0.5px var(--mac-divider-color),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    padding: var(--space-3);
+}
+
+.data-settings-section__body--compact {
+    padding: var(--space-3) var(--space-4);
+}
+
+.data-settings-inline-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 48px;
+}
+
+.data-settings-inline-row__copy {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.data-settings-inline-row__title {
+    font-size: var(--mac-font-size-md);
+    font-weight: var(--mac-font-weight-medium);
+    color: var(--mac-text-primary);
+}
+
+.data-settings-inline-row__desc {
+    font-size: var(--mac-font-size-sm);
+    line-height: 1.45;
+    color: var(--mac-text-secondary);
+}
+
+.data-settings-inline-row__actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.data-settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.data-settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.data-settings-field__label {
+    font-size: var(--mac-font-size-md);
+    font-weight: var(--mac-font-weight-medium);
+    color: var(--mac-text-primary);
+}
+
+.data-settings-field__hint {
+    font-size: var(--mac-font-size-sm);
+    color: var(--mac-text-secondary);
+    line-height: 1.45;
+}
+
+.data-settings-field__control {
+    width: 100%;
+}
+
+.data-settings-field__password {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.data-settings-field__password .data-settings-field__control {
+    flex: 1 1 auto;
+}
+
+.data-settings-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
+}
+
+.data-settings-actions--stacked {
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 0.5px solid var(--mac-divider-color);
+}
+
+.data-settings-actions--stacked .mac-button-group {
+    flex-shrink: 0;
+}
+
+.data-settings-versions {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 0.5px solid var(--mac-divider-color);
+}
+
+.data-settings-versions__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.data-settings-versions__title {
+    margin: 0;
+    font-size: var(--mac-font-size-xs);
+    font-weight: var(--mac-font-weight-semibold);
+    color: var(--mac-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-settings-versions__body {
+    background: color-mix(in srgb, var(--surface-glass) 72%, transparent);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 0.5px var(--mac-divider-color);
+}
+
+@media (max-width: 640px) {
+    .confirm-dialog-overlay {
+        padding: var(--space-4);
+        align-items: flex-end;
+    }
+
+    .confirm-dialog {
+        width: 100%;
+    }
+
+    .confirm-dialog__footer {
+        flex-direction: column-reverse;
+    }
+
+    .confirm-dialog__footer .mac-button {
+        width: 100%;
+    }
+
+    .data-settings-inline-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .data-settings-inline-row__actions {
+        justify-content: stretch;
+    }
+
+    .data-settings-inline-row__actions .mac-button-group {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .data-settings-inline-row__actions .mac-button-group .mac-button {
+        flex: 1 1 0;
+    }
+
+    .data-settings-actions,
+    .data-settings-actions--stacked {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .data-settings-actions .mac-button-group,
+    .data-settings-actions--stacked .mac-button-group {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .data-settings-actions .mac-button-group .mac-button,
+    .data-settings-actions--stacked .mac-button-group .mac-button {
+        flex: 1 1 0;
     }
 }

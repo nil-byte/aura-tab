@@ -39,6 +39,7 @@ class ModalLayerManager {
     #isInteractiveTarget(target) {
         const el = target instanceof Element ? target : null;
         if (!el) return false;
+        if (el.closest('.toast-container, .toast')) return true;
         return Boolean(el.closest(
             'a[href], button, input, select, textarea, label, summary, [role="button"], [role="menuitem"], [role="option"], [role="link"], [contenteditable="true"], [tabindex]:not([tabindex="-1"])'
         ));
@@ -250,12 +251,16 @@ class ModalLayerManager {
             return;
         }
 
+        const target = e.target instanceof Element ? e.target : null;
+        if (target?.closest('.toast-container, .toast')) {
+            return;
+        }
+
         if (this.#modals.size === 0) return;
 
         const { topLevel, topModals } = this.#getTopModals();
         if (topModals.length === 0) return;
 
-        const target = e.target;
         const isInsideAnyTopModal = topModals.some(modal =>
             modal.hitTestElement?.contains(target)
         );

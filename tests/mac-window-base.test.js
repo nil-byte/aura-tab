@@ -36,6 +36,13 @@ function mountWindowDom({ overlayId = 'testOverlay', windowId = 'testWindow' } =
     `);
 }
 
+function mountOpenerButton() {
+    document.body.insertAdjacentHTML('beforeend', `
+        <button type="button" id="opener">Open</button>
+    `);
+    return document.getElementById('opener');
+}
+
 function getZIndex(id) {
     return Number(document.getElementById(id)?.style.zIndex || 0);
 }
@@ -159,5 +166,72 @@ describe('mac-window-base', () => {
 
         firstWindow.destroy();
         secondWindow.destroy();
+    });
+
+    it('restores focus before hiding the overlay from assistive tech', async () => {
+        mountWindowDom();
+        const opener = mountOpenerButton();
+        opener.focus();
+
+        const testWindow = new TestWindow();
+        testWindow.open();
+
+        const overlay = document.getElementById('testOverlay');
+        const closeBtn = overlay.querySelector('.mac-window-btn--close');
+        closeBtn.focus();
+
+        let activeElementWhenHidden = null;
+        const originalSetAttribute = overlay.setAttribute.bind(overlay);
+        overlay.setAttribute = (name, value) => {
+            if (name === 'aria-hidden' && value === 'true') {
+                activeElementWhenHidden = document.activeElement;
+            }
+            return originalSetAttribute(name, value);
+        };
+
+        testWindow.close();
+
+        expect(activeElementWhenHidden).toBe(opener);
+        expect(overlay.contains(activeElementWhenHidden)).toBe(false);
+    });
+
+    it('restores opener focus even if focus already left the overlay before close', () => {
+        mountWindowDom();
+        const opener = mountOpenerButton();
+        const outside = document.createElement('button');
+        outside.type = 'button';
+        outside.id = 'outside';
+        document.body.appendChild(outside);
+        opener.focus();
+
+        const testWindow = new TestWindow();
+        testWindow.open();
+
+        outside.focus();
+        testWindow.close();
+
+        expect(document.activeElement).toBe(opener);
+    });
+
+    it('falls back to another safe control when opener was removed before close', () => {
+        mountWindowDom();
+        const opener = mountOpenerButton();
+        const fallback = document.createElement('button');
+        fallback.type = 'button';
+        fallback.id = 'fallback';
+        document.body.appendChild(fallback);
+        opener.focus();
+
+        const testWindow = new TestWindow();
+        testWindow.open();
+
+        const overlay = document.getElementById('testOverlay');
+        const closeBtn = overlay.querySelector('.mac-window-btn--close');
+        closeBtn.focus();
+        opener.remove();
+
+        testWindow.close();
+
+        expect(document.activeElement).toBe(fallback);
     });
 });

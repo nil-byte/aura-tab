@@ -66,11 +66,9 @@
     transform: scale(var(--scale-press));
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .photos-header-btn:hover {
-        background: var(--mac-item-hover);
-        color: var(--mac-text-primary);
-    }
+.photos-header-btn:hover {
+    background: var(--mac-item-hover);
+    color: var(--mac-text-primary);
 }
 
 .photos-header-btn svg {
@@ -123,22 +121,20 @@
     transform: scale(var(--scale-press));
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .photos-card:hover {
-        transform: scale(1.03);
-    }
+.photos-card:hover {
+    transform: scale(1.03);
+}
 
-    .photos-card.is-loaded:hover .photos-card-img {
-        transform: scale(1.05);
-    }
+.photos-card.is-loaded:hover .photos-card-img {
+    transform: scale(1.05);
+}
 
-    .photos-card:hover .photos-card-img {
-        transform: scale(1.05);
-    }
+.photos-card:hover .photos-card-img {
+    transform: scale(1.05);
+}
 
-    .photos-card:hover .photos-card-overlay {
-        opacity: 1;
-    }
+.photos-card:hover .photos-card-overlay {
+    opacity: 1;
 }
 
 .photos-card-image {
@@ -251,15 +247,13 @@
         transform var(--mac-transition-fast);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .photos-card-btn:hover {
-        background: transparent;
-        transform: scale(1.1);
-    }
+.photos-card-btn:hover {
+    background: transparent;
+    transform: scale(1.1);
+}
 
-    .photos-card-btn--favorite:hover {
-        background: transparent;
-    }
+.photos-card-btn--favorite:hover {
+    background: transparent;
 }
 
 .photos-card-btn--local.is-active {
@@ -325,11 +319,18 @@
 }
 
 .photos-empty-icon {
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: var(--space-4);
     opacity: 0.4;
 }
 
 .photos-empty-icon svg {
+    width: 64px;
+    height: 64px;
     stroke: var(--mac-text-tertiary);
 }
 
@@ -383,8 +384,6 @@
 /* ========== Photos Window Responsive ========== */
 
 @media (max-width: 768px) {
-    /* Other inherited base styles */
-
     .photos-gallery {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: var(--space-3);
@@ -466,11 +465,9 @@
         color 0.15s ease;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .immersive-close-corner:hover {
-        opacity: 1;
-        color: rgba(255, 255, 255, 0.9);
-    }
+.immersive-close-corner:hover {
+    opacity: 1;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .immersive-close-corner:active {
@@ -817,64 +814,35 @@
     }
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-    .immersive-toolbar {
-        bottom: var(--space-5);
-        padding: 6px var(--space-3);
-        gap: var(--space-1);
-        min-width: 280px;
-    }
-
-    .photos-immersive-viewer {
-        --viewer-action-size: 36px;
-    }
-
-    .immersive-nav {
-        width: 32px;
-        height: 32px;
-    }
-
-    .immersive-close-corner {
-        top: var(--space-3);
-        right: var(--space-3);
-        width: 28px;
-        height: 28px;
-    }
-
-    .immersive-info-panel {
-        bottom: 80px;
-        min-width: 240px;
-        max-width: calc(100vw - 40px);
-        padding: var(--space-3) var(--space-4);
-    }
-
-    .immersive-counter {
-        display: none;
-    }
-}
-
-/* ============================================================
-   Photos Storage Stats UI
-   Apple minimalist style: simple progress bar + usage display
-   ============================================================ */
-
 .photos-storage-stats {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: var(--space-3) var(--space-3) 14px;
-    margin: var(--space-2) var(--space-2) var(--space-3);
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: var(--radius-sm);
-    border: 0.5px solid rgba(255, 255, 255, 0.06);
-    position: relative;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 8px 10px;
+    margin: auto var(--space-2) var(--space-3);
+    color: var(--mac-text-secondary);
+    border-radius: 12px;
+    opacity: 0.68;
+    transition:
+        opacity 0.15s ease,
+        background-color 0.15s ease;
 }
 
-.photos-storage-header {
-    display: flex;
+.photos-storage-stats:focus-within {
+    opacity: 1;
+}
+
+.photos-storage-stats:hover {
+    background: rgba(255, 255, 255, 0.025);
+    opacity: 1;
+}
+
+.photos-storage-meta {
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    min-width: 0;
 }
 
 .photos-storage-icon {
@@ -883,99 +851,71 @@
     justify-content: center;
     width: 16px;
     height: 16px;
-    color: var(--mac-text-tertiary);
+    color: currentColor;
 }
 
 .photos-storage-icon svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
 }
 
 .photos-storage-title {
     font-size: var(--mac-font-size-xs);
-    font-weight: var(--mac-font-weight-medium);
-    color: var(--mac-text-secondary);
-    letter-spacing: 0.02em;
-}
-
-.photos-storage-bar {
-    height: 4px;
-    background: var(--surface-glass);
-    border-radius: var(--radius-2xs);
-    overflow: hidden;
-}
-
-.photos-storage-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #30D158, #34C759);
-    border-radius: var(--radius-2xs);
-    transition: width 0.3s ease-out;
-}
-
-.photos-storage-bar-fill.is-warning {
-    background: linear-gradient(90deg, #FFD60A, #FF9F0A);
-}
-
-.photos-storage-bar-fill.is-danger {
-    background: linear-gradient(90deg, #FF453A, #FF6961);
-}
-
-.photos-storage-info {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    font-size: var(--text-xs);
-    color: var(--mac-text-tertiary);
+    font-weight: 500;
+    color: currentColor;
+    letter-spacing: 0.04em;
 }
 
 .photos-storage-used {
-    font-weight: var(--mac-font-weight-medium);
-    color: var(--mac-text-secondary);
-}
-
-.photos-storage-total {
-    font-weight: var(--mac-font-weight-normal);
+    font-size: var(--mac-font-size-xs);
+    line-height: 1;
+    font-weight: 500;
+    color: var(--mac-text-tertiary);
+    font-variant-numeric: tabular-nums;
 }
 
 .photos-storage-clear {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 22px;
-    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: none;
+    width: 24px;
+    height: 24px;
+    border: 0;
     background: transparent;
-    color: var(--mac-text-quaternary);
-    border-radius: var(--radius-xs);
+    color: currentColor;
+    border-radius: 8px;
     cursor: pointer;
-    opacity: 0;
     transition:
-        opacity 0.15s ease,
+        transform 0.15s ease,
         background-color 0.15s ease,
         color 0.15s ease;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .photos-storage-stats:hover .photos-storage-clear {
-        opacity: 1;
-    }
-
-    .photos-storage-clear:hover {
-        background: var(--surface-glass);
-        color: var(--mac-text-secondary);
-    }
+.photos-storage-clear:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--mac-text-primary);
+    transform: translateY(-1px);
 }
 
 .photos-storage-clear:active {
-    background: var(--surface-glass-hover);
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(var(--scale-press));
 }
 
 .photos-storage-clear svg {
     width: 12px;
     height: 12px;
+}
+
+.mac-menu-item-icon--bing {
+    width: 18px;
+    height: 18px;
+}
+
+.mac-menu-item-icon--bing svg {
+    width: 13px;
+    height: 13px;
+    color: currentColor;
 }
 
 @media (prefers-reduced-motion: reduce) {

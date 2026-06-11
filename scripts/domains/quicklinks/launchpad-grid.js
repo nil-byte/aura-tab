@@ -334,39 +334,26 @@ const launchpadGridMethods = {
         this._goToPage(this._state.currentPage + direction);
     },
 
-    _setupSwipeGesture() {
-        if (!this._dom.container) return;
-        this._teardownSwipeGesture();
-        this._swipeStartRemover = this._events.add(this._dom.container, 'touchstart', this._boundHandlers.touchStart, { passive: true });
-        this._swipeEndRemover = this._events.add(this._dom.container, 'touchend', this._boundHandlers.touchEnd, { passive: true });
-    },
-
-    _teardownSwipeGesture() {
-        if (this._swipeStartRemover) {
-            this._swipeStartRemover();
-            this._swipeStartRemover = null;
-        }
-        if (this._swipeEndRemover) {
-            this._swipeEndRemover();
-            this._swipeEndRemover = null;
-        }
-    },
-
     _handleTouchStart(e) {
-        if (e.touches.length > 0) {
-            this._swipeState.startX = e.touches[0].clientX;
-            this._swipeState.startY = e.touches[0].clientY;
-        }
+        if (this._state.isDestroyed || !this._state.isOpen || this._dragState.isDragging || this._state.isSearching) return;
+        if (e.touches.length === 0) return;
+
+        this._swipeState.startX = e.touches[0].clientX;
+        this._swipeState.startY = e.touches[0].clientY;
     },
 
     _handleTouchEnd(e) {
-        if (this._state.isDestroyed || this._dragState.isDragging || this._state.isSearching) return;
+        if (this._state.isDestroyed || !this._state.isOpen || this._dragState.isDragging || this._state.isSearching) return;
+        if (store.getPageCount() <= 1) return;
         if (e.changedTouches.length === 0) return;
 
         const endX = e.changedTouches[0].clientX;
         const endY = e.changedTouches[0].clientY;
         const deltaX = endX - this._swipeState.startX;
         const deltaY = Math.abs(endY - this._swipeState.startY);
+
+        this._swipeState.startX = 0;
+        this._swipeState.startY = 0;
 
         if (Math.abs(deltaX) > this._config.SWIPE.threshold && deltaY < this._config.SWIPE.maxDeltaY) {
             this._goToPage(this._state.currentPage + (deltaX < 0 ? 1 : -1));

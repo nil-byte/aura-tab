@@ -1,7 +1,7 @@
 import { MacWindowBase } from '../../platform/mac-window-base.js';
 import { t, initHtmlI18n } from '../../platform/i18n.js';
 import { toast } from '../../shared/toast.js';
-import { assetsStore, ASSETS_CONFIG } from '../backgrounds/assets-store.js';
+import { assetsStore } from '../backgrounds/assets-store.js';
 import { ICONS } from './icons.js';
 import { favoriteToWallpaperItem, libraryRemoteToWallpaperItem } from './mappers.js';
 import { ImmersiveViewer } from './immersive-viewer.js';
@@ -27,9 +27,10 @@ function renderRemoteProviderMenuItemsHtml() {
         const meta = REMOTE_PROVIDER_META[provider];
         const labelAttrs = meta?.i18nKey ? ` data-i18n="${meta.i18nKey}"` : '';
         const icon = ICONS[meta?.icon] || ICONS.image;
+        const iconClass = provider === 'bing' ? ' mac-menu-item-icon--bing' : '';
         return `
                     <button class="mac-menu-item" data-category="${provider}" role="tab">
-                        <span class="mac-menu-item-icon">${icon}</span>
+                        <span class="mac-menu-item-icon${iconClass}">${icon}</span>
                         <span class="mac-menu-item-label"${labelAttrs}>${meta?.label || provider}</span>
                         <span class="mac-menu-item-count" id="count-${provider}"></span>
                     </button>`;
@@ -479,18 +480,12 @@ export class PhotosWindow extends MacWindowBase {
                 </nav>
                 <!-- Storage Stats (Apple Minimalist Style) -->
                 <div class="photos-storage-stats" id="photosStorageStats">
-                    <div class="photos-storage-header">
+                    <div class="photos-storage-meta">
                         <span class="photos-storage-icon">${ICONS.storage}</span>
                         <span class="photos-storage-title" data-i18n="photosStorageCache">Cache</span>
-                    </div>
-                    <div class="photos-storage-bar">
-                        <div class="photos-storage-bar-fill" id="photosStorageBarFill" style="width: 0%"></div>
-                    </div>
-                    <div class="photos-storage-info">
                         <span class="photos-storage-used" id="photosStorageUsed">0 MB</span>
-                        <span class="photos-storage-total" id="photosStorageTotal">/ 0 MB</span>
                     </div>
-                    <button type="button" class="photos-storage-clear" id="photosStorageClear" data-i18n="photosStorageClear" data-i18n-attr="title" title="Clear Cache">
+                    <button type="button" class="photos-storage-clear" id="photosStorageClear" data-i18n="photosStorageClear" data-i18n-attr="title" title="Clear Cache" aria-label="Clear Cache">
                         ${ICONS.trash}
                     </button>
                 </div>
@@ -847,13 +842,13 @@ export class PhotosWindow extends MacWindowBase {
         hint.className = 'photos-empty-hint';
         wrap.appendChild(icon);
         wrap.appendChild(title);
+        icon.innerHTML = this._getEmptyStateIcon(category);
         switch (category) {
             case 'favorites':
             case 'unsplash':
             case 'pixabay':
             case 'pexels':
             case 'bing':
-                icon.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path></svg>';
                 title.dataset.i18n = 'photosNoFavorites';
                 title.textContent = t('photosNoFavorites') || 'No favorites yet';
                 hint.dataset.i18n = 'photosNoFavoritesHint';
@@ -861,7 +856,6 @@ export class PhotosWindow extends MacWindowBase {
                 if (hint.textContent) wrap.appendChild(hint);
                 break;
             case 'local':
-                icon.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line></svg>';
                 title.dataset.i18n = 'photosNoLocalFiles';
                 title.textContent = t('photosNoLocalFiles') || 'No local files';
                 hint.dataset.i18n = 'photosNoLocalFilesHint';
@@ -870,7 +864,6 @@ export class PhotosWindow extends MacWindowBase {
                 break;
             case 'all':
             default:
-                icon.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>';
                 title.dataset.i18n = 'photosNoItems';
                 title.textContent = t('photosNoItems') || 'No items';
                 hint.dataset.i18n = 'photosNoItemsHint';
@@ -879,6 +872,25 @@ export class PhotosWindow extends MacWindowBase {
                 break;
         }
         this._photosBody.appendChild(wrap);
+    }
+    _getEmptyStateIcon(category) {
+        switch (category) {
+            case 'unsplash':
+                return ICONS.camera;
+            case 'pixabay':
+                return ICONS.image;
+            case 'pexels':
+                return ICONS.pexels;
+            case 'bing':
+                return ICONS.bing;
+            case 'favorites':
+                return ICONS.heart;
+            case 'local':
+                return ICONS.cloud;
+            case 'all':
+            default:
+                return ICONS.grid;
+        }
     }
     _favoriteToWallpaperItem(fav) {
         return favoriteToWallpaperItem(fav, {
@@ -1639,25 +1651,9 @@ export class PhotosWindow extends MacWindowBase {
         try {
             const stats = await assetsStore.getStats();
             const totalSize = stats.thumbnailSize + stats.fullSize;
-            const maxSize = ASSETS_CONFIG.fullImage.maxCacheSize;
-            const percentage = Math.min((totalSize / maxSize) * 100, 100);
-            const barFill = this._window?.querySelector('#photosStorageBarFill');
-            if (barFill) {
-                barFill.style.width = `${percentage}%`;
-                barFill.classList.remove('is-warning', 'is-danger');
-                if (percentage >= 90) {
-                    barFill.classList.add('is-danger');
-                } else if (percentage >= 70) {
-                    barFill.classList.add('is-warning');
-                }
-            }
             const usedEl = this._window?.querySelector('#photosStorageUsed');
             if (usedEl) {
                 usedEl.textContent = this._formatBytes(totalSize);
-            }
-            const totalEl = this._window?.querySelector('#photosStorageTotal');
-            if (totalEl) {
-                totalEl.textContent = `/ ${this._formatBytes(maxSize)}`;
             }
             const statsEl = this._window?.querySelector('#photosStorageStats');
             if (statsEl) statsEl.style.display = '';

@@ -1,5 +1,5 @@
-
 import { t } from '../../platform/i18n.js';
+import { confirmDialog } from '../../shared/confirm-dialog.js';
 import { escapeHtml } from '../../shared/text.js';
 
 let _linkManagerInstance = null;
@@ -8,151 +8,143 @@ let _backupProtectionOverlay = null;
 let _backupProtectionBeforeUnload = null;
 
 export function registerDataContent(window) {
-    window.registerContentRenderer('data', async (container) => {
+    window.registerContentRenderer('data', async (container, context = {}) => {
         container.innerHTML = `
-            <div class="mac-settings-section">
-                <h3 class="mac-settings-section-title" data-i18n="linkManagerTitle"></h3>
-                <div class="mac-settings-section-content">
-                    <div id="linkManagerContainer"></div>
-                </div>
-            </div>
+            <div class="data-page-layout">
+                <section class="data-settings-section data-settings-section--manager">
+                    <div class="data-settings-section__header">
+                        <h3 class="data-settings-section__title" data-i18n="linkManagerTitle"></h3>
+                        <p class="data-settings-section__desc" data-i18n="linkManagerSectionDesc"></p>
+                    </div>
+                    <div class="data-settings-section__body">
+                        <div id="linkManagerContainer"></div>
+                    </div>
+                </section>
 
-            <div class="mac-settings-section">
-                <h3 class="mac-settings-section-title" data-i18n="settingsDataSection"></h3>
-                <div class="mac-settings-section-content">
-                    <div class="mac-settings-row">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title" data-i18n="settingsDataImportExport"></span>
-                            <span class="mac-settings-row-desc" data-i18n="macSettingsDataDescV2"></span>
-                        </div>
-                        <div class="mac-settings-row-control" style="display: flex; gap: 8px;">
-                            <button class="mac-button" id="macExportData" data-i18n="settingsDataExport"></button>
-                            <button class="mac-button mac-button--primary" id="macImportData" data-i18n="settingsDataImport"></button>
-                            <input type="file" id="macImportDataFileInput" accept=".zip,application/zip" style="display: none;">
+                <section class="data-settings-section data-settings-section--local">
+                    <div class="data-settings-section__header">
+                        <h3 class="data-settings-section__title" data-i18n="localBackupSection"></h3>
                     </div>
-                </div>
-            </div>
-
-            <div class="mac-settings-section">
-                <h3 class="mac-settings-section-title" data-i18n="settingsQuicklinksSection"></h3>
-                <div class="mac-settings-section-content">
-                    <div class="mac-settings-row">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title" data-i18n="macSettingsLinksImportExport"></span>
-                            <span class="mac-settings-row-desc" data-i18n="macSettingsLinksDesc"></span>
-                        </div>
-                        <div class="mac-settings-row-control" style="display: flex; gap: 8px;">
-                            <button class="mac-button" id="macExportLinks" data-i18n="linkExportBtn"></button>
-                            <button class="mac-button mac-button--primary" id="macImportBookmarks" data-i18n="bookmarkImportBtn"></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mac-settings-section webdav-config-section">
-                <h3 class="mac-settings-section-title" data-i18n="webdavBackupSection"></h3>
-                <div class="mac-settings-section-content">
-                    <div class="mac-settings-row">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title" data-i18n="webdavServerUrl"></span>
-                            <span class="mac-settings-row-desc" data-i18n="webdavServerUrlDesc"></span>
-                        </div>
-                        <div class="mac-settings-row-control">
-                            <input type="url" class="mac-input" id="webdavServerUrl" 
-                                   placeholder="https://dav.example.com/" style="width: 240px;">
-                        </div>
-                    </div>
-                    <div class="mac-settings-row">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title" data-i18n="webdavRemoteDir"></span>
-                            <span class="mac-settings-row-desc" data-i18n="webdavRemoteDirDesc"></span>
-                        </div>
-                        <div class="mac-settings-row-control">
-                            <input type="text" class="mac-input" id="webdavRemoteDir" 
-                                   placeholder="AuraTabBackups" style="width: 200px;">
-                        </div>
-                    </div>
-                    <div class="mac-settings-row">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title" data-i18n="webdavUsername"></span>
-                        </div>
-                        <div class="mac-settings-row-control">
-                            <input type="text" class="mac-input" id="webdavUsername" 
-                                   placeholder="" style="width: 200px;">
-                        </div>
-                    </div>
-                    <div class="mac-settings-row">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title" data-i18n="webdavPassword"></span>
-                            <span class="mac-settings-row-desc" data-i18n="webdavPasswordDesc"></span>
-                        </div>
-                        <div class="mac-settings-row-control">
-                            <div class="mac-input-with-button" style="display: flex; align-items: center; gap: 8px;">
-                                <input type="password" class="mac-input" id="webdavPassword" 
-                                       placeholder="" style="width: 160px;">
-                                <button class="mac-icon-button password-toggle-btn" id="webdavPasswordToggle" type="button" title="Show/Hide Password">
-                                    <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                    <svg class="eye-off-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                                    </svg>
-                                </button>
+                    <div class="data-settings-section__body data-settings-section__body--compact">
+                        <div class="data-settings-inline-row">
+                            <div class="data-settings-inline-row__copy">
+                                <span class="data-settings-inline-row__title" data-i18n="settingsDataImportExport"></span>
+                                <span class="data-settings-inline-row__desc" data-i18n="macSettingsDataDesc"></span>
+                            </div>
+                            <div class="data-settings-inline-row__actions">
+                                <div class="mac-button-group mac-button-group--fixed">
+                                    <button class="mac-button" id="macExportData" data-i18n="settingsDataExport"></button>
+                                    <button class="mac-button mac-button--primary" id="macImportData" data-i18n="settingsDataImport"></button>
+                                </div>
+                                <input type="file" id="macImportDataFileInput" accept=".zip,application/zip" style="display: none;">
                             </div>
                         </div>
                     </div>
-                    <div class="mac-settings-row webdav-actions">
-                        <div class="mac-settings-row-label"></div>
-                        <div class="mac-settings-row-control" style="display: flex; gap: 10px;">
-                            <button class="mac-button" id="webdavTestConnection" data-i18n="webdavTestConnection"></button>
-                            <button class="mac-button mac-button--primary" id="webdavBackupNow" data-i18n="webdavBackupNow"></button>
+                </section>
+
+                <section class="data-settings-section data-settings-section--bookmarks">
+                    <div class="data-settings-section__header">
+                        <h3 class="data-settings-section__title" data-i18n="settingsQuicklinksSection"></h3>
+                    </div>
+                    <div class="data-settings-section__body data-settings-section__body--compact">
+                        <div class="data-settings-inline-row">
+                            <div class="data-settings-inline-row__copy">
+                                <span class="data-settings-inline-row__title" data-i18n="macSettingsLinksImportExport"></span>
+                                <span class="data-settings-inline-row__desc" data-i18n="macSettingsLinksDesc"></span>
+                            </div>
+                            <div class="data-settings-inline-row__actions">
+                                <div class="mac-button-group mac-button-group--fixed">
+                                    <button class="mac-button" id="macExportLinks" data-i18n="linkExportBtn"></button>
+                                    <button class="mac-button mac-button--primary" id="macImportBookmarks" data-i18n="bookmarkImportBtn"></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="mac-settings-section webdav-versions-section" id="webdavVersionsSection" style="display: none;">
-                <div class="mac-settings-section-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <h3 class="mac-settings-section-title" data-i18n="webdavVersionListTitle" style="margin-bottom: 0;"></h3>
-                    <button class="mac-icon-button" id="webdavRefreshList" title="Refresh">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M23 4v6h-6"></path>
-                            <path d="M1 20v-6h6"></path>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div class="mac-settings-section-content">
-                    <div class="webdav-versions-list" id="webdavVersionsList">
-                        <div class="webdav-loading">
-                            <div class="webdav-loading-spinner"></div>
+                <section class="data-settings-section data-settings-section--cloud">
+                    <div class="data-settings-section__header">
+                        <h3 class="data-settings-section__title" data-i18n="webdavBackupSection"></h3>
+                        <p class="data-settings-section__desc" data-i18n="webdavBackupSectionDesc"></p>
+                    </div>
+
+                    <div class="data-settings-section__body">
+                        <div class="data-settings-form">
+                            <label class="data-settings-field">
+                                <span class="data-settings-field__label" data-i18n="webdavServerUrl"></span>
+                                <span class="data-settings-field__hint" data-i18n="webdavServerUrlDesc"></span>
+                                <input type="url" class="mac-input data-settings-field__control" id="webdavServerUrl" placeholder="https://dav.example.com/">
+                            </label>
+
+                            <label class="data-settings-field">
+                                <span class="data-settings-field__label" data-i18n="webdavRemoteDir"></span>
+                                <span class="data-settings-field__hint" data-i18n="webdavRemoteDirDesc"></span>
+                                <input type="text" class="mac-input data-settings-field__control" id="webdavRemoteDir" placeholder="AuraTabBackups">
+                            </label>
+
+                            <label class="data-settings-field">
+                                <span class="data-settings-field__label" data-i18n="webdavUsername"></span>
+                                <input type="text" class="mac-input data-settings-field__control" id="webdavUsername" placeholder="">
+                            </label>
+
+                            <div class="data-settings-field">
+                                <span class="data-settings-field__label" data-i18n="webdavPassword"></span>
+                                <span class="data-settings-field__hint" data-i18n="webdavPasswordDesc"></span>
+                                <div class="data-settings-field__password">
+                                    <input type="password" class="mac-input data-settings-field__control" id="webdavPassword" placeholder="">
+                                    <button class="mac-icon-button password-toggle-btn" id="webdavPasswordToggle" type="button" title="Show/Hide Password">
+                                        <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                        <svg class="eye-off-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="data-settings-actions data-settings-actions--stacked">
+                            <span class="data-settings-meta" data-i18n="webdavCredentialsLocalHint"></span>
+                            <div class="mac-button-group mac-button-group--fixed">
+                                <button class="mac-button" id="webdavTestConnection" data-i18n="webdavTestConnection"></button>
+                                <button class="mac-button mac-button--primary" id="webdavBackupNow" data-i18n="webdavBackupNow"></button>
+                            </div>
+                        </div>
+
+                        <div class="data-settings-versions" id="webdavVersionsSection" style="display: none;">
+                            <div class="data-settings-versions__header">
+                                <h4 class="data-settings-versions__title" data-i18n="webdavVersionListTitle"></h4>
+                                <button class="mac-icon-button" id="webdavRefreshList" title="Refresh">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M23 4v6h-6"></path>
+                                        <path d="M1 20v-6h6"></path>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="data-settings-versions__body">
+                                <div class="webdav-versions-list" id="webdavVersionsList">
+                                    <div class="webdav-loading">
+                                        <div class="webdav-loading-spinner"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="mac-settings-section">
-                <h3 class="mac-settings-section-title" data-i18n="settingsPrivacySection"></h3>
-                <div class="mac-settings-section-content">
-                    <div class="mac-settings-row" style="flex-direction: column; align-items: flex-start;">
-                        <p class="mac-settings-row-desc" style="margin: 0; line-height: 1.6;">
-                            <span data-i18n="settingsPrivacyText"></span>
-                            <a href="https://nil-byte.github.io/aura-tab-privacy-policy/" target="_blank" rel="noopener noreferrer" data-i18n="settingsPrivacyLink" style="color: var(--mac-accent-color);"></a>
-                        </p>
-                    </div>
-                </div>
+                </section>
             </div>
         `;
 
         _bindDataEvents(container, window);
 
-        await _initLinkManager(container);
+        await _initLinkManager(container, context);
     });
 }
 
-async function _initLinkManager(container) {
+async function _initLinkManager(container, context = {}) {
     const managerContainer = container.querySelector('#linkManagerContainer');
     if (!managerContainer) return;
 
@@ -163,8 +155,10 @@ async function _initLinkManager(container) {
 
     try {
         const { LinkManagerComponent } = await import('../quicklinks/link-manager.js');
+        if (context.isCurrent && !context.isCurrent()) return;
         _linkManagerInstance = new LinkManagerComponent(managerContainer);
     } catch (error) {
+        if (context.isCurrent && !context.isCurrent()) return;
         console.error('[DataSettings] Failed to init Link Manager:', error);
         managerContainer.innerHTML = `<p style="color: var(--text-tertiary); font-size: 13px;">${t('linkManagerLoadError') || 'Failed to load link manager'}</p>`;
     }
@@ -264,7 +258,7 @@ async function _handleImportData(e) {
         return;
     }
 
-    const confirmed = globalThis.confirm(t('importConfirm'));
+    const confirmed = await confirmDialog(t('importConfirm'));
     if (!confirmed) return;
 
     try {
@@ -604,7 +598,10 @@ function _renderVersionsList(container, files) {
 async function _handleWebDAVRestore(container, filename) {
     const { toast } = await import('../../shared/toast.js');
 
-    const confirmed = globalThis.confirm(t('webdavRestoreConfirm') || 'Restore will overwrite all current data, continue?');
+    const confirmed = await confirmDialog(
+        t('webdavRestoreConfirm') || 'Restore will overwrite all current data, continue?',
+        { confirmLabel: t('webdavRestore') || 'Restore' }
+    );
     if (!confirmed) return;
 
     const config = _getWebDAVConfigFromForm(container);
@@ -658,7 +655,13 @@ async function _handleWebDAVRestore(container, filename) {
 async function _handleWebDAVDelete(container, filename) {
     const { toast } = await import('../../shared/toast.js');
 
-    const confirmed = globalThis.confirm(t('webdavDeleteConfirm') || 'Are you sure you want to delete this backup version?');
+    const confirmed = await confirmDialog(
+        t('webdavDeleteConfirm') || 'Are you sure you want to delete this backup version?',
+        {
+            confirmLabel: t('webdavDelete') || 'Delete',
+            confirmVariant: 'danger',
+        }
+    );
     if (!confirmed) return;
 
     const config = _getWebDAVConfigFromForm(container);

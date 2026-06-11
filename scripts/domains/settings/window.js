@@ -75,6 +75,7 @@ export class MacSettingsWindow extends MacWindowBase {
 
         // Content renderer mapping
         this._contentRenderers = new Map();
+        this._renderSequence = 0;
 
         // Initialize
         this._init();
@@ -108,7 +109,9 @@ export class MacSettingsWindow extends MacWindowBase {
         this._renderContent(this._selectedMenu);
     }
 
-    _onAfterClose() {}
+    _onAfterClose() {
+        this._renderSequence += 1;
+    }
 
     _resetState() {
         this._selectedMenu = 'general';
@@ -236,18 +239,52 @@ export class MacSettingsWindow extends MacWindowBase {
     _renderContent(menuKey) {
         const container = this._window?.querySelector('#macSettingsContentBody');
         if (!container) return;
-        container.innerHTML = '';
+        const renderId = ++this._renderSequence;
+        const renderRoot = document.createElement('div');
+        renderRoot.className = 'mac-settings-render-root';
+        renderRoot.style.display = 'contents';
+        container.replaceChildren(renderRoot);
+        const isCurrent = () => (
+            renderId === this._renderSequence &&
+            this._selectedMenu === menuKey &&
+            renderRoot.isConnected
+        );
         const renderer = this._contentRenderers.get(menuKey);
         if (renderer) {
-            renderer(container);
+            const context = { menuKey, isCurrent };
+            const finish = () => {
+                if (isCurrent()) {
+                    initHtmlI18n(renderRoot);
+                }
+            };
+            const fail = (error) => {
+                if (!isCurrent()) return;
+                console.error('[MacSettingsWindow] Failed to render settings content:', error);
+                renderRoot.innerHTML = `
+                    <div class="mac-settings-placeholder">
+                        <p>${t('macSettingsContentLoadError') || 'Failed to load settings content'}</p>
+                    </div>
+                `;
+                initHtmlI18n(renderRoot);
+            };
+            try {
+                const result = renderer(renderRoot, context);
+                if (result && typeof result.then === 'function') {
+                    result.then(finish).catch(fail);
+                } else {
+                    finish();
+                }
+            } catch (error) {
+                fail(error);
+            }
         } else {
-            container.innerHTML = `
+            renderRoot.innerHTML = `
                 <div class="mac-settings-placeholder">
                     <p>${t('macSettingsContentPlaceholder') || 'Content for ' + menuKey}</p>
                 </div>
             `;
+            initHtmlI18n(renderRoot);
         }
-        initHtmlI18n(container);
     }
 }
 

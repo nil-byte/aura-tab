@@ -355,9 +355,7 @@ class Dock extends DisposableComponent {
                     if (this.isDestroyed || !this.container || this._magnifierLocked) return;
                     if (this.container.classList.contains('magnify-off')) return;
                     const sourceEvent = originalEvent || evt?.originalEvent;
-                    const moveX = sourceEvent
-                        ? (sourceEvent.clientX ?? sourceEvent.touches?.[0]?.clientX ?? sourceEvent.changedTouches?.[0]?.clientX)
-                        : null;
+                    const moveX = sourceEvent ? sourceEvent.clientX : null;
                     if (!Number.isFinite(moveX)) return;
                     this._timers.clearTimeout('magnifierLeaveDelay');
                     this._magnifierCleanupAfterSettle = false;
@@ -374,7 +372,7 @@ class Dock extends DisposableComponent {
                     this.list?.classList.remove('in-drag');
                     document.body.classList.remove('app-dragging');
                     const orig = evt?.originalEvent;
-                    const endX = orig ? (orig.clientX ?? orig.touches?.[0]?.clientX ?? orig.changedTouches?.[0]?.clientX) : null;
+                    const endX = orig ? orig.clientX : null;
                     if (Number.isFinite(endX)) {
                         this._timers.clearTimeout('magnifierLeaveDelay');
                         this._magnifierCleanupAfterSettle = false;
@@ -511,7 +509,7 @@ class Dock extends DisposableComponent {
         const handlePointerMove = (e) => {
             if (this.isDestroyed) return;
             if (this.container?.classList.contains('magnify-off')) return;
-            const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX;
+            const clientX = e.clientX;
             if (!Number.isFinite(clientX)) return;
             cancelPendingLeave();
             this._magnifierCleanupAfterSettle = false;
@@ -530,8 +528,6 @@ class Dock extends DisposableComponent {
             this._scheduleMagnifierAnchorRefresh();
         });
         this._events.add(this.container, 'mousemove', handlePointerMove);
-        this._events.add(this.container, 'touchmove', handlePointerMove, { passive: true });
-        this._events.add(this.container, 'touchstart', handlePointerMove, { passive: true });
         const handlePointerLeave = () => {
             if (this.isDestroyed || this._magnifierLocked) return;
             if (this._dragState?.isDragging) return;
@@ -545,8 +541,6 @@ class Dock extends DisposableComponent {
             }, DEFAULTS.MAGNIFIER.leaveDelayMs);
         };
         this._events.add(this.container, 'mouseleave', handlePointerLeave);
-        this._events.add(this.container, 'touchend', handlePointerLeave, { passive: true });
-        this._events.add(this.container, 'touchcancel', handlePointerLeave, { passive: true });
         this._events.add(window, 'resize', () => {
             this._scheduleMagnifierAnchorRefresh();
         }, { passive: true });

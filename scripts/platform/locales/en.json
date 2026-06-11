@@ -214,6 +214,7 @@
     "settingsLaunchpadDensity": "Launchpad layout density",
     "settingsLaunchpadColumns": "Cols",
     "settingsLaunchpadRows": "Rows",
+    "macSettingsResources": "Resources",
     "settingsPrivacySection": "Privacy",
     "settingsPrivacyText": "This extension only saves settings locally and does not upload any data. See ",
     "settingsPrivacyLink": "Privacy Policy",
@@ -393,5 +394,11 @@
     "toastFolderCreated": "Folder created",
     "toastFolderDissolved": "Folder ungrouped",
     "aboutLinkGitHub": "GitHub",
-    "aboutLinkHomepage": "Home"
+    "aboutLinkHomepage": "Home",
+    "aboutLinkPrivacy": "Privacy Policy",
+    "confirm": "Confirm",
+    "localBackupSection": "Local Backup",
+    "webdavBackupSectionDesc": "Configure your own WebDAV server and keep restorable backup versions available.",
+    "webdavCredentialsLocalHint": "Credentials are stored locally in this browser.",
+    "linkManagerSectionDesc": "Organize your current quick links and folders here. Backup actions are grouped below."
 }

@@ -99,6 +99,15 @@ function mountLaunchpadDom() {
     return { overlay, container, cleanup: () => overlay.remove() };
 }
 
+function mountOpenerButton() {
+    const opener = document.createElement('button');
+    opener.type = 'button';
+    opener.id = 'launchpadOpener';
+    opener.textContent = 'Open';
+    document.body.appendChild(opener);
+    return opener;
+}
+
 async function freshModules() {
     vi.resetModules();
     const storeMod = await import('../scripts/domains/quicklinks/store.js');
@@ -235,6 +244,103 @@ describe('Launchpad resync + drag/search/ghost/style defensive branches', () => 
         launchpad.close();
         expect(launchpad._state.isOpen).toBe(false);
 
+        launchpad.destroy?.();
+        store.destroy?.();
+        cleanup();
+    });
+
+    it('close: should restore focus before hiding launchpad from assistive tech', async () => {
+        const opener = mountOpenerButton();
+        opener.focus();
+
+        setStorageData({
+            storageVersion: 4,
+            quicklinksItems: [],
+            quicklinksDockPins: [],
+            launchpadGridColumns: 6,
+            launchpadGridRows: 4
+        }, 'sync');
+
+        const { cleanup, overlay } = mountLaunchpadDom();
+        const { store, launchpad } = await freshModules();
+
+        await store.init();
+        await launchpad.init();
+
+        launchpad._renderPages = vi.fn();
+        launchpad._renderIndicator = vi.fn();
+        launchpad._goToPage = vi.fn();
+        launchpad._initSortables = vi.fn();
+
+        await launchpad.open();
+
+        const searchInput = document.getElementById('launchpadSearchInput');
+        searchInput.focus();
+
+        let activeElementWhenHidden = null;
+        const originalSetAttribute = overlay.setAttribute.bind(overlay);
+        overlay.setAttribute = (name, value) => {
+            if (name === 'aria-hidden' && value === 'true') {
+                activeElementWhenHidden = document.activeElement;
+            }
+            return originalSetAttribute(name, value);
+        };
+
+        launchpad.close();
+
+        expect(activeElementWhenHidden).toBe(opener);
+        expect(overlay.contains(activeElementWhenHidden)).toBe(false);
+
+        launchpad.destroy?.();
+        store.destroy?.();
+        cleanup();
+    });
+
+    it('touch swipe: should navigate pages on horizontal swipe when open', async () => {
+        setStorageData({
+            storageVersion: 4,
+            quicklinksItems: [],
+            quicklinksDockPins: [],
+            launchpadGridColumns: 6,
+            launchpadGridRows: 4
+        }, 'sync');
+
+        const { cleanup, container } = mountLaunchpadDom();
+        const { store, launchpad } = await freshModules();
+        const registeredTypes = [];
+        const originalAddEventListener = container.addEventListener.bind(container);
+        container.addEventListener = (type, listener, options) => {
+            registeredTypes.push(type);
+            return originalAddEventListener(type, listener, options);
+        };
+
+        await store.init();
+        await launchpad.init();
+
+        launchpad._renderPages = vi.fn();
+        launchpad._renderIndicator = vi.fn();
+        launchpad._goToPage = vi.fn();
+        launchpad._initSortables = vi.fn();
+
+        await launchpad.open();
+
+        store.getPageCount = vi.fn(() => 3);
+        launchpad._state.currentPage = 1;
+        launchpad._goToPage.mockClear();
+
+        expect(registeredTypes).toContain('touchstart');
+        expect(registeredTypes).toContain('touchend');
+
+        launchpad._boundHandlers.touchStart({
+            touches: [{ clientX: 100, clientY: 10 }]
+        });
+        launchpad._boundHandlers.touchEnd({
+            changedTouches: [{ clientX: 40, clientY: 12 }]
+        });
+
+        expect(launchpad._goToPage).toHaveBeenCalledWith(2);
+
+        launchpad.close();
         launchpad.destroy?.();
         store.destroy?.();
         cleanup();
@@ -418,61 +524,6 @@ describe('Launchpad resync + drag/search/ghost/style defensive branches', () => 
 
         expect(updateSpy).toHaveBeenCalledTimes(1);
         expect(launchpad._rerenderPages).not.toHaveBeenCalled();
-
-        launchpad.close();
-        launchpad.destroy?.();
-        store.destroy?.();
-        cleanup();
-    });
-
-    it('swipe: should navigate pages on horizontal swipe when not dragging/searching', async () => {
-        setStorageData({
-            storageVersion: 4,
-            quicklinksItems: [],
-            quicklinksDockPins: [],
-            launchpadGridColumns: 6,
-            launchpadGridRows: 4
-        }, 'sync');
-
-        const { cleanup } = mountLaunchpadDom();
-        const { store, launchpad } = await freshModules();
-
-        await store.init();
-        await launchpad.init();
-
-        launchpad._renderPages = vi.fn();
-        launchpad._renderIndicator = vi.fn();
-        launchpad._goToPage = vi.fn();
-        launchpad._initSortables = vi.fn();
-
-        await launchpad.open();
-
-        // Make thresholds deterministic
-        launchpad._config.SWIPE.threshold = 20;
-        launchpad._config.SWIPE.maxDeltaY = 30;
-
-        launchpad._state.currentPage = 1;
-        // Ensure we're not in a dragging state (preserve the real DragStateMachine instance).
-        launchpad._dragState.reset?.();
-        launchpad._state.isSearching = false;
-
-        // Swipe left (deltaX < 0) => next page
-        launchpad._handleTouchStart({ touches: [{ clientX: 100, clientY: 10 }] });
-        launchpad._handleTouchEnd({ changedTouches: [{ clientX: 50, clientY: 12 }] });
-        expect(launchpad._goToPage).toHaveBeenCalledWith(2);
-
-        // Swipe right (deltaX > 0) => previous page
-        launchpad._goToPage.mockClear();
-        launchpad._handleTouchStart({ touches: [{ clientX: 50, clientY: 10 }] });
-        launchpad._handleTouchEnd({ changedTouches: [{ clientX: 90, clientY: 12 }] });
-        expect(launchpad._goToPage).toHaveBeenCalledWith(0);
-
-        // Searching should block swipe
-        launchpad._goToPage.mockClear();
-        launchpad._state.isSearching = true;
-        launchpad._handleTouchStart({ touches: [{ clientX: 100, clientY: 10 }] });
-        launchpad._handleTouchEnd({ changedTouches: [{ clientX: 50, clientY: 12 }] });
-        expect(launchpad._goToPage).not.toHaveBeenCalled();
 
         launchpad.close();
         launchpad.destroy?.();

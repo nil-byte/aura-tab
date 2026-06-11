@@ -138,6 +138,25 @@ describe('ModalLayer', () => {
         expect(onLaunchpadDismiss).toHaveBeenCalledTimes(1);
     });
 
+    it('ignores toast clicks so active modals do not dismiss', () => {
+        const overlay = document.createElement('div');
+        document.body.appendChild(overlay);
+
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        const toast = document.createElement('button');
+        toast.className = 'toast';
+        toastContainer.appendChild(toast);
+        document.body.appendChild(toastContainer);
+
+        const onDismiss = vi.fn();
+        modalLayer.register('overlay', modalLayer.constructor.LEVEL.OVERLAY, overlay, onDismiss);
+
+        mousedown(toast);
+
+        expect(onDismiss).not.toHaveBeenCalled();
+    });
+
     it('keeps OVERLAY z-index within its band after many bringToFront calls', () => {
         const overlay = document.createElement('div');
         document.body.appendChild(overlay);

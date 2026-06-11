@@ -124,4 +124,34 @@ describe('BackupManager icon cache restore compatibility', () => {
         expect(manager._normalizeHostname('www.Example.com')).toBe('example.com');
         expect(manager._normalizeHostname('example.com/path')).toBe('example.com');
     });
+
+    it('backup export should continue traversing hidden icon cache and toolbar icon stores', async () => {
+        const manager = new BackupManager();
+        const exported = [];
+
+        manager._exportIDBToZipStream = async (configKey, _zipper, basePath) => {
+            exported.push({ configKey, basePath });
+            return { entries: 0, totalSize: 0 };
+        };
+        manager._addFileToZip = () => {};
+
+        global.chrome = {
+            storage: {
+                sync: { get: async () => ({ backgroundSettings: { type: 'color' } }) },
+                local: { get: async () => ({ toolbarIconConfig: { enabled: true } }) }
+            },
+            runtime: {
+                getManifest: () => ({ version: '3.0.0' })
+            }
+        };
+
+        await manager._appendBackupDataToZipper({}, {}, 'compat-check');
+
+        expect(exported).toEqual([
+            { configKey: 'iconCache', basePath: 'idb/icon-cache' },
+            { configKey: 'toolbarIcon', basePath: 'idb/toolbar-icon' },
+            { configKey: 'assets', basePath: 'idb/assets' },
+            { configKey: 'localFiles', basePath: 'idb/local-files' }
+        ]);
+    });
 });

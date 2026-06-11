@@ -25,7 +25,8 @@ async function loadWorker() {
     const listeners = {
         onInstalled: null,
         onStartup: null,
-        onAlarm: null
+        onAlarm: null,
+        onStorageChanged: null
     };
 
     global.chrome = {
@@ -35,7 +36,9 @@ async function loadWorker() {
                 set: mocks.syncSet
             },
             onChanged: {
-                addListener: vi.fn()
+                addListener: vi.fn((fn) => {
+                    listeners.onStorageChanged = fn;
+                })
             }
         },
         runtime: {
@@ -106,5 +109,20 @@ describe('background-defaults-consistency', () => {
         await listeners.onInstalled({ reason: 'install' });
 
         expect(mocks.syncSet).not.toHaveBeenCalled();
+    });
+
+    it('local toolbar icon changes should still trigger runtime restore listener', async () => {
+        const listeners = await loadWorker();
+
+        expect(typeof listeners.onStorageChanged).toBe('function');
+
+        listeners.onStorageChanged({
+            toolbarIconConfig: {
+                oldValue: { enabled: false },
+                newValue: { enabled: true }
+            }
+        }, 'local');
+
+        expect(mocks.restoreToolbarIcon).toHaveBeenCalledTimes(1);
     });
 });

@@ -1,6 +1,7 @@
 
 import { DisposableComponent } from './lifecycle.js';
 import { modalLayer } from './modal-layer.js';
+import { blurActiveElementWithin, restoreFocus } from '../shared/focus-restoration.js';
 import { WindowDragController, WindowResizeController } from './window-interaction.js';
 import { SYNC_SETTINGS_DEFAULTS } from './settings-contract.js';
 
@@ -295,6 +296,12 @@ export class MacWindowBase extends DisposableComponent {
 
         this._detachFocusTrap();
 
+        const prev = this._previousActiveElement;
+        this._previousActiveElement = null;
+
+        restoreFocus(prev, { excludeRoot: this._overlay });
+        blurActiveElementWithin(this._overlay);
+
         this._overlay.classList.remove('visible');
         this._overlay.setAttribute('aria-hidden', 'true');
 
@@ -303,15 +310,6 @@ export class MacWindowBase extends DisposableComponent {
         window.dispatchEvent(new CustomEvent(this._getCloseEventName()));
 
         this._onAfterClose();
-
-        const prev = this._previousActiveElement;
-        this._previousActiveElement = null;
-        if (prev && typeof prev.focus === 'function') {
-            try {
-                prev.focus();
-            } catch {
-            }
-        }
     }
 
     toggle() {

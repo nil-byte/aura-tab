@@ -1,4 +1,40 @@
 {
+  "3.5.0": {
+    "en": [
+      "Accessibility: Focus restoration across modals and Launchpad — focus returns to the opener before overlays hide from assistive tech",
+      "Confirm Dialog: New accessible confirmation dialog with focus trap, keyboard navigation, and ARIA support",
+      "Settings: Added Resources section with Privacy Policy link and localized backup section descriptions",
+      "Photos: Simplified cache status display and unified empty-state icons per category",
+      "Dock: Removed touch event listeners from magnifier for cleaner pointer handling",
+      "Launchpad: Touch swipe gesture lifecycle now tied to open/close for better stability",
+      "Background Defaults: Overlay set to 0 by default; refresh button and photo info now enabled by default",
+      "CSS: Hover effects now work on all pointer devices instead of fine-pointer only; removed narrow height media queries",
+      "Safety: Added optional-chain guards for chrome.runtime.onMessage listeners"
+    ],
+    "zh_CN": [
+      "无障碍：模态窗口与启动台关闭时优先恢复焦点，再对辅助技术隐藏，读屏焦点不再丢失",
+      "确认对话框：新增无障碍确认对话框，支持焦点陷阱、键盘导航与 ARIA 属性",
+      "设置：新增“相关链接”区块，含隐私政策入口与本地/WebDAV 备份说明文案",
+      "图库：精简缓存状态展示，各分类空状态图标统一由 ICONS 管理",
+      "Dock：放大镜移除触摸事件监听，指针处理更精简",
+      "启动台：触摸滑动手势生命周期绑定打开/关闭，稳定性提升",
+      "背景默认值：遮罩默认值改为 0；刷新按钮与图片信息默认开启",
+      "CSS：悬停效果在所有指针设备生效，移除窄高度媒体查询",
+      "安全性：chrome.runtime.onMessage 监听器添加可选链防护"
+    ],
+    "zh_TW": [
+      "無障礙：模態視窗與啟動台關閉時優先恢復焦點，再對輔助技術隱藏，螢幕閱讀焦點不再遺失",
+      "確認對話框：新增無障礙確認對話框，支援焦點陷阱、鍵盤導航與 ARIA 屬性",
+      "設定：新增「相關連結」區塊，含隱私權政策入口與本地/WebDAV 備份說明文案",
+      "圖庫：精簡快取狀態展示，各分類空白狀態圖示統一由 ICONS 管理",
+      "Dock：放大鏡移除觸控事件監聽器，指標處理更精簡",
+      "啟動台：觸控滑動手勢生命週期綁定開啟/關閉，穩定性提升",
+      "背景預設值：遮罩預設值改為 0；重新整理按鈕與圖片資訊預設開啟",
+      "CSS：懸停效果在所有指標裝置生效，移除窄高度媒體查詢",
+      "安全性：chrome.runtime.onMessage 監聽器新增可選鏈防護"
+    ],
+    "moreUrl": ""
+  },
   "3.4.9": {
     "en": [
       "App Icons: Redesigned all app icons with a fresh new look",

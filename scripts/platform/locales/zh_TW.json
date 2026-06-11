@@ -214,6 +214,7 @@
     "settingsLaunchpadDensity": "啟動台佈局密度",
     "settingsLaunchpadColumns": "列",
     "settingsLaunchpadRows": "行",
+    "macSettingsResources": "相關連結",
     "settingsPrivacySection": "隱私說明",
     "settingsPrivacyText": "本擴充功能僅在本地儲存您的設定，不會上傳任何數據。詳見",
     "settingsPrivacyLink": "隱私權政策",
@@ -393,5 +394,11 @@
     "toastFolderCreated": "資料夾已建立",
     "toastFolderDissolved": "已取消群組",
     "aboutLinkGitHub": "GitHub",
-    "aboutLinkHomepage": "主頁"
+    "aboutLinkHomepage": "主頁",
+    "aboutLinkPrivacy": "隱私權政策",
+    "confirm": "確認",
+    "localBackupSection": "本地備份",
+    "webdavBackupSectionDesc": "配置您自己的 WebDAV 伺服器，並保留可還原的備份版本。",
+    "webdavCredentialsLocalHint": "憑據將保存在此瀏覽器的本機儲存中。",
+    "linkManagerSectionDesc": "在這裡整理目前的快捷連結與資料夾，備份操作已集中到下方。"
 }

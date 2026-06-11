@@ -8,6 +8,7 @@ import { installLaunchpadGridMethods } from './launchpad-grid.js';
 import { installLaunchpadSearchMethods } from './launchpad-search.js';
 import { installLaunchpadDragMethods } from './launchpad-drag.js';
 import { installLaunchpadFolderMethods, setFolderContextMenuRef } from './launchpad-folder.js';
+import { blurActiveElementWithin, restoreFocus } from '../../shared/focus-restoration.js';
 import {
     DragStateMachine,
     AsyncTaskTracker,
@@ -210,9 +211,6 @@ class Launchpad {
         this._folderGridDirty = false;
         this._folderGridNeedsFullRerender = false;
 
-        this._swipeStartRemover = null;
-        this._swipeEndRemover = null;
-
         this._keydownRemover = null;
         this._wheelRemover = null;
         this._resizeRemover = null;
@@ -370,6 +368,11 @@ class Launchpad {
             this._events.add(this._dom.overlay, 'click', this._boundHandlers.overlayClick);
         }
 
+        if (this._dom.container) {
+            this._events.add(this._dom.container, 'touchstart', this._boundHandlers.touchStart, { passive: true });
+            this._events.add(this._dom.container, 'touchend', this._boundHandlers.touchEnd, { passive: true });
+        }
+
         if (this._dom.indicator) {
             this._events.add(this._dom.indicator, 'click', (e) => {
                 const dot = e.target.closest('.page-dot');
@@ -512,8 +515,6 @@ class Launchpad {
             this._wheelRemover = this._events.add(this._dom.container, 'wheel', this._boundHandlers.wheel, { passive: false });
         }
 
-        this._setupSwipeGesture();
-
         this._timers.setTimeout('settled', () => {
             if (this._state.isOpen && this._dom.overlay) {
                 this._state.isSettled = true;
@@ -539,6 +540,10 @@ class Launchpad {
         this._state.isPaused = false;
         this._state.openFolderId = null;
         this._dom.overlay.classList.remove('active', 'settled', 'paused');
+
+        this._restorePreviousFocus();
+        blurActiveElementWithin(this._dom.overlay);
+
         this._dom.overlay.setAttribute('aria-hidden', 'true');
 
         document.body.classList.remove('launchpad-open');
@@ -568,7 +573,6 @@ class Launchpad {
         }
 
         contextMenu.close();
-        this._restorePreviousFocus();
     }
 
     _cleanupGlobalListeners() {
@@ -620,7 +624,6 @@ class Launchpad {
         this._wheelLocked = false;
         this._clearSearch();
         this._resetFolderDragSession?.();
-        this._teardownSwipeGesture();
         this._restoreFallbackDragStyles(null);
         this._dragStyleBackup = null;
     }
@@ -638,16 +641,7 @@ class Launchpad {
         const prev = this._previousActiveElement;
         this._previousActiveElement = null;
 
-        if (!prev || typeof prev.focus !== 'function') return;
-
-        const isConnected = prev.isConnected !== false;
-        const isEnabled = !prev.disabled;
-        if (!isConnected || !isEnabled) return;
-
-        try {
-            prev.focus({ preventScroll: true });
-        } catch {
-        }
+        restoreFocus(prev, { excludeRoot: this._dom.overlay });
     }
 
     _handleKeydown(e) {

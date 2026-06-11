@@ -157,110 +157,26 @@ export function registerAboutContent(window) {
         const version = manifest.version || '1.0.0';
         const name = manifest.name || 'Aura Tab';
         const safeName = escapeHtml(name);
+        const currentYear = new Date().getFullYear();
 
         container.innerHTML = `
             <div class="mac-about-content">
-                <div class="mac-about-header">
+                <div class="mac-about-header mac-about-header--hero">
                     <div class="mac-about-icon">
-                        <img src="assets/icons/icon128.png" alt="${safeName}" width="96" height="96">
+                        <img src="assets/icons/icon128.png" alt="${safeName}" width="112" height="112">
                     </div>
-                    <h2 class="mac-about-name">${safeName}</h2>
-                    <p class="mac-about-version">${t('macSettingsVersion') || 'Version'} ${version}</p>
+                    <div class="mac-about-header-copy">
+                        <h2 class="mac-about-name">${safeName}</h2>
+                        <p class="mac-about-version">${t('macSettingsVersion') || 'Version'} ${version}</p>
+                    </div>
                 </div>
 
-                <div id="macAboutSections"></div>
+                <div id="macAboutSections" class="mac-about-sections"></div>
 
                 <div class="mac-about-footer">
-                    <p>© ${new Date().getFullYear()} Aura Tab. ${t('macSettingsAllRightsReserved') || 'All rights reserved.'}</p>
+                    <p>© ${currentYear} Aura Tab. ${t('macSettingsAllRightsReserved') || 'All rights reserved.'}</p>
                 </div>
             </div>
-
-            <style>
-                .mac-about-content {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    text-align: center;
-                    min-height: 100%;
-                }
-
-                .mac-about-header {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    padding: 24px 0;
-                }
-
-                .mac-about-icon {
-                    width: 96px;
-                    height: 96px;
-                    border-radius: 22%;
-                    overflow: hidden;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    margin-bottom: 16px;
-                }
-
-                .mac-about-icon img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-
-                .mac-about-name {
-                    font-size: 24px;
-                    font-weight: 600;
-                    color: var(--mac-text-primary);
-                    margin: 0 0 4px;
-                }
-
-                .mac-about-version {
-                    font-size: 13px;
-                    color: var(--mac-text-secondary);
-                    margin: 0;
-                }
-
-                .mac-kbd {
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-width: 24px;
-                    height: 24px;
-                    padding: 0 8px;
-                    background: var(--mac-select-bg);
-                    border-radius: 4px;
-                    font-family: var(--mac-font-family);
-                    font-size: 12px;
-                    font-weight: 500;
-                    color: var(--mac-text-primary);
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-                }
-
-                .mac-shortcut-btn.recording {
-                    border-color: var(--mac-accent-color);
-                    box-shadow: 0 0 0 2px var(--mac-accent-color);
-                }
-
-                .mac-about-footer {
-                    margin-top: auto;
-                    padding-top: 16px;
-                    padding-bottom: 0;
-                    margin-bottom: -8px;
-                    border-top: 1px solid var(--mac-divider-color);
-                    width: 100%;
-                    text-align: center;
-                }
-
-                .mac-about-footer p {
-                    font-size: 11px;
-                    color: var(--mac-text-tertiary);
-                    margin: 0;
-                }
-
-                .mac-about-content .mac-settings-section {
-                    width: 100%;
-                    text-align: left;
-                }
-            </style>
         `;
 
         const sectionHost = container.querySelector('#macAboutSections');
@@ -270,13 +186,12 @@ export function registerAboutContent(window) {
             sections: [
                 {
                     type: 'section',
-                    style: 'margin-top: 24px;',
                     rows: [
                         {
                             type: 'custom',
                             html: `
-                                <div class="mac-settings-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
-                                    <p style="margin: 0; line-height: 1.6; color: var(--mac-text-secondary);">
+                                <div class="mac-settings-row mac-about-copy-row">
+                                    <p class="mac-about-description">
                                         ${t('macSettingsAboutDesc') || 'A beautiful new tab page with macOS-style design, featuring quick links, wallpapers, and more.'}
                                     </p>
                                 </div>
@@ -294,7 +209,7 @@ export function registerAboutContent(window) {
                             label: 'Focus Search',
                             controlHtml: `
                                 <button type="button"
-                                        class="mac-button mac-button--small mac-shortcut-btn"
+                                        class="mac-shortcut-btn mac-keycap"
                                         data-shortcut-action="${SHORTCUT_ACTIONS.focusSearch}">
                                 </button>
                             `
@@ -305,7 +220,7 @@ export function registerAboutContent(window) {
                             label: 'Open Launchpad',
                             controlHtml: `
                                 <button type="button"
-                                        class="mac-button mac-button--small mac-shortcut-btn"
+                                        class="mac-shortcut-btn mac-keycap"
                                         data-shortcut-action="${SHORTCUT_ACTIONS.openLaunchpad}">
                                 </button>
                             `
@@ -314,18 +229,19 @@ export function registerAboutContent(window) {
                             type: 'custom',
                             labelKey: 'macSettingsOpenSettings',
                             label: 'Open Settings',
-                            controlHtml: '<kbd class="mac-kbd">Space</kbd>'
+                            controlHtml: '<span class="mac-keycap" aria-label="Space">Space</span>'
                         },
                         {
                             type: 'custom',
                             labelKey: 'macSettingsCloseOverlay',
                             label: 'Close Overlay',
-                            controlHtml: '<kbd class="mac-kbd">Esc</kbd>'
+                            controlHtml: '<span class="mac-keycap" aria-label="Escape">Esc</span>'
                         }
                     ]
                 },
                 {
                     type: 'section',
+                    titleKey: 'macSettingsResources',
                     rows: [
                         {
                             type: 'custom',
@@ -347,56 +263,27 @@ export function registerAboutContent(window) {
                                        target="_blank"
                                        rel="noopener noreferrer"
                                        class="mac-about-link-btn">
-                                        <svg class="mac-about-link-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
-                                            <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm5.292 5H11.1a13.2 13.2 0 0 0-1.163-3.213A6.034 6.034 0 0 1 13.292 5zM8 1.042c.558.707 1.04 1.584 1.388 2.584H6.612C6.96 2.626 7.442 1.749 8 1.042zM1.165 9A6.9 6.9 0 0 1 1 8c0-.34.058-.672.165-1h2.521A14 14 0 0 0 3.6 8c0 .342.03.678.086 1H1.165zm.543 1h2.191c.258 1.2.673 2.292 1.163 3.213A6.034 6.034 0 0 1 1.708 10zm2.191-4H1.708A6.034 6.034 0 0 1 5.062 2.787C4.572 3.708 4.157 4.8 3.899 6zM8 14.958c-.558-.707-1.04-1.584-1.388-2.584h2.776C9.04 13.374 8.558 14.251 8 14.958zM9.612 11H6.388A11.8 11.8 0 0 1 6.1 9h3.8c-.07.352-.17.69-.288 1zm.326 2.213c.49-.921.905-2.013 1.163-3.213h2.191a6.034 6.034 0 0 1-3.354 3.213zM12.314 9a14 14 0 0 0 .086-1 14 14 0 0 0-.086-1h2.521c.107.328.165.66.165 1s-.058.672-.165 1h-2.521z"/>
+                                        <svg class="mac-about-link-icon mac-about-link-icon--homepage" viewBox="0 0 1029 1024" width="16" height="16" fill="currentColor">
+                                            <path d="M1001.423238 494.592q21.504 20.48 22.528 45.056t-16.384 40.96q-19.456 17.408-45.056 16.384t-40.96-14.336q-5.12-4.096-31.232-28.672t-62.464-58.88-77.824-73.728-78.336-74.24-63.488-60.416-33.792-31.744q-32.768-29.696-64.512-28.672t-62.464 28.672q-10.24 9.216-38.4 35.328t-65.024 60.928-77.824 72.704-75.776 70.656-59.904 55.808-30.208 27.136q-15.36 12.288-40.96 13.312t-44.032-15.36q-20.48-18.432-19.456-44.544t17.408-41.472q6.144-6.144 37.888-35.84t75.776-70.656 94.72-88.064 94.208-88.064 74.752-70.144 36.352-34.304q38.912-37.888 83.968-38.4t76.8 30.208q6.144 5.12 25.6 24.064t47.616 46.08 62.976 60.928 70.656 68.096 70.144 68.096 62.976 60.928 48.128 46.592zM447.439238 346.112q25.6-23.552 61.44-25.088t64.512 25.088q3.072 3.072 18.432 17.408l38.912 35.84q22.528 21.504 50.688 48.128t57.856 53.248q68.608 63.488 153.6 142.336l0 194.56q0 22.528-16.896 39.936t-45.568 18.432l-193.536 0 0-158.72q0-33.792-31.744-33.792l-195.584 0q-17.408 0-24.064 10.24t-6.656 23.552q0 6.144-0.512 31.232t-0.512 53.76l0 73.728-187.392 0q-29.696 0-47.104-13.312t-17.408-37.888l0-203.776q83.968-76.8 152.576-139.264 28.672-26.624 57.344-52.736t52.224-47.616 39.424-36.352 19.968-18.944z"/>
                                         </svg>
                                         <span>${t('aboutLinkHomepage') || 'Home'}</span>
                                         <svg class="mac-about-link-arrow" viewBox="0 0 12 12" width="12" height="12">
                                             <path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                     </a>
+                                    <a href="https://nil-byte.github.io/aura-tab-privacy-policy/"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="mac-about-link-btn">
+                                        <svg class="mac-about-link-icon mac-about-link-icon--privacy" viewBox="0 0 1024 1024" width="16" height="16" fill="currentColor">
+                                            <path d="M170.996 125.72c35.822 11.49 82.282 9.983 139.524-5.643 59.517-16.247 119.876-44.842 181.082-85.96a36 36 0 0 1 39.513-0.418c66.49 42.653 127.344 71.386 182.35 86.373 53.044 14.454 100.03 15.98 141.384 5.11C877.674 119.184 900 136.401 900 160v435.61c0 183.2-128.142 341.438-307.341 379.523-22.62 4.807-45.702 11.141-69.248 19.01a36 36 0 0 1-22.736 0.03c-23.555-7.807-46.622-14.101-69.202-18.892C252.211 937.25 124 778.981 124 595.73V160c0-24.4 23.761-41.732 46.996-34.28zM448.39 632.514v0.001L337.21 509.8c-11.808-12.24-29.03-9.935-40.723 2.425l-27.31 28.872c-2.903 3.069-2.903 8.012 0 11.081l132.025 144.484 0.051-0.055 25.806 27.283 0.211 0.22c11.809 12.24 30.86 12.14 42.553-0.22l285.943-312.967c2.903-3.069 2.903-8.012 0-11.081l-29.082-30.305c-11.809-12.24-29.299-10.927-40.99 1.433L448.39 632.514z"/>
+                                        </svg>
+                                        <span>${t('aboutLinkPrivacy') || 'Privacy Policy'}</span>
+                                        <svg class="mac-about-link-arrow" viewBox="0 0 12 12" width="12" height="12">
+                                            <path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </a>
                                 </div>
-                                <style>
-                                    .mac-about-links {
-                                        display: flex;
-                                        flex-direction: column;
-                                        width: 100%;
-                                    }
-                                    .mac-about-link-btn {
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 10px;
-                                        padding: 8px 12px;
-                                        min-height: 40px;
-                                        text-decoration: none;
-                                        color: var(--mac-text-primary);
-                                        font-size: 14px;
-                                        font-weight: 400;
-                                        border-bottom: 0.5px solid var(--mac-divider-color);
-                                        transition: background 0.15s ease;
-                                        cursor: pointer;
-                                    }
-                                    .mac-about-link-btn:last-child {
-                                        border-bottom: none;
-                                    }
-                                    .mac-about-link-btn:hover {
-                                        background: rgba(0, 0, 0, 0.04);
-                                    }
-                                    [data-theme="dark"] .mac-about-link-btn:hover {
-                                        background: rgba(255, 255, 255, 0.06);
-                                    }
-                                    .mac-about-link-icon {
-                                        flex-shrink: 0;
-                                        color: var(--mac-text-secondary);
-                                    }
-                                    .mac-about-link-btn span {
-                                        flex: 1;
-                                    }
-                                    .mac-about-link-arrow {
-                                        flex-shrink: 0;
-                                        color: var(--mac-text-tertiary);
-                                    }
-                                </style>
                             `
                         }
                     ]
@@ -536,7 +423,7 @@ export function registerChangelogContent(window) {
         const data = await loadChangelogData();
         const versions = Object.keys(data).sort((a, b) =>
             b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' })
-        );
+        ).slice(0, 20);
 
         container.innerHTML = `
       <div class="mac-settings-section mac-changelog-section">

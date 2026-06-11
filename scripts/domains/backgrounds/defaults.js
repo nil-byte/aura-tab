@@ -4,7 +4,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     fadein: 400,
     brightness: 100,
     blur: 0,
-    overlay: 30,
+    overlay: 0,
     color: '#1a1a2e',
     texture: Object.freeze({
         type: 'none',
@@ -12,8 +12,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
         size: 30,
         color: '#ffffff'
     }),
-    showRefreshButton: false,
-    showPhotoInfo: false,
+    showRefreshButton: true,
+    showPhotoInfo: true,
     smartCropEnabled: true,
     apiKeys: Object.freeze({
         unsplash: '',

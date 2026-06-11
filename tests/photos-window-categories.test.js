@@ -72,6 +72,27 @@ describe('photos window categories', () => {
         expect(document.querySelector('[data-category="bing"]')).toBeTruthy();
         expect(document.getElementById('count-bing')).toBeTruthy();
         expect(document.getElementById('count-bing')?.textContent).toBe('1');
+        expect(document.querySelector('[data-category="bing"] .mac-menu-item-icon--bing')).toBeTruthy();
+    });
+
+    it('renders compact storage status with used size and clear action', () => {
+        const photosWindow = new PhotosWindow();
+        void photosWindow;
+
+        expect(document.querySelector('.photos-storage-stats')).toBeTruthy();
+        expect(document.querySelector('.photos-storage-meta')).toBeTruthy();
+        expect(document.querySelector('.photos-storage-used')).toBeTruthy();
+        expect(document.querySelector('.photos-storage-clear')).toBeTruthy();
+        expect(document.querySelector('.photos-storage-bar')).toBeFalsy();
+        expect(document.querySelector('#photosStorageTotal')).toBeFalsy();
+    });
+
+    it('renders empty state icon that matches the selected category', async () => {
+        const photosWindow = new PhotosWindow();
+        await photosWindow._renderCategory('bing');
+
+        const emptyIcon = document.querySelector('.photos-empty-icon svg');
+        expect(emptyIcon?.getAttribute('viewBox')).toBe('0 0 1024 1024');
     });
 
     it('filters bing category to bing favorites only', async () => {

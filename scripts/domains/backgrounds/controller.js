@@ -677,7 +677,8 @@ class BackgroundSystem {
             void this.refresh();
             return false;
         };
-        chrome.runtime.onMessage.addListener(this._runtimeMessageHandler);
+        const runtimeOnMessage = chrome?.runtime?.onMessage;
+        runtimeOnMessage?.addListener?.(this._runtimeMessageHandler);
     }
 
     initVisibilityListener() {
@@ -941,7 +942,8 @@ class BackgroundSystem {
             clearTimeout(this._saveTimeout);
         }
         if (this._runtimeMessageHandler) {
-            chrome.runtime.onMessage.removeListener(this._runtimeMessageHandler);
+            const runtimeOnMessage = chrome?.runtime?.onMessage;
+            runtimeOnMessage?.removeListener?.(this._runtimeMessageHandler);
             this._runtimeMessageHandler = null;
         }
         if (this._visibilityHandler) {

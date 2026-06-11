@@ -214,6 +214,7 @@
     "settingsLaunchpadDensity": "启动台布局密度",
     "settingsLaunchpadColumns": "列",
     "settingsLaunchpadRows": "行",
+    "macSettingsResources": "相关链接",
     "settingsPrivacySection": "隐私说明",
     "settingsPrivacyText": "本扩展仅在本地保存您的设置，不会上传任何数据。详见",
     "settingsPrivacyLink": "隐私政策",
@@ -393,5 +394,11 @@
     "toastFolderCreated": "文件夹已创建",
     "toastFolderDissolved": "已取消分组",
     "aboutLinkGitHub": "GitHub",
-    "aboutLinkHomepage": "主页"
+    "aboutLinkHomepage": "主页",
+    "aboutLinkPrivacy": "隐私政策",
+    "confirm": "确认",
+    "localBackupSection": "本地备份",
+    "webdavBackupSectionDesc": "配置您自己的 WebDAV 服务器，并保留可恢复的备份版本。",
+    "webdavCredentialsLocalHint": "凭据将保存在此浏览器的本地存储中。",
+    "linkManagerSectionDesc": "在这里整理当前的快捷链接与文件夹，备份操作已单独收纳到下方。"
 }
