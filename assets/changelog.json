@@ -1,4 +1,19 @@
 {
+  "3.5.1": {
+    "en": [
+      "Launchpad: Added smoother circular page transitions and kept wrap clones out of focus and item selectors",
+      "Accessibility: Closing Launchpad now forces focus out before hiding when no opener can be restored"
+    ],
+    "zh_CN": [
+      "启动台：新增更平滑的循环翻页动画，并让过渡 clone 不再参与焦点与项目选择器命中",
+      "无障碍：当没有可恢复的打开源时，关闭启动台会先强制移出焦点，再对辅助技术隐藏"
+    ],
+    "zh_TW": [
+      "啟動台：新增更平滑的循環翻頁動畫，並讓過渡 clone 不再參與焦點與項目選擇器命中",
+      "無障礙：當沒有可恢復的開啟來源時，關閉啟動台會先強制移出焦點，再對輔助技術隱藏"
+    ],
+    "moreUrl": ""
+  },
   "3.5.0": {
     "en": [
       "Accessibility: Focus restoration across modals and Launchpad — focus returns to the opener before overlays hide from assistive tech",

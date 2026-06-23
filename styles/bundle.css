@@ -257,6 +257,11 @@
     /* Strong ease-out for interactive UI (design-engineering convention) */
     --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 
+    --launchpad-page-transition-duration: 320ms;
+    --launchpad-page-transition-ease: var(--ease-out-strong);
+    --launchpad-page-inactive-scale: 0.985;
+    --launchpad-page-inactive-opacity: 0.92;
+
     /* Press feedback: keep within ~0.95–0.98; decorative entrances use --scale-overlay-initial */
     --scale-lift: 1.06;
     --scale-lift-subtle: 1.03;
@@ -2193,12 +2198,26 @@ html[data-first-paint='disarming'] #background-media .background-image {
     display: flex;
     flex-direction: row;
     width: 100%;
-    transition: transform var(--duration-slow) var(--ease-spring);
-
+    transform: translate3d(0, 0, 0);
+    transition: transform var(--launchpad-page-transition-duration) var(--launchpad-page-transition-ease);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
-.launchpad-pages.animating {
+.launchpad-pages.animating,
+.launchpad-pages.looping,
+.launchpad-pages.jumping {
     will-change: transform;
+}
+
+.launchpad-pages.animating .launchpad-page,
+.launchpad-pages.looping .launchpad-page {
+    will-change: transform, opacity;
+}
+
+.launchpad-pages.jumping,
+.launchpad-pages.jumping .launchpad-page {
+    transition: none !important;
 }
 
 body.launchpad-dragging .launchpad-pages {
@@ -2219,10 +2238,25 @@ body.launchpad-dragging .launchpad-pages {
     contain: layout style;
 }
 
+.launchpad-page.wrap-clone {
+    pointer-events: none;
+}
+
 .launchpad-pages.paginated .launchpad-page {
     justify-items: start;
     align-content: start;
     justify-content: start;
+    opacity: var(--launchpad-page-inactive-opacity);
+    transform: scale(var(--launchpad-page-inactive-scale));
+    transform-origin: center;
+    transition:
+        opacity var(--launchpad-page-transition-duration) var(--launchpad-page-transition-ease),
+        transform var(--launchpad-page-transition-duration) var(--launchpad-page-transition-ease);
+}
+
+.launchpad-pages.paginated .launchpad-page.active {
+    opacity: 1;
+    transform: scale(1);
 }
 
 .launchpad-item {

@@ -28,6 +28,7 @@ const launchpadGridMethods = {
 
         const durationFast = readCssVarMs('--duration-fast', 150);
         const durationNormal = readCssVarMs('--duration-normal', 250);
+        const pageTransitionDuration = readCssVarMs('--launchpad-page-transition-duration', durationNormal);
         const durationSortable = readCssVarMs('--duration-sortable', 200);
         const easeSortable = readCssVarString('--ease-sortable', 'cubic-bezier(0.25, 1, 0.5, 1)');
 
@@ -35,6 +36,7 @@ const launchpadGridMethods = {
         this._config.MOTION.searchDebounceMs = durationFast;
         this._config.MOTION.deferredRerenderMs = durationNormal;
         this._config.MOTION.postDragCleanupMs = durationNormal;
+        this._config.MOTION.pageAnimationMs = pageTransitionDuration;
         this._config.SORTABLE.animationMs = durationSortable;
         this._config.SORTABLE.easing = easeSortable;
 
@@ -198,6 +200,7 @@ const launchpadGridMethods = {
         }
 
         this._dom.pagesContainer.replaceChildren(fragment);
+        this._updatePageActiveState();
         this._initSortables();
     },
 
@@ -237,6 +240,170 @@ const launchpadGridMethods = {
         this._goToPage(Math.min(currentPage, maxPage), { force: true });
     },
 
+    _updatePageActiveState() {
+        if (!this._dom.pagesContainer) return;
+
+        const pages = this._dom.pagesContainer.querySelectorAll('.launchpad-page');
+        pages.forEach((page) => {
+            if (page.classList.contains('wrap-clone')) {
+                page.removeAttribute('aria-current');
+                return;
+            }
+
+            const pageIndex = Number.parseInt(page.dataset.page, 10);
+            const isActive = Number.isFinite(pageIndex) && pageIndex === this._state.currentPage;
+
+            page.classList.toggle('active', isActive);
+            if (isActive) {
+                page.setAttribute('aria-current', 'page');
+            } else {
+                page.removeAttribute('aria-current');
+            }
+        });
+    },
+
+    _removePageWrapClone() {
+        if (!this._dom.pagesContainer) return;
+
+        this._dom.pagesContainer.querySelectorAll('.launchpad-page.wrap-clone').forEach((clone) => {
+            clone.remove();
+        });
+        this._dom.pagesContainer.classList.remove('looping');
+    },
+
+    _createPageWrapClone(pageIndex, position) {
+        if (!this._dom.pagesContainer) return null;
+
+        const pages = Array.from(this._dom.pagesContainer.querySelectorAll('.launchpad-page:not(.wrap-clone)'));
+        const source = pages.find((page) => Number.parseInt(page.dataset.page, 10) === pageIndex);
+        if (!source) return null;
+
+        const clone = source.cloneNode(true);
+        clone.classList.add('wrap-clone', 'active');
+        clone.setAttribute('aria-hidden', 'true');
+        clone.removeAttribute('aria-current');
+        clone.removeAttribute('data-page');
+        clone.querySelectorAll('[tabindex], a, button, input, select, textarea').forEach((el) => {
+            el.setAttribute('tabindex', '-1');
+        });
+        clone.querySelectorAll('[data-id]').forEach((el) => {
+            el.removeAttribute('data-id');
+        });
+
+        if (position === 'before') {
+            this._dom.pagesContainer.prepend(clone);
+        } else {
+            this._dom.pagesContainer.appendChild(clone);
+        }
+
+        return clone;
+    },
+
+    _schedulePageWrapFinalize(targetIndex, pagesContainer) {
+        this._timers.setTimeout('pageAnimation', () => {
+            if (this._state.isDestroyed || this._dom.pagesContainer !== pagesContainer) return;
+
+            this._removePageWrapClone();
+            this._setPageTransform(-targetIndex * 100, { animate: false });
+        }, this._config.MOTION.pageAnimationMs);
+    },
+
+    _animateWrappedPageTransition(targetIndex, direction, pageCount) {
+        if (!this._dom.pagesContainer || pageCount <= 1) return false;
+
+        const pagesContainer = this._dom.pagesContainer;
+        const clone = this._createPageWrapClone(targetIndex, direction < 0 ? 'before' : 'after');
+        if (!clone) return false;
+
+        this._timers.clearTimeout('pageAnimation');
+        this._timers.cancelAnimationFrame('pageTransitionRestore');
+        this._timers.cancelAnimationFrame('pageWrapStart');
+        pagesContainer.classList.remove('jumping');
+        pagesContainer.classList.add('looping');
+
+        if (direction > 0) {
+            this._setPageTransform(-pageCount * 100, { animate: true });
+            this._schedulePageWrapFinalize(targetIndex, pagesContainer);
+            return true;
+        }
+
+        pagesContainer.classList.remove('animating');
+        pagesContainer.classList.add('jumping');
+        pagesContainer.style.transition = 'none';
+        pagesContainer.style.transform = 'translate3d(-100%, 0, 0)';
+        void pagesContainer.offsetWidth;
+
+        const startBackwardsWrap = () => {
+            if (this._state.isDestroyed || this._dom.pagesContainer !== pagesContainer) return;
+
+            pagesContainer.classList.remove('jumping');
+            pagesContainer.style.removeProperty('transition');
+            pagesContainer.classList.add('animating');
+            pagesContainer.style.transform = 'translate3d(0%, 0, 0)';
+            this._schedulePageWrapFinalize(targetIndex, pagesContainer);
+        };
+
+        if (typeof requestAnimationFrame === 'function') {
+            this._timers.requestAnimationFrame('pageWrapStart', startBackwardsWrap);
+        } else {
+            startBackwardsWrap();
+        }
+
+        return true;
+    },
+
+    _setPageTransform(offset, { animate = true } = {}) {
+        if (!this._dom.pagesContainer) return;
+
+        const pagesContainer = this._dom.pagesContainer;
+        const transform = `translate3d(${offset}%, 0, 0)`;
+
+        if (!animate) {
+            this._timers.clearTimeout('pageAnimation');
+            this._timers.cancelAnimationFrame('pageTransitionRestore');
+            pagesContainer.classList.remove('animating', 'looping');
+            pagesContainer.classList.add('jumping');
+
+            const previousTransition = pagesContainer.style.transition === 'none'
+                ? ''
+                : pagesContainer.style.transition;
+
+            pagesContainer.style.transition = 'none';
+            pagesContainer.style.transform = transform;
+            void pagesContainer.offsetWidth;
+
+            const restoreTransition = () => {
+                if (this._state.isDestroyed || this._dom.pagesContainer !== pagesContainer) return;
+                pagesContainer.classList.remove('jumping');
+                if (previousTransition) {
+                    pagesContainer.style.transition = previousTransition;
+                } else {
+                    pagesContainer.style.removeProperty('transition');
+                }
+            };
+
+            if (typeof requestAnimationFrame === 'function') {
+                this._timers.requestAnimationFrame('pageTransitionRestore', restoreTransition);
+            } else {
+                restoreTransition();
+            }
+            return;
+        }
+
+        this._timers.cancelAnimationFrame('pageTransitionRestore');
+        pagesContainer.classList.remove('jumping');
+        if (pagesContainer.style.transition === 'none') {
+            pagesContainer.style.removeProperty('transition');
+        }
+
+        pagesContainer.classList.add('animating');
+        this._timers.setTimeout('pageAnimation', () => {
+            this._dom.pagesContainer?.classList.remove('animating');
+        }, this._config.MOTION.pageAnimationMs);
+
+        pagesContainer.style.transform = transform;
+    },
+
     _goToPage(pageIndex, { force = false, animate = true } = {}) {
         if (this._state.isDestroyed) return;
 
@@ -246,25 +413,33 @@ const launchpadGridMethods = {
             return;
         }
 
+        const previousPage = this._state.currentPage;
         const normalizedIndex = ((pageIndex % pageCount) + pageCount) % pageCount;
+        const wrapsAround = pageIndex < 0 || pageIndex >= pageCount;
+        const wrapsBackwardFromFirst = previousPage === 0 && normalizedIndex === pageCount - 1 && pageIndex < 0;
+        const wrapsForwardFromLast = previousPage === pageCount - 1 && normalizedIndex === 0 && pageIndex >= pageCount;
+        const canUseWrapBridge = animate && pageCount > 1 && (wrapsBackwardFromFirst || wrapsForwardFromLast);
 
         if (!force && normalizedIndex === this._state.currentPage && pageIndex >= 0 && pageIndex < pageCount) {
             return;
         }
 
+        this._timers.cancelAnimationFrame('pageWrapStart');
+        this._removePageWrapClone();
+
         this._state.currentPage = normalizedIndex;
+        this._updatePageActiveState();
 
         if (this._dom.pagesContainer) {
             const offset = -normalizedIndex * 100;
-
-            if (animate) {
-                this._dom.pagesContainer.classList.add('animating');
-                this._timers.setTimeout('pageAnimation', () => {
-                    this._dom.pagesContainer?.classList.remove('animating');
-                }, this._config.MOTION.pageAnimationMs);
+            if (canUseWrapBridge) {
+                const direction = wrapsForwardFromLast ? 1 : -1;
+                if (!this._animateWrappedPageTransition(normalizedIndex, direction, pageCount)) {
+                    this._setPageTransform(offset, { animate: false });
+                }
+            } else {
+                this._setPageTransform(offset, { animate: animate && !wrapsAround });
             }
-
-            this._dom.pagesContainer.style.transform = `translateX(${offset}%)`;
         }
 
         this._updateIndicator();

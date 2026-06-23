@@ -296,6 +296,52 @@ describe('Launchpad resync + drag/search/ghost/style defensive branches', () => 
         cleanup();
     });
 
+    it('close: should force focus out before hiding when there is no restorable opener', async () => {
+        setStorageData({
+            storageVersion: 4,
+            quicklinksItems: [],
+            quicklinksDockPins: [],
+            launchpadGridColumns: 6,
+            launchpadGridRows: 4
+        }, 'sync');
+
+        const { cleanup, overlay } = mountLaunchpadDom();
+        const { store, launchpad } = await freshModules();
+
+        await store.init();
+        await launchpad.init();
+
+        launchpad._renderPages = vi.fn();
+        launchpad._renderIndicator = vi.fn();
+        launchpad._goToPage = vi.fn();
+        launchpad._initSortables = vi.fn();
+
+        await launchpad.open();
+
+        const searchInput = document.getElementById('launchpadSearchInput');
+        launchpad._previousActiveElement = null;
+        searchInput.blur = vi.fn();
+        searchInput.focus();
+
+        let activeElementWhenHidden = null;
+        const originalSetAttribute = overlay.setAttribute.bind(overlay);
+        overlay.setAttribute = (name, value) => {
+            if (name === 'aria-hidden' && value === 'true') {
+                activeElementWhenHidden = document.activeElement;
+            }
+            return originalSetAttribute(name, value);
+        };
+
+        launchpad.close();
+
+        expect(activeElementWhenHidden).not.toBe(searchInput);
+        expect(overlay.contains(activeElementWhenHidden)).toBe(false);
+
+        launchpad.destroy?.();
+        store.destroy?.();
+        cleanup();
+    });
+
     it('touch swipe: should navigate pages on horizontal swipe when open', async () => {
         setStorageData({
             storageVersion: 4,

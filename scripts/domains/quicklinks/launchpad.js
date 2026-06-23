@@ -613,6 +613,8 @@ class Launchpad {
         this._timers.cancelAnimationFrame('dragEndPhase2');
         this._timers.cancelAnimationFrame('folderDragStart');
         this._timers.cancelAnimationFrame('folderDragFinalize');
+        this._timers.cancelAnimationFrame('pageTransitionRestore');
+        this._timers.cancelAnimationFrame('pageWrapStart');
         this._deferredRerenderExecutor?.cancel();
     }
 
@@ -631,8 +633,8 @@ class Launchpad {
     _resetVisualState() {
         this._state.currentPage = 0;
         if (this._dom.pagesContainer) {
-            this._dom.pagesContainer.style.transform = 'translateX(0%)';
-            this._dom.pagesContainer.classList.remove('animating');
+            this._dom.pagesContainer.style.transform = 'translate3d(0%, 0, 0)';
+            this._dom.pagesContainer.classList.remove('animating', 'jumping', 'looping');
             this._dom.pagesContainer.replaceChildren();
         }
     }

@@ -36,6 +36,30 @@ function findFocusableFallback(excludeRoot) {
     return null;
 }
 
+function focusDocumentBody() {
+    if (!(document.body instanceof HTMLElement)) return false;
+
+    const hadTabIndex = document.body.hasAttribute('tabindex');
+    const previousTabIndex = document.body.getAttribute('tabindex');
+
+    if (!hadTabIndex) {
+        document.body.setAttribute('tabindex', '-1');
+    }
+
+    try {
+        document.body.focus({ preventScroll: true });
+    } catch {
+    }
+
+    if (!hadTabIndex) {
+        document.body.removeAttribute('tabindex');
+    } else {
+        document.body.setAttribute('tabindex', previousTabIndex);
+    }
+
+    return document.activeElement === document.body;
+}
+
 export function restoreFocus(previousActiveElement, { excludeRoot = null, fallbackElement = null } = {}) {
     const candidates = [
         previousActiveElement,
@@ -64,5 +88,17 @@ export function blurActiveElementWithin(root) {
     if (typeof activeElement.blur !== 'function') return false;
 
     activeElement.blur();
-    return !root.contains(document.activeElement);
+    if (!root.contains(document.activeElement)) return true;
+
+    const fallback = findFocusableFallback(root);
+    if (fallback) {
+        try {
+            fallback.focus({ preventScroll: true });
+        } catch {
+        }
+
+        if (!root.contains(document.activeElement)) return true;
+    }
+
+    return focusDocumentBody() && !root.contains(document.activeElement);
 }
