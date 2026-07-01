@@ -89,8 +89,6 @@ function createSections() {
         "settingsQuicklinksShowBackdrop",
         KEYS.showBackdrop,
       ),
-    ]),
-    section("settingsQuicklinksMagnify", [
       {
         type: "slider",
         id: "macMagnifyScale",
@@ -108,7 +106,6 @@ function createSections() {
         fromInput: clampQuicklinksMagnifyScale,
       },
     ]),
-    section("settingsLaunchpadDensity", STEPPER_CONFIGS.slice(1).map(createStepperRow)),
     // Icon cache UI stays hidden, but runtime/cache/backup compatibility remains supported.
   ];
 }

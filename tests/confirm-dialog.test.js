@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { confirmDialog } from '../scripts/shared/confirm-dialog.js';
 import { MacWindowBase } from '../scripts/platform/mac-window-base.js';
 import { modalLayer } from '../scripts/platform/modal-layer.js';
@@ -60,6 +62,13 @@ describe('confirm-dialog', () => {
                 </div>
             </div>
         `);
+    }
+
+    function readCssRule(selector) {
+        const css = readFileSync(resolve(process.cwd(), 'styles/bundle.css'), 'utf8');
+        const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const match = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`, 'm'));
+        return match?.[1] || '';
     }
 
     it('should resolve true when confirm button is clicked', async () => {
@@ -154,6 +163,40 @@ describe('confirm-dialog', () => {
             new MouseEvent('click', { bubbles: true })
         );
         await expect(promise).resolves.toBe(true);
+    });
+
+    it('should render above a window modal using an isolated non-transparent dialog layer', async () => {
+        mountWindowDom();
+        const baseWindow = new TestWindow();
+        baseWindow.open();
+        await Promise.resolve();
+
+        const promise = confirmDialog('Delete backup?');
+        await Promise.resolve();
+
+        const windowOverlay = document.getElementById('testOverlay');
+        const confirmOverlay = document.querySelector('.confirm-dialog-overlay');
+        const dialog = confirmOverlay?.querySelector('.confirm-dialog');
+
+        expect(Number(confirmOverlay?.style.zIndex || 0)).toBeGreaterThan(Number(windowOverlay?.style.zIndex || 0));
+        expect(confirmOverlay?.classList.contains('confirm-dialog-overlay')).toBe(true);
+        expect(dialog?.classList.contains('confirm-dialog')).toBe(true);
+
+        confirmOverlay?.querySelector('.confirm-dialog__cancel')?.dispatchEvent(
+            new MouseEvent('click', { bubbles: true })
+        );
+        await expect(promise).resolves.toBe(false);
+    });
+
+    it('should define an isolated opaque visual layer for confirmation dialogs', () => {
+        const overlayRule = readCssRule('.confirm-dialog-overlay');
+        const dialogRule = readCssRule('.confirm-dialog');
+
+        expect(overlayRule).toContain('z-index: var(--z-modal)');
+        expect(overlayRule).toContain('isolation: isolate');
+        expect(overlayRule).toContain('pointer-events: auto');
+        expect(dialogRule).toContain('background: var(--mac-dialog-bg)');
+        expect(dialogRule).toContain('isolation: isolate');
     });
 
     it('should restore focus before hiding the dialog subtree from assistive tech', async () => {

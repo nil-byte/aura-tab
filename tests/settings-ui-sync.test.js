@@ -124,7 +124,7 @@ describe('settings UI Safari sync', () => {
         expect(settingsRepoMocks.patchSyncSettings).not.toHaveBeenCalled();
     });
 
-    it('dock page should keep launchpad density controls hidden-item removal scoped to icon-cache only', async () => {
+    it('dock page should keep dock appearance controls without launchpad density rows', async () => {
         const { registerDockContent } = await import('../scripts/domains/settings/content-dock.js');
         const win = createWindowStub();
         const container = document.createElement('div');
@@ -144,16 +144,15 @@ describe('settings UI Safari sync', () => {
 
         expect(sectionTitles).toEqual([
             'settingsQuicklinksSection',
-            'macSettingsDockAppearance',
-            'settingsQuicklinksMagnify',
-            'settingsLaunchpadDensity'
+            'macSettingsDockAppearance'
         ]);
         expect(sectionTitles).not.toContain('iconCacheSectionTitle');
+        expect(sectionTitles).not.toContain('settingsLaunchpadDensity');
         expect(rows.some((row) => row.id === 'macMagnifyScale')).toBe(true);
         expect(rows.some((row) => row.id === 'macQuicklinksStyle')).toBe(true);
         expect(rows.some((row) => row.controlHtml?.includes('macDockCount'))).toBe(true);
-        expect(rows.some((row) => row.controlHtml?.includes('macGridCols'))).toBe(true);
-        expect(rows.some((row) => row.controlHtml?.includes('macGridRows'))).toBe(true);
+        expect(rows.some((row) => row.controlHtml?.includes('macGridCols'))).toBe(false);
+        expect(rows.some((row) => row.controlHtml?.includes('macGridRows'))).toBe(false);
         expect(rows.some((row) => row.id === 'macIconCacheTTL')).toBe(false);
     });
 

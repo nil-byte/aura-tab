@@ -51,8 +51,14 @@ describe('settings-general-ui-defaults', () => {
         expect(mocks.createSettingsBuilder).toHaveBeenCalledTimes(1);
 
         const [, config] = mocks.createSettingsBuilder.mock.calls[0];
+        const sectionTitles = config.sections.map((section) => section.titleKey);
         const rows = config.sections.flatMap((section) => section.rows || []);
 
+        expect(sectionTitles).toEqual([
+            'settingsLanguageSection',
+            'settingsUiSection',
+            'settingsLaunchpadDensity'
+        ]);
         expect(getRowById(rows, 'macShowSeconds')?.defaultValue).toBe(SYNC_SETTINGS_DEFAULTS.showSeconds);
         expect(getRowById(rows, 'macSearchOpenNewTab')?.defaultValue).toBe(SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab);
         expect(getRowById(rows, 'macShowRefreshBtn')?.defaultValue).toBe(bgDefaults.showRefreshButton);
@@ -61,5 +67,15 @@ describe('settings-general-ui-defaults', () => {
         expect(getRowById(rows, 'macShowPhotoInfo')?.defaultValue).toBe(bgDefaults.showPhotoInfo);
         expect(getRowById(rows, 'macLaunchpadShowNames')?.defaultValue).toBe(SYNC_SETTINGS_DEFAULTS.launchpadShowNames);
         expect(getRowById(rows, 'macCloseSettingsOnOutsideClick')?.defaultValue).toBe(SYNC_SETTINGS_DEFAULTS.macSettingsDismissOnOutsideClick);
+        expect(rows.some((row) => row.controlHtml?.includes('macGridCols'))).toBe(true);
+        expect(rows.some((row) => row.controlHtml?.includes('macGridRows'))).toBe(true);
+
+        const launchpadDensitySection = config.sections.find(
+            (section) => section.titleKey === 'settingsLaunchpadDensity'
+        );
+        const launchpadDensityRows = launchpadDensitySection?.rows || [];
+        expect(launchpadDensityRows).toHaveLength(2);
+        expect(launchpadDensityRows.some((row) => row.controlHtml?.includes('macGridCols'))).toBe(true);
+        expect(launchpadDensityRows.some((row) => row.controlHtml?.includes('macGridRows'))).toBe(true);
     });
 });

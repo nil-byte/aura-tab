@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/nil-byte/aura-tab/actions/workflows/ci.yml/badge.svg)](https://github.com/nil-byte/aura-tab/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-3.4-blue.svg)](https://github.com/nil-byte/aura-tab/releases)
+[![Version](https://img.shields.io/badge/version-3.5.2-blue.svg)](https://github.com/nil-byte/aura-tab/releases)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-brightgreen)](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja)
 
 A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backgrounds, quick links management, and immersive photo viewing.

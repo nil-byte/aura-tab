@@ -1,4 +1,22 @@
 {
+  "3.5.2": {
+    "en": [
+      "Settings: Reorganized General and Dock options so interface, Launchpad density, and Dock appearance controls are grouped more clearly",
+      "Confirm Dialog: Fixed destructive confirmation dialogs appearing visually transparent over Settings and other overlays",
+      "Stepper Controls: Fixed plus/minus steppers so decrement, value, and increment columns are visually centered"
+    ],
+    "zh_CN": [
+      "设置：重新整理通用与 Dock 选项分组，让界面设置、启动台布局密度与 Dock 外观控制更清晰",
+      "确认对话框：修复删除等确认框在设置窗口和其他浮层上出现视觉透底的问题",
+      "步进控件：修复加减按钮左右宽度不均，列、数值与行等控件现在视觉居中"
+    ],
+    "zh_TW": [
+      "設定：重新整理通用與 Dock 選項分組，讓介面設定、啟動台佈局密度與 Dock 外觀控制更清楚",
+      "確認對話框：修復刪除等確認框在設定視窗和其他浮層上出現視覺透底的問題",
+      "步進控制項：修復加減按鈕左右寬度不均，列、數值與行等控制項現在視覺置中"
+    ],
+    "moreUrl": ""
+  },
   "3.5.1": {
     "en": [
       "Launchpad: Added smoother circular page transitions and kept wrap clones out of focus and item selectors",

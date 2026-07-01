@@ -10,11 +10,30 @@ import {
     resolveShortcutSettings
 } from '../../platform/shortcut-manager.js';
 import { createSettingsBuilder } from './builder.js';
+import { createStepperRow } from './content-dock.js';
 import { normalizeLocaleForChangelog, loadChangelogData } from '../changelog/utils.js';
 import { escapeHtml } from '../../shared/text.js';
+import { QUICKLINKS_BOUNDS, QUICKLINKS_SYNC_KEYS } from '../quicklinks/store.js';
 
 const ONLINE_BACKGROUND_SOURCES = ['unsplash', 'pixabay', 'pexels', 'bing'];
 const BACKGROUND_UI_DEFAULTS = createBackgroundSettingsDefaults();
+const QUICKLINKS_KEYS = QUICKLINKS_SYNC_KEYS;
+const LAUNCHPAD_DENSITY_STEPPERS = [
+    {
+        prefix: 'macGridCols',
+        labelKey: 'settingsLaunchpadColumns',
+        storageKey: QUICKLINKS_KEYS.gridColumns,
+        min: QUICKLINKS_BOUNDS.gridColumns.min,
+        max: QUICKLINKS_BOUNDS.gridColumns.max
+    },
+    {
+        prefix: 'macGridRows',
+        labelKey: 'settingsLaunchpadRows',
+        storageKey: QUICKLINKS_KEYS.gridRows,
+        min: QUICKLINKS_BOUNDS.gridRows.min,
+        max: QUICKLINKS_BOUNDS.gridRows.max
+    }
+];
 const SHORTCUT_EDITABLE_ACTIONS = Object.freeze([
     SHORTCUT_ACTIONS.focusSearch,
     SHORTCUT_ACTIONS.openLaunchpad
@@ -58,32 +77,6 @@ export function registerGeneralContent(window) {
                 },
                 {
                     type: 'section',
-                    titleKey: 'settingsClockSection',
-                    rows: [
-                        {
-                            type: 'toggle',
-                            id: 'macShowSeconds',
-                            labelKey: 'settingsClockShowSeconds',
-                            storageKey: 'showSeconds',
-                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSeconds
-                        }
-                    ]
-                },
-                {
-                    type: 'section',
-                    titleKey: 'macSettingsSearchSection',
-                    rows: [
-                        {
-                            type: 'toggle',
-                            id: 'macSearchOpenNewTab',
-                            labelKey: 'settingsUiSearchNewTab',
-                            storageKey: 'searchOpenInNewTab',
-                            defaultValue: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab
-                        }
-                    ]
-                },
-                {
-                    type: 'section',
                     titleKey: 'settingsUiSection',
                     rows: [
                         {
@@ -108,6 +101,20 @@ export function registerGeneralContent(window) {
                             labelKey: 'settingsUiShowSearchBtn',
                             storageKey: 'showSearchBtn',
                             defaultValue: SYNC_SETTINGS_DEFAULTS.showSearchBtn
+                        },
+                        {
+                            type: 'toggle',
+                            id: 'macShowSeconds',
+                            labelKey: 'settingsClockShowSeconds',
+                            storageKey: 'showSeconds',
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.showSeconds
+                        },
+                        {
+                            type: 'toggle',
+                            id: 'macSearchOpenNewTab',
+                            labelKey: 'settingsUiSearchNewTab',
+                            storageKey: 'searchOpenInNewTab',
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab
                         },
                         {
                             type: 'toggle',
@@ -136,6 +143,11 @@ export function registerGeneralContent(window) {
                             fromInput: (value) => value === true
                         }
                     ]
+                },
+                {
+                    type: 'section',
+                    titleKey: 'settingsLaunchpadDensity',
+                    rows: LAUNCHPAD_DENSITY_STEPPERS.map(createStepperRow)
                 }
             ],
             onAfterLoad: ({ builder, storage }) => {
