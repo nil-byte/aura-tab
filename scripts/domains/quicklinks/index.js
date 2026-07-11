@@ -11,7 +11,7 @@ import { iconCache } from '../../platform/icon-cache.js';
 import { DisposableComponent, createDebounce } from '../../platform/lifecycle.js';
 import { fetchIconBlobViaBackground } from '../../platform/icon-fetch-bridge.js';
 import { getInitial, isValidQuicklinkUrl, normalizeUrlForNavigation } from '../../shared/text.js';
-import { ICON_PALETTE, createTextIconContent, normalizeIconAppearance, truncateIconText } from './icon-appearance.js';
+import { ICON_PALETTE, createTextIconContent, normalizeCustomIconColor, normalizeIconAppearance, resolveIconColor, truncateIconText } from './icon-appearance.js';
 
 const MODAL_ID = 'quicklink-dialog';
 
@@ -78,6 +78,9 @@ class QuickLinksApp extends DisposableComponent {
             iconTextInput: byId('quicklinkIconTextInput'),
             iconMode: byId('quicklinkIconMode'),
             colorPalette: byId('quicklinkColorPalette'),
+            customColorPopover: byId('quicklinkCustomColorPopover'),
+            customColorInput: byId('quicklinkCustomColorInput'),
+            customColorValue: byId('quicklinkCustomColorValue'),
             dockCheckbox: byId('quicklinkDockCheckbox'),
             previewIcon: byId('quicklinkPreviewIcon'),
             refreshIconRow: byId('quicklinkRefreshIconRow'),
@@ -135,9 +138,28 @@ class QuickLinksApp extends DisposableComponent {
         this._events.add(this.refs.colorPalette, 'click', (event) => {
             const button = event.target.closest('[data-color]');
             if (!button) return;
+            if (button.dataset.color === 'custom') {
+                this.refs.customColorPopover?.classList.toggle('hidden');
+                return;
+            }
             this.editState.iconColor = button.dataset.color;
+            this.refs.customColorPopover?.classList.add('hidden');
             this._renderColorPalette();
             this._updatePreviewIcon();
+        });
+        this._events.add(this.refs.customColorInput, 'input', (event) => {
+            const color = normalizeCustomIconColor(event.target.value);
+            if (!color) return;
+            this.editState.iconColor = color;
+            event.target.value = color;
+            if (this.refs.customColorValue) this.refs.customColorValue.textContent = color;
+            this._renderColorPalette();
+            this._updatePreviewIcon();
+        });
+        this._events.add(document, 'click', (event) => {
+            if (!event.target.closest('.quicklink-color-picker-anchor')) {
+                this.refs.customColorPopover?.classList.add('hidden');
+            }
         });
 
         const tagsInput = this.refs.tagsInput;
@@ -181,6 +203,10 @@ class QuickLinksApp extends DisposableComponent {
         const appearance = !link?.icon ? normalizeIconAppearance(link?.iconAppearance, link) : null;
         this.editState.iconMode = link?.icon ? 'custom' : (appearance ? 'text' : 'auto');
         this.editState.iconColor = appearance?.color || 'slate';
+        const customColor = resolveIconColor(this.editState.iconColor) || ICON_PALETTE.slate;
+        if (this.refs.customColorInput) this.refs.customColorInput.value = customColor;
+        if (this.refs.customColorValue) this.refs.customColorValue.textContent = customColor;
+        this.refs.customColorPopover?.classList.add('hidden');
 
         const rawTags = link && Array.isArray(link.tags) ? link.tags : [];
         const nextTags = [];
@@ -498,7 +524,7 @@ class QuickLinksApp extends DisposableComponent {
 
     _renderColorPalette() {
         if (!this.refs.colorPalette) return;
-        this.refs.colorPalette.replaceChildren(...Object.entries(ICON_PALETTE).map(([token, value]) => {
+        const buttons = Object.entries(ICON_PALETTE).map(([token, value]) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.dataset.color = token;
@@ -507,7 +533,17 @@ class QuickLinksApp extends DisposableComponent {
             button.setAttribute('aria-label', token);
             button.setAttribute('aria-checked', String(token === this.editState.iconColor));
             return button;
-        }));
+        });
+        const customButton = document.createElement('button');
+        customButton.type = 'button';
+        customButton.className = 'quicklink-custom-color-btn';
+        customButton.dataset.color = 'custom';
+        customButton.setAttribute('role', 'radio');
+        customButton.setAttribute('aria-label', t('dialogIconCustomColor'));
+        customButton.setAttribute('aria-checked', String(String(this.editState.iconColor).startsWith('#')));
+        customButton.style.setProperty('--selected-custom-color', resolveIconColor(this.editState.iconColor) || ICON_PALETTE.slate);
+        buttons.push(customButton);
+        this.refs.colorPalette.replaceChildren(...buttons);
     }
 
     _handleTagKeydown(e) {

@@ -142,7 +142,14 @@
                             <span data-i18n="dialogIconText"></span>
                             <input type="text" id="quicklinkIconTextInput" maxlength="8" autocomplete="off">
                         </label>
-                        <div class="quicklink-color-palette" id="quicklinkColorPalette" role="radiogroup" aria-label="Icon color"></div>
+                        <div class="quicklink-color-picker-anchor">
+                            <div class="quicklink-color-palette" id="quicklinkColorPalette" role="radiogroup" aria-label="Icon color"></div>
+                            <div class="quicklink-custom-color-popover hidden" id="quicklinkCustomColorPopover">
+                                <label for="quicklinkCustomColorInput" data-i18n="dialogIconCustomColor"></label>
+                                <input type="color" id="quicklinkCustomColorInput" value="#475569">
+                                <output id="quicklinkCustomColorValue">#475569</output>
+                            </div>
+                        </div>
                     </div>
                 </aside>
                 <div class="quicklink-dialog-form">

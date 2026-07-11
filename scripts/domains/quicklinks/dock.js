@@ -513,6 +513,7 @@ class Dock extends DisposableComponent {
         const handlePointerMove = (e) => {
             if (this.isDestroyed) return;
             if (this.container?.classList.contains('magnify-off')) return;
+            if (this.container?.dataset.position === 'top') return;
             const clientX = e.clientX;
             if (!Number.isFinite(clientX)) return;
             cancelPendingLeave();
@@ -522,12 +523,12 @@ class Dock extends DisposableComponent {
                 this.container.classList.add('magnifying');
             }
             this._timers.requestAnimationFrame('magnifierMeasure', () => {
-                if (this.container?.dataset.position === 'top') this._updateTopMagnifier(clientX);
-                else this._updateMagnifierTargets();
+                this._updateMagnifierTargets();
             });
         };
         this._events.add(this.container, 'mouseenter', () => {
             if (this.isDestroyed || this.container?.classList.contains('magnify-off')) return;
+            if (this.container?.dataset.position === 'top') return;
             cancelPendingLeave();
             this._magnifierCleanupAfterSettle = false;
             this._scheduleMagnifierAnchorRefresh();
@@ -554,28 +555,6 @@ class Dock extends DisposableComponent {
         this._events.add(window, 'resize', () => {
             this._scheduleMagnifierAnchorRefresh();
         }, { passive: true });
-    }
-    _updateTopMagnifier(clientX) {
-        const elements = this._collectMagnifierElements().filter(el => !el.classList.contains('dock-separator'));
-        if (!elements.length) return;
-        const centers = elements.map(el => this._centerX(el));
-        let closest = 0;
-        for (let i = 1; i < centers.length; i++) {
-            if (Math.abs(centers[i] - clientX) < Math.abs(centers[closest] - clientX)) closest = i;
-        }
-        const setting = Math.max(0, Math.min(100, Number(store.settings.magnifyScale) || 0));
-        const peak = 1 + (0.26 * setting / 100);
-        for (let i = 0; i < elements.length; i++) {
-            const step = i - closest;
-            const distance = Math.abs(step);
-            const weight = distance === 0 ? 1 : distance === 1 ? 0.48 : distance === 2 ? 0.18 : 0;
-            const scale = 1 + ((peak - 1) * weight);
-            const direction = step === 0 ? 0 : Math.sign(step);
-            const nudge = distance <= 2 ? direction * (peak - 1) * 14 * (3 - distance) : 0;
-            elements[i].style.setProperty('--top-fisheye-scale', scale.toFixed(3));
-            elements[i].style.setProperty('--top-fisheye-x', `${nudge.toFixed(2)}px`);
-            elements[i].style.setProperty('--top-fisheye-y', `${((scale - 1) * 8).toFixed(2)}px`);
-        }
     }
     _clearTopMagnifier() {
         for (const el of this._collectMagnifierElements()) {

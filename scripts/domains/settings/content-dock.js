@@ -58,6 +58,9 @@ export function registerDockContent(window) {
   window.registerContentRenderer("dock", (container) => {
     const builder = createSettingsBuilder(container, {
       sections: createSections(),
+      onAfterLoad: ({ builder: loadedBuilder, storage }) => {
+        updateMagnifyAvailability(loadedBuilder, storage?.sync?.[KEYS.dockPosition]);
+      },
     });
     void builder.init();
   });
@@ -97,6 +100,7 @@ function createSections() {
         toInput: normalizeQuicklinksDockPosition,
         fromInput: normalizeQuicklinksDockPosition,
         options: POSITION_OPTIONS,
+        onChange: ({ builder, value }) => updateMagnifyAvailability(builder, value),
       },
       createStepperRow(STEPPER_CONFIGS[0]),
       createToggleRow(
@@ -117,12 +121,22 @@ function createSections() {
         valueId: "macMagnifyValue",
         formatValue: (value) => `${value}%`,
         controlStyle: "flex: 1; max-width: 200px;",
+        rowId: "macMagnifyScaleRow",
+        descKey: "settingsQuicklinksMagnifyBottomOnly",
         toInput: clampQuicklinksMagnifyScale,
         fromInput: clampQuicklinksMagnifyScale,
       },
     ]),
     // Icon cache UI stays hidden, but runtime/cache/backup compatibility remains supported.
   ];
+}
+
+function updateMagnifyAvailability(builder, position) {
+  const isTop = normalizeQuicklinksDockPosition(position) === "top";
+  const slider = builder.getById("macMagnifyScale");
+  const row = builder.getById("macMagnifyScaleRow");
+  if (slider) slider.disabled = isTop;
+  row?.classList.toggle("is-position-disabled", isTop);
 }
 
 function section(titleKey, rows) {

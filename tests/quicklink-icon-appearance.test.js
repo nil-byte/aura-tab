@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+    ensureWhiteTextContrast,
     ICON_PALETTE,
+    normalizeCustomIconColor,
     normalizeIconAppearance,
     resolveIconMode,
     truncateIconText
@@ -27,6 +29,17 @@ describe('quicklink icon appearance', () => {
         expect(resolveIconMode({ icon: 'https://example.com/icon.png', iconAppearance: appearance })).toBe('custom');
         expect(resolveIconMode({ icon: '', iconAppearance: appearance })).toBe('text');
         expect(resolveIconMode({})).toBe('auto');
+    });
+
+    it('accepts six-digit hex colors and darkens them for white text contrast', () => {
+        expect(normalizeCustomIconColor('#123456')).toBe('#123456');
+        const corrected = ensureWhiteTextContrast('#ffffff');
+        expect(corrected).toMatch(/^#[0-9a-f]{6}$/);
+        expect(corrected).not.toBe('#ffffff');
+        expect(normalizeIconAppearance({ mode: 'text', text: 'A', color: '#ffffff' }))
+            .toEqual({ mode: 'text', text: 'A', color: corrected });
+        expect(normalizeCustomIconColor('#fff')).toBeNull();
+        expect(normalizeCustomIconColor('rgba(0,0,0,.5)')).toBeNull();
     });
 
     it('uses bottom as the non-mutating runtime fallback for Dock position', () => {
