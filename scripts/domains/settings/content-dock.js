@@ -3,6 +3,7 @@ import { patchSyncSettings } from "../../platform/settings-repo.js";
 import {
   clampQuicklinksMagnifyScale,
   normalizeQuicklinksStyle,
+  normalizeQuicklinksDockPosition,
   QUICKLINKS_BOUNDS,
   QUICKLINKS_SYNC_DEFAULTS,
   QUICKLINKS_SYNC_KEYS,
@@ -23,6 +24,10 @@ const STYLE_OPTIONS = [
   { value: "large", labelKey: "settingsQuicklinksStyleLarge" },
   { value: "medium", labelKey: "settingsQuicklinksStyleMedium" },
   { value: "small", labelKey: "settingsQuicklinksStyleSmall" },
+];
+const POSITION_OPTIONS = [
+  { value: "bottom", labelKey: "settingsQuicklinksDockPositionBottom" },
+  { value: "top", labelKey: "settingsQuicklinksDockPositionTop" },
 ];
 
 const STEPPER_CONFIGS = [
@@ -82,6 +87,16 @@ function createSections() {
         toInput: normalizeQuicklinksStyle,
         fromInput: normalizeQuicklinksStyle,
         options: STYLE_OPTIONS,
+      },
+      {
+        type: "select",
+        id: "macQuicklinksDockPosition",
+        labelKey: "settingsQuicklinksDockPosition",
+        storageKey: KEYS.dockPosition,
+        defaultValue: DEFAULTS[KEYS.dockPosition],
+        toInput: normalizeQuicklinksDockPosition,
+        fromInput: normalizeQuicklinksDockPosition,
+        options: POSITION_OPTIONS,
       },
       createStepperRow(STEPPER_CONFIGS[0]),
       createToggleRow(

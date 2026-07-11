@@ -49,7 +49,7 @@ function readNumber(style, prop, fallback) {
     return Number.isFinite(val) ? val : fallback;
 }
 function itemHash(item) {
-    return `${item._id}|${item.title || ''}|${item.url || ''}|${item.icon || ''}`;
+    return `${item._id}|${item.title || ''}|${item.url || ''}|${item.icon || ''}|${JSON.stringify(item.iconAppearance || null)}`;
 }
 class Dock extends DisposableComponent {
     constructor() {
@@ -114,6 +114,10 @@ class Dock extends DisposableComponent {
     _applySettings() {
         if (!this.container) return;
         this.container.dataset.style = store.settings.style;
+        const nextPosition = store.settings.dockPosition === 'top' ? 'top' : 'bottom';
+        const positionChanged = this.container.dataset.position && this.container.dataset.position !== nextPosition;
+        if (positionChanged) this._resetMagnifierImmediate();
+        this.container.dataset.position = nextPosition;
         const enabled = Boolean(store.settings.enabled);
         this.container.classList.toggle('hidden', !enabled);
         this.container.classList.toggle('show', enabled);
@@ -518,7 +522,8 @@ class Dock extends DisposableComponent {
                 this.container.classList.add('magnifying');
             }
             this._timers.requestAnimationFrame('magnifierMeasure', () => {
-                this._updateMagnifierTargets();
+                if (this.container?.dataset.position === 'top') this._updateTopMagnifier(clientX);
+                else this._updateMagnifierTargets();
             });
         };
         this._events.add(this.container, 'mouseenter', () => {
@@ -536,14 +541,48 @@ class Dock extends DisposableComponent {
                 if (this.isDestroyed || this._magnifierLocked) return;
                 if (this._dragState?.isDragging) return;
                 this._hoverX = null;
-                this._magnifierCleanupAfterSettle = true;
-                this._updateMagnifierTargets();
+                if (this.container?.dataset.position === 'top') {
+                    this._clearTopMagnifier();
+                    this.container.classList.remove('magnifying');
+                } else {
+                    this._magnifierCleanupAfterSettle = true;
+                    this._updateMagnifierTargets();
+                }
             }, DEFAULTS.MAGNIFIER.leaveDelayMs);
         };
         this._events.add(this.container, 'mouseleave', handlePointerLeave);
         this._events.add(window, 'resize', () => {
             this._scheduleMagnifierAnchorRefresh();
         }, { passive: true });
+    }
+    _updateTopMagnifier(clientX) {
+        const elements = this._collectMagnifierElements().filter(el => !el.classList.contains('dock-separator'));
+        if (!elements.length) return;
+        const centers = elements.map(el => this._centerX(el));
+        let closest = 0;
+        for (let i = 1; i < centers.length; i++) {
+            if (Math.abs(centers[i] - clientX) < Math.abs(centers[closest] - clientX)) closest = i;
+        }
+        const setting = Math.max(0, Math.min(100, Number(store.settings.magnifyScale) || 0));
+        const peak = 1 + (0.26 * setting / 100);
+        for (let i = 0; i < elements.length; i++) {
+            const step = i - closest;
+            const distance = Math.abs(step);
+            const weight = distance === 0 ? 1 : distance === 1 ? 0.48 : distance === 2 ? 0.18 : 0;
+            const scale = 1 + ((peak - 1) * weight);
+            const direction = step === 0 ? 0 : Math.sign(step);
+            const nudge = distance <= 2 ? direction * (peak - 1) * 14 * (3 - distance) : 0;
+            elements[i].style.setProperty('--top-fisheye-scale', scale.toFixed(3));
+            elements[i].style.setProperty('--top-fisheye-x', `${nudge.toFixed(2)}px`);
+            elements[i].style.setProperty('--top-fisheye-y', `${((scale - 1) * 8).toFixed(2)}px`);
+        }
+    }
+    _clearTopMagnifier() {
+        for (const el of this._collectMagnifierElements()) {
+            el.style.removeProperty('--top-fisheye-scale');
+            el.style.removeProperty('--top-fisheye-x');
+            el.style.removeProperty('--top-fisheye-y');
+        }
     }
     _updateMagnifierTargets() {
         if (this.isDestroyed || !this.container) return;
@@ -752,6 +791,7 @@ class Dock extends DisposableComponent {
     }
     _resetMagnifierImmediate() {
         if (!this.container) return;
+        this._clearTopMagnifier();
         this._hoverX = null;
         this._magnifierAnimating = false;
         this._magnifierCleanupAfterSettle = false;
