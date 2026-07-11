@@ -36,6 +36,20 @@ export function getFaviconUrlCandidates(pageUrl, { size = 64 } = {}) {
   const px = Number(size) || 64;
   const candidates = [];
   if (hostname) {
+    const chromeApiBig = getChromeFaviconApiUrl(normalizedUrl, { size: Math.max(px * 2, 128) });
+    const chromeApi = getChromeFaviconApiUrl(normalizedUrl, { size: Math.max(px, 64) });
+    if (chromeApiBig) candidates.push(chromeApiBig);
+    if (chromeApi) candidates.push(chromeApi);
+  }
+  try {
+    const origin = new URL(normalizedUrl).origin;
+    candidates.push(`${origin}/apple-touch-icon.png`);
+    candidates.push(`${origin}/apple-touch-icon-precomposed.png`);
+    candidates.push(`${origin}/favicon.ico`);
+    candidates.push(`${origin}/favicon.png`);
+  } catch {
+  }
+  if (hostname) {
     const s2Sizes = [...new Set([px * 2, Math.max(px, 128), px].filter(n => Number.isFinite(n) && n > 0))];
     for (const s of s2Sizes) {
       candidates.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=${s}`);
@@ -44,18 +58,6 @@ export function getFaviconUrlCandidates(pageUrl, { size = 64 } = {}) {
     for (const s of vSizes) {
       candidates.push(`https://favicon.vemetric.com/${encodeURIComponent(hostname)}?size=${s}&format=png`);
     }
-    const chromeApiBig = getChromeFaviconApiUrl(normalizedUrl, { size: Math.max(px * 2, 128) });
-    const chromeApi = getChromeFaviconApiUrl(normalizedUrl, { size: Math.max(px, 64) });
-    if (chromeApiBig) candidates.push(chromeApiBig);
-    if (chromeApi) candidates.push(chromeApi);
-  }
-  try {
-    const origin = new URL(normalizedUrl).origin;
-    candidates.push(`${origin}/favicon.ico`);
-    candidates.push(`${origin}/favicon.png`);
-    candidates.push(`${origin}/apple-touch-icon.png`);
-    candidates.push(`${origin}/apple-touch-icon-precomposed.png`);
-  } catch {
   }
   return [...new Set(candidates.filter(Boolean))];
 }
@@ -109,7 +111,7 @@ async function _loadIconWithCache(img, urls, onExhausted, { minPx, skipSvg, skip
         needsRefresh = !cacheValid;
       } else {
         const isStale = iconCache.isStale(entry);
-        cacheValid = !isStale;
+        cacheValid = true;
         needsRefresh = isStale;
       }
     }
@@ -140,10 +142,8 @@ async function _loadIconWithCache(img, urls, onExhausted, { minPx, skipSvg, skip
         return;
       }
       if (needsRefresh && canWriteCache) {
-        const urlToRefresh = customIconUrl || entry.sourceUrl;
-        if (urlToRefresh) {
-          _fetchAndCacheIcon(cacheKey, urlToRefresh);
-        }
+        const refreshUrls = customIconUrl ? [customIconUrl] : urls;
+        _refreshCacheFromCandidates(cacheKey, refreshUrls);
       }
       return;
     }
@@ -183,6 +183,16 @@ async function _loadIconWithCache(img, urls, onExhausted, { minPx, skipSvg, skip
     console.warn('[favicon] Cache error, falling back:', error);
     _loadIconWithFallback(img, urls, onExhausted, { minPx, skipSvg, skipSmall, desiredPx });
   }
+}
+async function _refreshCacheFromCandidates(cacheKey, urls) {
+  for (const url of [...new Set((urls || []).filter(Boolean))]) {
+    const blob = await _fetchAndCacheIcon(cacheKey, url);
+    if (blob) {
+      iconCache.removeFromNegativeCache(cacheKey);
+      return blob;
+    }
+  }
+  return null;
 }
 const _objectUrlRegistry = {
   urls: new Map(),
