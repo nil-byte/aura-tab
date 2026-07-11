@@ -5,6 +5,7 @@ import { toast } from '../../shared/toast.js';
 import { buildIconCacheKey, getFaviconUrlCandidates, setImageSrcWithFallback } from '../../shared/favicon.js';
 import { extractHostname } from '../../shared/text.js';
 import { escapeHtml, getInitial } from '../../shared/text.js';
+import { createTextIconContent, normalizeIconAppearance } from './icon-appearance.js';
 
 const CONFIG = {
     ITEMS_PER_PAGE: 10,
@@ -492,6 +493,13 @@ export class LinkManagerComponent {
             iconDiv.setAttribute('data-loaded', 'true');
             const url = iconDiv.dataset.url;
             const customIcon = iconDiv.dataset.customIcon;
+            const itemId = iconDiv.closest('[data-id]')?.dataset.id;
+            const item = itemId ? store.getItem(itemId) : null;
+            const textAppearance = !customIcon ? normalizeIconAppearance(item?.iconAppearance, item) : null;
+            if (textAppearance) {
+                iconDiv.appendChild(createTextIconContent(item, 'mac', textAppearance));
+                return;
+            }
 
             const img = document.createElement('img');
             img.alt = '';

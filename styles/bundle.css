@@ -1550,6 +1550,50 @@ html[data-first-paint='disarming'] #background-media .background-image {
     overflow: visible;
 }
 
+.quicklinks-container[data-position="top"] {
+    top: var(--space-10);
+    bottom: auto;
+    align-items: flex-start;
+}
+
+.quicklinks-container[data-position="top"] .quicklinks-list {
+    align-items: flex-start;
+}
+
+.quicklinks-container[data-position="top"] .quicklink-item,
+.quicklinks-container[data-position="top"] .launchpad-btn,
+.quicklinks-container[data-position="top"] .mac-settings-dock-btn,
+.quicklinks-container[data-position="top"] .quicklinks-add-wrapper {
+    --top-fisheye-scale: 1;
+    --top-fisheye-x: 0px;
+    --top-fisheye-y: 0px;
+    transform: translateX(var(--top-fisheye-x));
+    transition: transform 180ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.quicklinks-container[data-position="top"] .quicklink-icon,
+.quicklinks-container[data-position="top"] .launchpad-btn,
+.quicklinks-container[data-position="top"] .mac-settings-dock-btn,
+.quicklinks-container[data-position="top"] .quicklinks-add-btn {
+    transform: translateX(var(--top-fisheye-x)) translateY(var(--top-fisheye-y)) scale(var(--top-fisheye-scale));
+    transform-origin: top center;
+    transition: transform 180ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.quicklinks-container[data-position="top"] .quicklink-title {
+    top: calc(100% + var(--space-3));
+    bottom: auto;
+    transform: translateX(-50%) translateY(-6px);
+}
+
+.quicklinks-container[data-position="top"] .quicklink-item:hover .quicklink-title {
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 899px) {
+    .quicklinks-container[data-position="top"] { top: 112px; }
+}
+
 .quicklinks-container::before {
     content: '';
     position: absolute;
@@ -1654,9 +1698,9 @@ html[data-first-paint='disarming'] #background-media .background-image {
     transition: transform 0.08s var(--ease-default);
 }
 
-.quicklinks-container.magnifying .quicklink-item:hover .quicklink-icon,
-.quicklinks-container.magnifying .launchpad-btn:hover,
-.quicklinks-container.magnifying .quicklinks-add-btn:hover {
+.quicklinks-container[data-position="bottom"].magnifying .quicklink-item:hover .quicklink-icon,
+.quicklinks-container[data-position="bottom"].magnifying .launchpad-btn:hover,
+.quicklinks-container[data-position="bottom"].magnifying .quicklinks-add-btn:hover {
     transform: none;
     box-shadow: none;
 }
@@ -2281,7 +2325,7 @@ body.launchpad-dragging .launchpad-pages {
 }
 
 .launchpad-item:hover .launchpad-icon {
-    background: var(--surface-glass-hover);
+    background: transparent;
     box-shadow: none;
 }
 
@@ -2320,7 +2364,7 @@ body.launchpad-dragging .launchpad-pages {
 }
 
 .launchpad-item:active .launchpad-icon {
-    background: var(--surface-glass-active);
+    background: transparent;
 }
 
 .launchpad-icon img {
@@ -2350,9 +2394,26 @@ body.launchpad-dragging .launchpad-pages {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    height: 100%;
+    width: 64px;
+    height: 64px;
+    border-radius: calc(64px * var(--ql-radius-ratio));
 }
+
+.icon-text-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--icon-text-bg, rgba(71, 85, 105, 0.82));
+    color: #fff;
+    line-height: 1;
+    text-transform: none;
+    box-sizing: border-box;
+}
+
+.quicklink-icon .icon-text-content { width: 100%; height: 100%; border-radius: inherit; }
+.launchpad-icon .icon-text-content { width: 64px; height: 64px; }
+.mac-app-icon .icon-text-content { width: 100%; height: 100%; border-radius: inherit; }
+.icon-auto-fallback { background: rgba(71, 85, 105, 0.58); }
 
 .launchpad-title {
     font-size: var(--text-xs);
@@ -3150,7 +3211,10 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 
 .quicklink-dialog {
     width: 90%;
-    max-width: 360px;
+    max-width: 620px;
+    max-height: min(760px, calc(100vh - 48px));
+    display: flex;
+    flex-direction: column;
 
     background: linear-gradient(180deg,
             rgba(50, 50, 52, 0.95) 0%,
@@ -3214,18 +3278,29 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 
 
 .quicklink-dialog-content {
-    padding: var(--space-4);
+    padding: var(--space-5);
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: var(--space-6);
+    overflow-y: auto;
+}
+
+.quicklink-dialog-icon-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
 }
 
 .quicklink-dialog-preview {
     display: flex;
     justify-content: center;
-    margin-bottom: var(--space-4);
+    margin: var(--space-2) 0;
 }
 
 .quicklink-preview-icon {
-    width: 64px;
-    height: 64px;
+    width: 96px;
+    height: 96px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3236,10 +3311,39 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 }
 
 .quicklink-preview-icon img {
-    width: 48px;
-    height: 48px;
-    object-fit: contain;
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: calc(80px * var(--ql-radius-ratio));
 }
+
+.quicklink-preview-icon .icon-text-content { width: 80px; height: 80px; border-radius: calc(80px * var(--ql-radius-ratio)); font-size: 30px; }
+
+.quicklink-icon-mode {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 3px;
+    gap: 2px;
+    background: rgba(255,255,255,.08);
+    border-radius: var(--radius-md);
+}
+
+.quicklink-icon-mode button {
+    min-width: 0;
+    padding: 7px 4px;
+    border: 0;
+    border-radius: calc(var(--radius-md) - 2px);
+    background: transparent;
+    color: var(--text-tertiary);
+    font: 500 11px/1.2 var(--font-system);
+    cursor: pointer;
+}
+
+.quicklink-icon-mode button[aria-checked="true"] { background: rgba(255,255,255,.16); color: var(--text-primary); box-shadow: 0 1px 4px rgba(0,0,0,.22); }
+.quicklink-icon-options p { margin: 0; color: var(--text-quaternary); font-size: var(--text-xs); line-height: 1.45; }
+.quicklink-color-palette { display: grid; grid-template-columns: repeat(4, 30px); gap: 10px; margin-top: var(--space-3); }
+.quicklink-color-palette button { width: 30px; height: 30px; border: 2px solid transparent; border-radius: 10px; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+.quicklink-color-palette button[aria-checked="true"] { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.22); }
 
 .quicklink-preview-icon .preview-fallback {
     font-size: var(--text-2xl);
@@ -3604,6 +3708,21 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     padding: var(--space-4);
     border-top: 1px solid var(--border-subtle);
     gap: var(--space-3);
+}
+
+@media (max-width: 639px) {
+    .quicklink-dialog { width: calc(100% - 24px); max-height: calc(100vh - 24px); }
+    .quicklink-dialog-content { grid-template-columns: 1fr; gap: var(--space-4); }
+    .quicklink-dialog-icon-editor { align-items: stretch; }
+    .quicklink-dialog-preview { margin: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .quicklinks-container[data-position="top"] .quicklink-item,
+    .quicklinks-container[data-position="top"] .launchpad-btn,
+    .quicklinks-container[data-position="top"] .quicklinks-add-wrapper,
+    .quicklinks-container[data-position="top"] .quicklink-icon,
+    .quicklinks-container[data-position="top"] .quicklinks-add-btn { transform: none !important; transition: none !important; }
 }
 
 .quicklink-btn {

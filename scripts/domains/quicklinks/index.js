@@ -11,6 +11,7 @@ import { iconCache } from '../../platform/icon-cache.js';
 import { DisposableComponent, createDebounce } from '../../platform/lifecycle.js';
 import { fetchIconBlobViaBackground } from '../../platform/icon-fetch-bridge.js';
 import { getInitial, isValidQuicklinkUrl, normalizeUrlForNavigation } from '../../shared/text.js';
+import { ICON_PALETTE, createTextIconContent, normalizeIconAppearance, truncateIconText } from './icon-appearance.js';
 
 const MODAL_ID = 'quicklink-dialog';
 
@@ -33,7 +34,9 @@ class QuickLinksApp extends DisposableComponent {
             isEditing: false,
             editingId: null,
             source: null,  // 'launchpad' | 'dock' | null
-            tags: []  // Current tags in editing
+            tags: [],
+            iconMode: 'auto',
+            iconColor: 'slate'
         };
 
         this._debouncedPreview = createDebounce(() => this._updatePreviewIcon(), 500);
@@ -72,6 +75,9 @@ class QuickLinksApp extends DisposableComponent {
             titleInput: byId('quicklinkTitleInput'),
             urlInput: byId('quicklinkUrlInput'),
             iconInput: byId('quicklinkIconInput'),
+            iconTextInput: byId('quicklinkIconTextInput'),
+            iconMode: byId('quicklinkIconMode'),
+            colorPalette: byId('quicklinkColorPalette'),
             dockCheckbox: byId('quicklinkDockCheckbox'),
             previewIcon: byId('quicklinkPreviewIcon'),
             refreshIconRow: byId('quicklinkRefreshIconRow'),
@@ -121,6 +127,18 @@ class QuickLinksApp extends DisposableComponent {
             this._events.add(iconInput, 'blur', () => this._updatePreviewIcon());
             this._events.add(iconInput, 'input', () => this._debouncedPreview.call());
         }
+        this._events.add(this.refs.iconMode, 'click', (event) => {
+            const button = event.target.closest('[data-mode]');
+            if (button) this._setIconMode(button.dataset.mode);
+        });
+        this._events.add(this.refs.iconTextInput, 'input', () => this._updatePreviewIcon());
+        this._events.add(this.refs.colorPalette, 'click', (event) => {
+            const button = event.target.closest('[data-color]');
+            if (!button) return;
+            this.editState.iconColor = button.dataset.color;
+            this._renderColorPalette();
+            this._updatePreviewIcon();
+        });
 
         const tagsInput = this.refs.tagsInput;
         if (tagsInput) {
@@ -160,6 +178,9 @@ class QuickLinksApp extends DisposableComponent {
         this.editState.isEditing = Boolean(link && link._id);
         this.editState.editingId = link ? link._id : null;
         this.editState.source = source;
+        const appearance = !link?.icon ? normalizeIconAppearance(link?.iconAppearance, link) : null;
+        this.editState.iconMode = link?.icon ? 'custom' : (appearance ? 'text' : 'auto');
+        this.editState.iconColor = appearance?.color || 'slate';
 
         const rawTags = link && Array.isArray(link.tags) ? link.tags : [];
         const nextTags = [];
@@ -190,6 +211,9 @@ class QuickLinksApp extends DisposableComponent {
         if (titleInput) titleInput.value = link ? link.title : '';
         if (urlInput) urlInput.value = link ? link.url : '';
         if (iconInput) iconInput.value = link ? (link.icon || '') : '';
+        if (this.refs.iconTextInput) this.refs.iconTextInput.value = appearance?.text || '';
+        this._renderColorPalette();
+        this._setIconMode(this.editState.iconMode, false);
 
         if (dockCheckbox) {
             if (link && link._id) {
@@ -233,6 +257,8 @@ class QuickLinksApp extends DisposableComponent {
         this.editState.editingId = null;
         this.editState.source = null;
         this.editState.tags = [];
+        this.editState.iconMode = 'auto';
+        this.editState.iconColor = 'slate';
 
         if (wasFromLaunchpad) {
             launchpad.resumeFromPaused();
@@ -262,7 +288,11 @@ class QuickLinksApp extends DisposableComponent {
 
         const title = titleInput?.value.trim() || '';
         let url = urlInput?.value.trim() || '';
-        const icon = iconInput?.value.trim() || '';
+        const icon = this.editState.iconMode === 'custom' ? (iconInput?.value.trim() || '') : '';
+        const text = truncateIconText(this.refs.iconTextInput?.value, 2);
+        const iconAppearance = this.editState.iconMode === 'text'
+            ? { mode: 'text', text: text || this._getInitial(title || url || '?'), color: this.editState.iconColor }
+            : undefined;
 
         this._clearUrlValidation();
 
@@ -286,6 +316,7 @@ class QuickLinksApp extends DisposableComponent {
                     title: title || this._getTitleFromUrl(url),
                     url,
                     icon,
+                    iconAppearance,
                     tags: this.editState.tags
                 });
 
@@ -302,6 +333,7 @@ class QuickLinksApp extends DisposableComponent {
                     title: title || this._getTitleFromUrl(url),
                     url,
                     icon,
+                    iconAppearance,
                     tags: this.editState.tags
                 });
 
@@ -344,7 +376,7 @@ class QuickLinksApp extends DisposableComponent {
         }
 
         const normalizedUrl = this._normalizeUrl(url);
-        const customIconUrl = iconInput?.value.trim() || '';
+        const customIconUrl = this.editState.iconMode === 'custom' ? (iconInput?.value.trim() || '') : '';
         const cacheKey = buildIconCacheKey(normalizedUrl, customIconUrl);
 
         if (!cacheKey) {
@@ -395,7 +427,7 @@ class QuickLinksApp extends DisposableComponent {
 
         const url = urlInput?.value.trim();
         const title = titleInput?.value.trim();
-        const customIcon = iconInput?.value.trim();
+        const customIcon = this.editState.iconMode === 'custom' ? iconInput?.value.trim() : '';
 
         const oldImg = previewIcon.querySelector('img');
         if (oldImg?.src?.startsWith('blob:')) {
@@ -405,6 +437,16 @@ class QuickLinksApp extends DisposableComponent {
         }
 
         previewIcon.innerHTML = '';
+
+        if (this.editState.iconMode === 'text') {
+            const appearance = {
+                mode: 'text',
+                text: truncateIconText(this.refs.iconTextInput?.value, 2) || this._getInitial(title || url || '?'),
+                color: this.editState.iconColor
+            };
+            previewIcon.appendChild(createTextIconContent({ title, url }, 'preview', appearance));
+            return;
+        }
 
         const normalizedUrl = url ? this._normalizeUrl(url) : '';
         const urls = [customIcon, ...getFaviconUrlCandidates(normalizedUrl, { size: 64 })].filter(Boolean);
@@ -440,6 +482,32 @@ class QuickLinksApp extends DisposableComponent {
         fallback.className = 'preview-fallback';
         fallback.textContent = this._getInitial(title || '?');
         previewIcon.appendChild(fallback);
+    }
+
+    _setIconMode(mode, updatePreview = true) {
+        if (!['auto', 'custom', 'text'].includes(mode)) mode = 'auto';
+        this.editState.iconMode = mode;
+        for (const button of this.refs.iconMode?.querySelectorAll('[data-mode]') || []) {
+            button.setAttribute('aria-checked', String(button.dataset.mode === mode));
+        }
+        for (const panel of this.dialogOverlay?.querySelectorAll('[data-icon-panel]') || []) {
+            panel.classList.toggle('hidden', panel.dataset.iconPanel !== mode);
+        }
+        if (updatePreview) this._updatePreviewIcon();
+    }
+
+    _renderColorPalette() {
+        if (!this.refs.colorPalette) return;
+        this.refs.colorPalette.replaceChildren(...Object.entries(ICON_PALETTE).map(([token, value]) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.color = token;
+            button.style.backgroundColor = value;
+            button.setAttribute('role', 'radio');
+            button.setAttribute('aria-label', token);
+            button.setAttribute('aria-checked', String(token === this.editState.iconColor));
+            return button;
+        }));
     }
 
     _handleTagKeydown(e) {

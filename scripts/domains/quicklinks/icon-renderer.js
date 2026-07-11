@@ -7,6 +7,7 @@
 
 import { buildIconCacheKey, getFaviconUrlCandidates, setImageSrcWithFallback } from '../../shared/favicon.js';
 import { getInitial } from '../../shared/text.js';
+import { createTextIconContent, normalizeIconAppearance } from './icon-appearance.js';
 
 /**
  * Default icon size for favicon candidates
@@ -62,16 +63,19 @@ export function createIconElement(item, classPrefix) {
     const iconDiv = document.createElement('div');
     iconDiv.className = `${classPrefix}-icon`;
 
+    const textAppearance = !item.icon ? normalizeIconAppearance(item.iconAppearance) : null;
+    if (textAppearance) {
+        iconDiv.appendChild(createTextIconContent(item, classPrefix, textAppearance));
+        return iconDiv;
+    }
+
     const img = document.createElement('img');
     img.alt = '';
     img.draggable = false;
 
     const fallbackToInitial = () => {
         img.style.display = 'none';
-        const fallback = document.createElement('span');
-        fallback.className = `${classPrefix}-icon-fallback`;
-        fallback.textContent = getIconInitial(item.title || item.url);
-        iconDiv.appendChild(fallback);
+        iconDiv.appendChild(createTextIconContent(item, classPrefix));
     };
 
     const customIconUrl = item.icon || '';
@@ -149,16 +153,19 @@ export function updateItemIcon(el, item, classPrefix) {
     // Clear existing content
     iconDiv.innerHTML = '';
 
+    const textAppearance = !item.icon ? normalizeIconAppearance(item.iconAppearance) : null;
+    if (textAppearance) {
+        iconDiv.appendChild(createTextIconContent(item, classPrefix, textAppearance));
+        return;
+    }
+
     const img = document.createElement('img');
     img.alt = '';
     img.draggable = false;
 
     const fallbackToInitial = () => {
         img.style.display = 'none';
-        const fallback = document.createElement('span');
-        fallback.className = `${classPrefix}-icon-fallback`;
-        fallback.textContent = getIconInitial(item.title || item.url);
-        iconDiv.appendChild(fallback);
+        iconDiv.appendChild(createTextIconContent(item, classPrefix));
     };
 
     const customIconUrl = item.icon || '';

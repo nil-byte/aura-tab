@@ -1,6 +1,7 @@
 import { t } from '../../platform/i18n.js';
 import { setStorageInChunks } from '../../shared/storage.js';
 import { clamp } from '../../shared/text.js';
+import { normalizeIconAppearance } from './icon-appearance.js';
 
 export const QUICKLINKS_SYNC_KEYS = Object.freeze({
     enabled: 'quicklinksEnabled',
@@ -8,6 +9,7 @@ export const QUICKLINKS_SYNC_KEYS = Object.freeze({
     newTab: 'quicklinksNewTab',
     dockCount: 'quicklinksDockCount',
     magnifyScale: 'quicklinksMagnifyScale',
+    dockPosition: 'quicklinksDockPosition',
     showBackdrop: 'quicklinksShowBackdrop',
     gridColumns: 'launchpadGridColumns',
     gridRows: 'launchpadGridRows'
@@ -28,6 +30,7 @@ export const QUICKLINKS_STORE_DEFAULTS = Object.freeze({
     newTab: true,
     dockCount: QUICKLINKS_BOUNDS.dockCount.default,
     magnifyScale: QUICKLINKS_BOUNDS.magnifyScale.default,
+    dockPosition: 'bottom',
     showBackdrop: true,
     launchpadGridColumns: QUICKLINKS_BOUNDS.gridColumns.default,
     launchpadGridRows: QUICKLINKS_BOUNDS.gridRows.default
@@ -39,6 +42,7 @@ export const QUICKLINKS_SYNC_DEFAULTS = Object.freeze({
     [QUICKLINKS_SYNC_KEYS.newTab]: QUICKLINKS_STORE_DEFAULTS.newTab,
     [QUICKLINKS_SYNC_KEYS.dockCount]: QUICKLINKS_STORE_DEFAULTS.dockCount,
     [QUICKLINKS_SYNC_KEYS.magnifyScale]: QUICKLINKS_STORE_DEFAULTS.magnifyScale,
+    [QUICKLINKS_SYNC_KEYS.dockPosition]: QUICKLINKS_STORE_DEFAULTS.dockPosition,
     [QUICKLINKS_SYNC_KEYS.showBackdrop]: QUICKLINKS_STORE_DEFAULTS.showBackdrop,
     [QUICKLINKS_SYNC_KEYS.gridColumns]: QUICKLINKS_STORE_DEFAULTS.launchpadGridColumns,
     [QUICKLINKS_SYNC_KEYS.gridRows]: QUICKLINKS_STORE_DEFAULTS.launchpadGridRows
@@ -60,6 +64,10 @@ export function clampQuicklinksMagnifyScale(value) {
     const n = Number(value);
     if (!Number.isFinite(n)) return QUICKLINKS_BOUNDS.magnifyScale.default;
     return clamp(n, QUICKLINKS_BOUNDS.magnifyScale.min, QUICKLINKS_BOUNDS.magnifyScale.max);
+}
+
+export function normalizeQuicklinksDockPosition(value) {
+    return value === 'top' ? 'top' : 'bottom';
 }
 
 export function clampLaunchpadGridColumns(value) {
@@ -735,7 +743,7 @@ class Store {
         }
         const rawUrl = String(item.url || '').slice(0, CONFIG.MAX_URL_LENGTH);
         const safeUrl = this.getSafeUrl(rawUrl);
-        return {
+        const normalized = {
             _id: item._id,
             title: String(item.title || '').slice(0, CONFIG.MAX_TITLE_LENGTH),
             url: safeUrl || '',
@@ -743,6 +751,9 @@ class Store {
             tags: this._normalizeTags(item.tags),
             createdAt: item.createdAt || Date.now()
         };
+        const iconAppearance = normalizeIconAppearance(item.iconAppearance, normalized);
+        if (iconAppearance) normalized.iconAppearance = iconAppearance;
+        return normalized;
     }
     _normalizeFolderData(item) {
         if (!item || !item._id) return null;
@@ -1039,6 +1050,9 @@ class Store {
         if (changes[keys.magnifyScale]) {
             settingsPatch.magnifyScale = clampQuicklinksMagnifyScale(changes[keys.magnifyScale].newValue);
         }
+        if (changes[keys.dockPosition]) {
+            settingsPatch.dockPosition = normalizeQuicklinksDockPosition(changes[keys.dockPosition].newValue);
+        }
         if (changes[keys.showBackdrop]) settingsPatch.showBackdrop = changes[keys.showBackdrop].newValue;
         if (changes[keys.gridColumns]) settingsPatch.launchpadGridColumns = clampLaunchpadGridColumns(changes[keys.gridColumns].newValue);
         if (changes[keys.gridRows]) settingsPatch.launchpadGridRows = clampLaunchpadGridRows(changes[keys.gridRows].newValue);
@@ -1091,6 +1105,7 @@ class Store {
                 newTab: data[keys.newTab],
                 dockCount: clampQuicklinksDockCount(data[keys.dockCount]),
                 magnifyScale: clampQuicklinksMagnifyScale(data[keys.magnifyScale]),
+                dockPosition: normalizeQuicklinksDockPosition(data[keys.dockPosition]),
                 showBackdrop: data[keys.showBackdrop],
                 launchpadGridColumns: clampLaunchpadGridColumns(data[keys.gridColumns]),
                 launchpadGridRows: clampLaunchpadGridRows(data[keys.gridRows])
@@ -1569,6 +1584,8 @@ class Store {
             tags: this._normalizeTags(itemData.tags),
             createdAt: Date.now()
         };
+        const iconAppearance = normalizeIconAppearance(itemData.iconAppearance, item);
+        if (iconAppearance) item.iconAppearance = iconAppearance;
         const committed = await this._enqueueWrite(async () => {
             return this._commit({
                 itemsToSet: { [item._id]: item },
@@ -1654,7 +1671,7 @@ class Store {
         const itemsToSet = {};
         for (const entry of entries) {
             const id = String(entry.item._id);
-            itemsToSet[id] = {
+            const restored = {
                 ...entry.item,
                 _id: id,
                 title: String(entry.item.title || '').slice(0, CONFIG.MAX_TITLE_LENGTH),
@@ -1663,6 +1680,10 @@ class Store {
                 tags: this._normalizeTags(entry.item.tags),
                 createdAt: Number.isFinite(Number(entry.item.createdAt)) ? Number(entry.item.createdAt) : Date.now()
             };
+            const iconAppearance = normalizeIconAppearance(entry.item.iconAppearance, restored);
+            if (iconAppearance) restored.iconAppearance = iconAppearance;
+            else delete restored.iconAppearance;
+            itemsToSet[id] = restored;
         }
         const dockBefore = Array.isArray(this.dockPins) ? this.dockPins.join('|') : '';
         const committed = await this._enqueueWrite(async () => {
@@ -2546,6 +2567,9 @@ class Store {
         if ('dockCount' in normalized) {
             normalized.dockCount = clampQuicklinksDockCount(normalized.dockCount);
         }
+        if ('dockPosition' in normalized) {
+            normalized.dockPosition = normalizeQuicklinksDockPosition(normalized.dockPosition);
+        }
         if ('style' in normalized) {
             normalized.style = normalizeQuicklinksStyle(normalized.style);
         }
@@ -2569,6 +2593,9 @@ class Store {
                 [keys.showBackdrop]: this.settings.showBackdrop,
                 [CONFIG.STORAGE_REVISION_KEY]: revision
             };
+            if (Object.prototype.hasOwnProperty.call(newSettings || {}, 'dockPosition')) {
+                updates[keys.dockPosition] = normalizeQuicklinksDockPosition(this.settings.dockPosition);
+            }
             if (typeof this.settings.launchpadGridColumns !== 'undefined') {
                 updates[keys.gridColumns] = clampLaunchpadGridColumns(this.settings.launchpadGridColumns);
             }

@@ -1,11 +1,9 @@
 import { store } from './store.js';
 import { t } from '../../platform/i18n.js';
 import { escapeHtml } from '../../shared/text.js';
-import { getFaviconUrlCandidates, setImageSrcWithFallback } from '../../shared/favicon.js';
 import {
     getTitleFromUrl,
-    getIconInitial,
-    getCacheKeyForItem
+    createIconElement
 } from './icon-renderer.js';
 
 const launchpadSearchMethods = {
@@ -106,27 +104,7 @@ const launchpadSearchMethods = {
         el.dataset.id = item._id;
         el.tabIndex = 0;
 
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'launchpad-icon';
-
-        const img = document.createElement('img');
-        img.alt = '';
-        img.draggable = false;
-
-        const fallbackToInitial = () => {
-            img.style.display = 'none';
-            const fallback = document.createElement('span');
-            fallback.className = 'launchpad-icon-fallback';
-            fallback.textContent = getIconInitial(item.title || item.url);
-            iconDiv.appendChild(fallback);
-        };
-
-        const customIconUrl = item.icon || '';
-        const urls = [customIconUrl, ...getFaviconUrlCandidates(item.url, { size: 64 })].filter(Boolean);
-        const cacheKey = getCacheKeyForItem(item.url, customIconUrl);
-        setImageSrcWithFallback(img, urls, fallbackToInitial, { cacheKey, customIconUrl: customIconUrl || undefined });
-
-        iconDiv.appendChild(img);
+        const iconDiv = createIconElement(item, 'launchpad');
 
         const title = document.createElement('span');
         title.className = 'launchpad-title';
