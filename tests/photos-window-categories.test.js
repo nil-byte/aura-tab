@@ -10,7 +10,7 @@ let originalCancelIdleCallback;
 
 function mountPhotosDom() {
     document.body.innerHTML = `
-        <div class="mac-window-overlay photos-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="mac-window-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true" aria-hidden="true">
             <div class="mac-window photos-window" id="photosWindow"></div>
         </div>
     `;
@@ -126,5 +126,22 @@ describe('photos window categories', () => {
         const ids = Array.from(document.querySelectorAll('.photos-card'))
             .map((card) => card.getAttribute('data-wallpaper-id'));
         expect(ids).toEqual(['bing-1']);
+    });
+
+    it('defers external library refresh while a local mutation is in flight', async () => {
+        const photosWindow = new PhotosWindow();
+        photosWindow._isOpen = true;
+        photosWindow._hotReloadInFlight = 1;
+        const refreshSpy = vi.spyOn(photosWindow, '_refreshAfterStateChange').mockResolvedValue();
+
+        photosWindow._handleLibraryItemsStorageChange();
+
+        expect(photosWindow._pendingExternalRefresh).toBe(true);
+        expect(refreshSpy).not.toHaveBeenCalled();
+
+        photosWindow._finishHotReload();
+        await vi.waitFor(() => expect(refreshSpy).toHaveBeenCalledTimes(1));
+        expect(refreshSpy).toHaveBeenCalledWith({ context: 'external' });
+        expect(photosWindow._pendingExternalRefresh).toBe(false);
     });
 });

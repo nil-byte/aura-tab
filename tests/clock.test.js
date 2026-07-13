@@ -86,4 +86,31 @@ describe('clock', () => {
             chrome.storage.sync.set = originalSet;
         }
     });
+
+    it('handles a click-triggered persistence failure without an unhandled rejection', async () => {
+        setStorageData({
+            clockFormat: '24',
+            dateFormat: 'en',
+            showSeconds: false
+        }, 'sync');
+
+        const originalSet = chrome.storage.sync.set;
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        chrome.storage.sync.set = vi.fn(async () => {
+            throw new Error('quota');
+        });
+
+        const { initClock } = await import('../scripts/domains/clock.js');
+        const state = await initClock();
+
+        try {
+            document.getElementById('clock').click();
+            await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledOnce());
+            expect(state.settings.clockFormat).toBe('24');
+        } finally {
+            state.destroy();
+            errorSpy.mockRestore();
+            chrome.storage.sync.set = originalSet;
+        }
+    });
 });

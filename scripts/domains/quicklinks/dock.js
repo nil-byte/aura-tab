@@ -892,16 +892,6 @@ class Dock extends DisposableComponent {
             this.container.classList.add('hidden');
         }
     }
-    updateStyle(style) {
-        if (this.container) {
-            this.container.dataset.style = style;
-        }
-    }
-    setShowBackdrop(show) {
-        if (this.container) {
-            this.container.classList.toggle('no-backdrop', !show);
-        }
-    }
     destroy() {
         if (this.isDestroyed) return;
         try {

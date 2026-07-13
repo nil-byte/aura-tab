@@ -67,6 +67,28 @@ export async function getLocalFileUrl(id, size = 'full', scope = 'local-files') 
     return blobUrlManager.create(blob, scope);
 }
 
+async function resolveLocalFileUrls(id, scope, { includeFull = true, includeSmall = true } = {}) {
+    const [full, small] = await Promise.all([
+        includeFull ? getLocalFileUrl(id, 'full', scope) : null,
+        includeSmall ? getLocalFileUrl(id, 'small', scope) : null
+    ]);
+    return { full, small };
+}
+
+function createLocalFileBackground(id, file, urls) {
+    return {
+        format: 'image',
+        id,
+        urls: Object.fromEntries(Object.entries(urls).filter(([, url]) => Boolean(url))),
+        file
+    };
+}
+
+function releaseLocalFileUrls({ full, small }) {
+    if (full) blobUrlManager.release(full, true);
+    if (small) blobUrlManager.release(small, true);
+}
+
 export async function getLocalFileBlobs(id) {
     const entry = await _getEntry(id);
     if (!entry || !entry.fullBlob || !entry.smallBlob) return null;
@@ -86,6 +108,9 @@ export async function deleteLocalFileBlobs(id) {
 
 
 const LOCALFILES_CHANGED_EVENT = 'background:localfiles-changed';
+const LOCALFILES_WRITE_ID_KEY = 'backgroundFilesWriteId';
+const LOCALFILES_LOCK_NAME = 'aura-tab:local-files';
+const MAX_TRACKED_WRITE_IDS = 32;
 
 class LocalFilesManager {
     constructor() {
@@ -94,7 +119,7 @@ class LocalFilesManager {
         this._storageListenerInitialized = false;
         this._storageChangeHandler = null;
         this._pendingSave = null;
-        this._saveDebounceTimer = null;
+        this._ownWriteIds = new Set();
     }
 
     async init() {
@@ -121,7 +146,8 @@ class LocalFilesManager {
         this._storageChangeHandler = (changes, areaName) => {
             if (areaName !== 'local' || !changes.backgroundFiles) return;
 
-            if (this._pendingSave) return;
+            const writeId = changes[LOCALFILES_WRITE_ID_KEY]?.newValue;
+            if (writeId && this._ownWriteIds.delete(writeId)) return;
 
             const next = changes.backgroundFiles.newValue || {};
             this.files = new Map(Object.entries(next));
@@ -149,6 +175,7 @@ class LocalFilesManager {
         const results = [];
         const files = Array.from(fileList);
         const createdBlobUrls = [];
+        const addedIds = [];
 
         for (const file of files) {
             if (!isImageFile(file)) {
@@ -161,7 +188,7 @@ class LocalFilesManager {
                 continue;
             }
 
-            let objectUrl = null;
+            let objectUrl;
 
             try {
                 const id = generateFileId(file);
@@ -189,19 +216,12 @@ class LocalFilesManager {
                 };
 
                 this.files.set(id, fileData);
+                addedIds.push(id);
 
-                const [fullUrl, smallUrl] = await Promise.all([
-                    getLocalFileUrl(id, 'full', `file-${id}`),
-                    getLocalFileUrl(id, 'small', `file-${id}`)
-                ]);
+                const urls = await resolveLocalFileUrls(id, `file-${id}`);
 
-                if (fullUrl && smallUrl) {
-                    results.push({
-                        format: 'image',
-                        id,
-                        urls: { full: fullUrl, small: smallUrl },
-                        file: fileData
-                    });
+                if (urls.full && urls.small) {
+                    results.push(createLocalFileBackground(id, fileData, urls));
                     showNotification(t('bgUploadSuccessWithName', { name: file.name }), 'success');
                 }
 
@@ -215,7 +235,15 @@ class LocalFilesManager {
             try { URL.revokeObjectURL(url); } catch { }
         }
 
-        await this.saveToStorage();
+        try {
+            await this.saveToStorage({ upsertIds: addedIds });
+        } catch (error) {
+            for (const id of addedIds) {
+                this.files.delete(id);
+                try { await deleteLocalFileBlobs(id); } catch { }
+            }
+            throw error;
+        }
         await this.enforceLimits();
 
         if (results.length > 0) {
@@ -227,13 +255,16 @@ class LocalFilesManager {
 
     async deleteFile(id, { silent = false, origin } = {}) {
         if (!this.files.has(id)) return;
+        const fileSnapshot = this.files.get(id);
+        let blobsSnapshot = null;
 
         try {
+            blobsSnapshot = await getLocalFileBlobs(id);
             blobUrlManager.releaseScope(`file-${id}`);
 
             await deleteLocalFileBlobs(id);
             this.files.delete(id);
-            await this.saveToStorage();
+            await this.saveToStorage({ removeIds: [id] });
 
             this._emitChanged({ action: 'delete', id, origin });
 
@@ -241,6 +272,17 @@ class LocalFilesManager {
                 showNotification(t('bgFileDeleted'), 'success');
             }
         } catch (error) {
+            if (fileSnapshot) {
+                this.files.set(id, fileSnapshot);
+            }
+            if (blobsSnapshot?.full && blobsSnapshot?.small) {
+                try {
+                    await saveLocalFileBlobs(id, blobsSnapshot);
+                    await this.saveToStorage({ upsertIds: [id] });
+                } catch (restoreError) {
+                    console.error('[LocalFilesManager] Failed to roll back delete:', restoreError);
+                }
+            }
             console.error('[LocalFilesManager] Failed to delete file:', error);
             if (!silent) {
                 showNotification(t('bgDeleteFailed'), 'error');
@@ -274,12 +316,14 @@ class LocalFilesManager {
         try {
             await saveLocalFileBlobs(exported.id, exported.blobs);
             this.files.set(exported.id, { ...exported.file, lastUsed: new Date().toISOString() });
-            await this.saveToStorage();
+            await this.saveToStorage({ upsertIds: [exported.id] });
             await this.enforceLimits();
 
             this._emitChanged({ action: 'restore', id: exported.id });
             return true;
         } catch (error) {
+            this.files.delete(exported.id);
+            try { await deleteLocalFileBlobs(exported.id); } catch { }
             console.error('[LocalFilesManager] restoreExportedFile error:', error);
             return false;
         }
@@ -301,33 +345,21 @@ class LocalFilesManager {
 
         const file = this.files.get(id);
 
-        const [fullUrl, smallUrl] = await Promise.all([
-            includeFull ? getLocalFileUrl(id, 'full', scope) : Promise.resolve(null),
-            includeSmall ? getLocalFileUrl(id, 'small', scope) : Promise.resolve(null)
-        ]);
+        const urls = await resolveLocalFileUrls(id, scope, { includeFull, includeSmall });
 
         const hasRequired =
-            (!includeFull || Boolean(fullUrl)) &&
-            (!includeSmall || Boolean(smallUrl));
+            (!includeFull || Boolean(urls.full)) &&
+            (!includeSmall || Boolean(urls.small));
 
         if (hasRequired) {
-            return {
-                format: 'image',
-                id,
-                urls: {
-                    ...(fullUrl ? { full: fullUrl } : {}),
-                    ...(smallUrl ? { small: smallUrl } : {})
-                },
-                file
-            };
+            return createLocalFileBackground(id, file, urls);
         }
 
-        if (fullUrl) blobUrlManager.release(fullUrl, true);
-        if (smallUrl) blobUrlManager.release(smallUrl, true);
+        releaseLocalFileUrls(urls);
 
         console.warn('[LocalFilesManager] File store miss, cleaning up metadata:', id);
         this.files.delete(id);
-        this.saveToStorage().catch(err => {
+        this.saveToStorage({ removeIds: [id] }).catch(err => {
             console.error('[LocalFilesManager] Failed to save after cache miss cleanup:', err);
         });
 
@@ -343,29 +375,17 @@ class LocalFilesManager {
         const toDelete = [];
 
         for (const [id, file] of this.files) {
-            const [fullUrl, smallUrl] = await Promise.all([
-                includeFull ? getLocalFileUrl(id, 'full', scope) : Promise.resolve(null),
-                includeSmall ? getLocalFileUrl(id, 'small', scope) : Promise.resolve(null)
-            ]);
+            const urls = await resolveLocalFileUrls(id, scope, { includeFull, includeSmall });
 
             const hasRequired =
-                (!includeFull || Boolean(fullUrl)) &&
-                (!includeSmall || Boolean(smallUrl));
+                (!includeFull || Boolean(urls.full)) &&
+                (!includeSmall || Boolean(urls.small));
 
             if (hasRequired) {
-                results.push({
-                    format: 'image',
-                    id,
-                    urls: {
-                        ...(fullUrl ? { full: fullUrl } : {}),
-                        ...(smallUrl ? { small: smallUrl } : {})
-                    },
-                    file
-                });
+                results.push(createLocalFileBackground(id, file, urls));
             } else {
                 toDelete.push(id);
-                if (fullUrl) blobUrlManager.release(fullUrl, true);
-                if (smallUrl) blobUrlManager.release(smallUrl, true);
+                releaseLocalFileUrls(urls);
             }
         }
 
@@ -374,7 +394,7 @@ class LocalFilesManager {
             for (const id of toDelete) {
                 this.files.delete(id);
             }
-            this.saveToStorage().catch(err => {
+            this.saveToStorage({ removeIds: toDelete }).catch(err => {
                 console.error('[LocalFilesManager] Failed to save after cleanup:', err);
             });
         }
@@ -394,22 +414,13 @@ class LocalFilesManager {
             const id = ids[randomIndex];
             const file = this.files.get(id);
 
-            const [fullUrl, smallUrl] = await Promise.all([
-                getLocalFileUrl(id, 'full', scope),
-                getLocalFileUrl(id, 'small', scope)
-            ]);
+            const urls = await resolveLocalFileUrls(id, scope);
 
-            if (fullUrl && smallUrl) {
-                return {
-                    format: 'image',
-                    id,
-                    urls: { full: fullUrl, small: smallUrl },
-                    file
-                };
+            if (urls.full && urls.small) {
+                return createLocalFileBackground(id, file, urls);
             }
 
-            if (fullUrl) blobUrlManager.release(fullUrl, true);
-            if (smallUrl) blobUrlManager.release(smallUrl, true);
+            releaseLocalFileUrls(urls);
             ids.splice(randomIndex, 1);
         }
 
@@ -424,7 +435,7 @@ class LocalFilesManager {
         if (file) {
             file.selected = true;
             file.lastUsed = new Date().toISOString();
-            await this.saveToStorage();
+            await this.saveToStorage({ selectedId: id });
         }
     }
 
@@ -434,33 +445,16 @@ class LocalFilesManager {
 
         for (const [id, file] of this.files) {
             if (file.selected) {
-                const [fullUrl, smallUrl] = await Promise.all([
-                    getLocalFileUrl(id, 'full', scope),
-                    getLocalFileUrl(id, 'small', scope)
-                ]);
+                const urls = await resolveLocalFileUrls(id, scope);
 
-                if (fullUrl && smallUrl) {
-                    return {
-                        format: 'image',
-                        id,
-                        urls: { full: fullUrl, small: smallUrl },
-                        file
-                    };
+                if (urls.full && urls.small) {
+                    return createLocalFileBackground(id, file, urls);
                 }
 
-                if (fullUrl) blobUrlManager.release(fullUrl, true);
-                if (smallUrl) blobUrlManager.release(smallUrl, true);
+                releaseLocalFileUrls(urls);
             }
         }
         return null;
-    }
-
-    async updateFilePosition(id, position) {
-        const file = this.files.get(id);
-        if (file) {
-            file.position = { ...file.position, ...position };
-            await this.saveToStorage();
-        }
     }
 
     get count() {
@@ -473,6 +467,7 @@ class LocalFilesManager {
 
     async enforceLimits() {
         let metadataUpdated = false;
+        const updatedIds = [];
 
         for (const [id, file] of Array.from(this.files.entries())) {
             if (typeof file.size !== 'number') {
@@ -483,11 +478,12 @@ class LocalFilesManager {
                 }
                 file.size = size;
                 metadataUpdated = true;
+                updatedIds.push(id);
             }
         }
 
         if (metadataUpdated) {
-            await this.saveToStorage();
+            await this.saveToStorage({ upsertIds: updatedIds });
         }
 
         const entries = Array.from(this.files.entries()).sort((a, b) => {
@@ -518,21 +514,84 @@ class LocalFilesManager {
         }
     }
 
-    async saveToStorage() {
-        if (this._pendingSave) {
-            return this._pendingSave;
-        }
-
-        this._pendingSave = (async () => {
+    async _withStorageLock(task) {
+        const locks = globalThis.navigator?.locks;
+        if (locks?.request) {
+            let taskStarted = false;
             try {
-                const backgroundFiles = Object.fromEntries(this.files);
-                await chrome.storage.local.set({ backgroundFiles });
-            } finally {
+                return await locks.request(LOCALFILES_LOCK_NAME, { mode: 'exclusive' }, async () => {
+                    taskStarted = true;
+                    return task();
+                });
+            } catch (error) {
+                if (taskStarted) throw error;
+                console.warn('[LocalFilesManager] Web Lock unavailable, continuing without it:', error);
+            }
+        }
+        return task();
+    }
+
+    async saveToStorage({ upsertIds, removeIds = [], selectedId } = {}) {
+        const hasSelectionUpdate = typeof selectedId === 'string' && selectedId.length > 0;
+        const selectedLastUsed = hasSelectionUpdate ? this.files.get(selectedId)?.lastUsed : undefined;
+        const idsToUpsert = Array.isArray(upsertIds)
+            ? upsertIds
+            : (hasSelectionUpdate ? [] : Array.from(this.files.keys()));
+        const upserts = {};
+        for (const id of idsToUpsert) {
+            const file = this.files.get(id);
+            if (id && file) upserts[id] = file;
+        }
+        const removals = new Set(Array.isArray(removeIds) ? removeIds.filter(Boolean) : []);
+        const writeId = `${Date.now()}-${Math.random()}`;
+        this._ownWriteIds.add(writeId);
+        if (this._ownWriteIds.size > MAX_TRACKED_WRITE_IDS) {
+            this._ownWriteIds.delete(this._ownWriteIds.values().next().value);
+        }
+        const previousSave = this._pendingSave || Promise.resolve();
+        const currentSave = previousSave
+            .catch(() => {})
+            .then(() => this._withStorageLock(async () => {
+                const stored = await chrome.storage.local.get({ backgroundFiles: {} });
+                const latest = stored.backgroundFiles && typeof stored.backgroundFiles === 'object'
+                    ? stored.backgroundFiles
+                    : {};
+                let backgroundFiles = { ...latest, ...upserts };
+                for (const id of removals) {
+                    delete backgroundFiles[id];
+                }
+                if (hasSelectionUpdate && backgroundFiles[selectedId]) {
+                    backgroundFiles = Object.fromEntries(
+                        Object.entries(backgroundFiles).map(([id, file]) => [
+                            id,
+                            {
+                                ...file,
+                                selected: id === selectedId,
+                                ...(id === selectedId && selectedLastUsed ? { lastUsed: selectedLastUsed } : {})
+                            }
+                        ])
+                    );
+                }
+                await chrome.storage.local.set({
+                    backgroundFiles,
+                    [LOCALFILES_WRITE_ID_KEY]: writeId
+                });
+                for (const [id, file] of Object.entries(backgroundFiles)) {
+                    if (!this.files.has(id)) this.files.set(id, file);
+                }
+            }));
+        this._pendingSave = currentSave;
+
+        try {
+            await currentSave;
+        } catch (error) {
+            this._ownWriteIds.delete(writeId);
+            throw error;
+        } finally {
+            if (this._pendingSave === currentSave) {
                 this._pendingSave = null;
             }
-        })();
-
-        return this._pendingSave;
+        }
     }
 }
 

@@ -282,23 +282,6 @@ export class ImmersiveViewer {
         }
     }
 
-    _isAppendableRemoteUrl(url) {
-        return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
-    }
-
-    _buildUrlWithParams(url, params) {
-        try {
-            const u = new URL(url);
-            for (const [k, v] of Object.entries(params || {})) {
-                if (v === undefined || v === null || v === '') continue;
-                u.searchParams.set(k, String(v));
-            }
-            return u.toString();
-        } catch {
-            return url;
-        }
-    }
-
     _resolveViewerUrls(detailItem) {
         const fullBase =
             detailItem?.urls?.raw ||
@@ -324,9 +307,9 @@ export class ImmersiveViewer {
 
         let primaryUrl = fullBase;
 
-        if (this._isAppendableRemoteUrl(fullBase)) {
+        if (this._host._isAppendableRemoteUrl(fullBase)) {
             const provider = detailItem?.provider || detailItem?.favoriteData?.provider || '';
-            let host = '';
+            let host;
             try {
                 host = new URL(fullBase).host;
             } catch {
@@ -337,14 +320,14 @@ export class ImmersiveViewer {
             const isPexels = provider === 'pexels' || host.includes('pexels.com');
 
             if (isUnsplash) {
-                primaryUrl = this._buildUrlWithParams(fullBase, {
+                primaryUrl = this._host._buildUrlWithParams(fullBase, {
                     auto: 'format',
                     fit: 'max',
                     w: 2400,
                     q: 90
                 });
             } else if (isPexels) {
-                primaryUrl = this._buildUrlWithParams(fullBase, {
+                primaryUrl = this._host._buildUrlWithParams(fullBase, {
                     auto: 'compress',
                     cs: 'tinysrgb',
                     fit: 'max',
@@ -536,10 +519,9 @@ export class ImmersiveViewer {
             }, 300);
 
             const hdLoaded = await this._preloadAndSwapImage(
-                cachedUrl || primaryUrl,
+                primaryUrl,
                 imageEl,
-                seq,
-                item.source
+                seq
             );
 
             clearTimeout(loadingTimeout);
@@ -557,8 +539,7 @@ export class ImmersiveViewer {
                 const fallbackOk = await this._preloadAndSwapImage(
                     fallbackUrl,
                     imageEl,
-                    seq,
-                    item.source
+                    seq
                 );
                 imageEl.classList.remove('is-blur-placeholder');
                 if (!fallbackOk && seq === this._loadSeq) {
@@ -578,16 +559,14 @@ export class ImmersiveViewer {
             let ok = await this._preloadAndSwapImage(
                 cachedUrl || primaryUrl,
                 imageEl,
-                seq,
-                item.source
+                seq
             );
 
             if (!ok && fallbackUrl) {
                 ok = await this._preloadAndSwapImage(
                     fallbackUrl,
                     imageEl,
-                    seq,
-                    item.source
+                    seq
                 );
             }
 

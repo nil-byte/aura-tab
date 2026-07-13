@@ -21,20 +21,7 @@ vi.mock('../scripts/domains/backgrounds/controller.js', () => ({
         whenReady: vi.fn(async () => {}),
         getLocalFiles: vi.fn(async () => []),
         getSystemBackgrounds: vi.fn(() => []),
-        getCurrentBackground: vi.fn(() => null),
-        getSettings: vi.fn(async () => ({
-            type: 'unsplash',
-            frequency: 'day',
-            overlay: 0,
-            blur: 0,
-            brightness: 100,
-            color: '#1a1a2e',
-            texture: { type: 'none' },
-            apiKeys: {},
-            localFiles: [],
-            showRefreshButton: true,
-            showPhotoInfo: true
-        }))
+        getCurrentBackground: vi.fn(() => null)
     }
 }));
 

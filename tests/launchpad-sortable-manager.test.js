@@ -34,7 +34,6 @@ describe('Launchpad SortableManager', () => {
         expect(ok1).toBe(true);
         expect(ok2).toBe(true);
         expect(mgr.isReady).toBe(true);
-        expect(mgr.getClass()).toBe(FakeSortable);
         expect(getSortable).toHaveBeenCalledTimes(1);
 
         launchpad.destroy?.();
@@ -53,8 +52,6 @@ describe('Launchpad SortableManager', () => {
         const ok1 = await mgr.preload();
         expect(ok1).toBe(false);
         expect(mgr.isReady).toBe(false);
-        expect(mgr.isLoading).toBe(false);
-
         const ok2 = await mgr.preload();
         expect(ok2).toBe(true);
         expect(mgr.isReady).toBe(true);
@@ -77,7 +74,7 @@ describe('Launchpad SortableManager', () => {
                 created.push(this);
             }
             destroy() {
-                // ok
+                this.destroyed = true;
             }
         }
 
@@ -95,19 +92,18 @@ describe('Launchpad SortableManager', () => {
 
         const inst1 = mgr.createForPage(pageEl, { a: 1 });
         expect(inst1).not.toBe(null);
-        expect(mgr.instanceCount).toBe(1);
 
         // Re-create for same page => old one destroyed and replaced
         const inst2 = mgr.createForPage(pageEl, { a: 2 });
         expect(inst2).not.toBe(null);
-        expect(mgr.instanceCount).toBe(1);
         expect(created.length).toBe(2);
+        expect(inst1.destroyed).toBe(true);
 
         // Constructor throw => null and no instance tracked
         mgr.destroyForPage(pageEl);
-        expect(mgr.instanceCount).toBe(0);
+        expect(inst2.destroyed).toBe(true);
         expect(mgr.createForPage(pageEl, { shouldThrow: true })).toBe(null);
-        expect(mgr.instanceCount).toBe(0);
+        expect(created.length).toBe(2);
 
         expect(warnSpy).toHaveBeenCalled();
         warnSpy.mockRestore();
@@ -116,8 +112,13 @@ describe('Launchpad SortableManager', () => {
     });
 
     it('destroyForPage() should swallow destroy errors and still remove instance', async () => {
+        let instance;
         class FakeSortable {
+            constructor() {
+                instance = this;
+            }
             destroy() {
+                this.destroyed = true;
                 throw new Error('destroy failed');
             }
         }
@@ -131,18 +132,16 @@ describe('Launchpad SortableManager', () => {
 
         await mgr.preload();
         expect(mgr.createForPage(pageEl, {})).not.toBe(null);
-        expect(mgr.instanceCount).toBe(1);
 
         expect(() => mgr.destroyForPage(pageEl)).not.toThrow();
-        expect(mgr.instanceCount).toBe(0);
+        expect(instance.destroyed).toBe(true);
 
         launchpad.destroy?.();
     });
 
     it('grid manager destroyAll() should not affect folder manager instances', async () => {
         class FakeSortable {
-            constructor() { }
-            destroy() { }
+            destroy() { this.destroyed = true; }
         }
 
         const { launchpad } = await freshLaunchpadWithSortable({
@@ -158,15 +157,15 @@ describe('Launchpad SortableManager', () => {
         const gridPage = document.createElement('div');
         const folderPage = document.createElement('div');
 
-        expect(gridMgr.createForPage(gridPage, {})).not.toBe(null);
-        expect(folderMgr.createForPage(folderPage, {})).not.toBe(null);
-        expect(gridMgr.instanceCount).toBe(1);
-        expect(folderMgr.instanceCount).toBe(1);
+        const gridInstance = gridMgr.createForPage(gridPage, {});
+        const folderInstance = folderMgr.createForPage(folderPage, {});
+        expect(gridInstance).not.toBe(null);
+        expect(folderInstance).not.toBe(null);
 
         gridMgr.destroyAll();
 
-        expect(gridMgr.instanceCount).toBe(0);
-        expect(folderMgr.instanceCount).toBe(1);
+        expect(gridInstance.destroyed).toBe(true);
+        expect(folderInstance.destroyed).not.toBe(true);
 
         launchpad.destroy?.();
     });

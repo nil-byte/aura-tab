@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "3.5.2",
+  "version": "3.5.3",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "permissions": [
@@ -10,7 +10,8 @@
     "alarms",
     "search",
     "favicon",
-    "bookmarks"
+    "bookmarks",
+    "offscreen"
   ],
   "host_permissions": [
     "https://*/*",
@@ -39,5 +40,6 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: blob: https:;"
   },
-  "offline_enabled": true
+  "offline_enabled": true,
+  "minimum_chrome_version": "109"
 }

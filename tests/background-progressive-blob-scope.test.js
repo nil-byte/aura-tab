@@ -6,7 +6,6 @@ vi.mock('../scripts/domains/backgrounds/image-pipeline.js', () => {
         release: vi.fn(),
         releaseScope: vi.fn(),
         releaseAll: vi.fn(),
-        retain: vi.fn(),
         create: vi.fn(),
         get size() { return 0; }
     };

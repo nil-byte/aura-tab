@@ -62,4 +62,20 @@ describe('layout shortcuts', () => {
         expect(event.defaultPrevented).toBe(true);
         expect(toggleSearchSpy).toHaveBeenCalledWith(true, true, { focus: true });
     });
+
+    it('rolls back optimistic search visibility when persistence fails', async () => {
+        const manager = new LayoutManager();
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        chrome.storage.sync.set.mockRejectedValueOnce(new Error('quota'));
+
+        manager.toggleSearch(true, true);
+        expect(manager.isSearchActive).toBe(true);
+
+        await vi.waitFor(() => expect(manager.isSearchActive).toBe(false));
+        expect(document.querySelector('.layout-container')?.classList.contains('search-active')).toBe(false);
+        expect(errorSpy).toHaveBeenCalledTimes(1);
+
+        errorSpy.mockRestore();
+        manager.destroy();
+    });
 });

@@ -189,7 +189,7 @@ const launchpadFolderMethods = {
 
         this._state.openFolderId = folderId;
         this._state.folderCurrentPage = 0;
-        this._folderWheelState = { isActive: false, hasTriggered: false };
+        this._folderWheelState = { hasTriggered: false };
         this._resetFolderDragSession();
 
         // Capture folder icon position for transform-origin
@@ -404,20 +404,18 @@ const launchpadFolderMethods = {
         e.stopPropagation();
 
         if (!this._folderWheelState) {
-            this._folderWheelState = { isActive: false, hasTriggered: false };
+            this._folderWheelState = { hasTriggered: false };
         }
 
         this._timers.clearTimeout('folderGestureEnd');
         this._timers.setTimeout('folderGestureEnd', () => {
             if (this._folderWheelState) {
-                this._folderWheelState.isActive = false;
                 this._folderWheelState.hasTriggered = false;
             }
         }, FOLDER_GESTURE_END_TIMEOUT);
 
         if (this._folderWheelState.hasTriggered) return;
 
-        this._folderWheelState.isActive = true;
         this._folderWheelState.hasTriggered = true;
 
         const direction = isHorizontalSwipe

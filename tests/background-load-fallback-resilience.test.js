@@ -133,6 +133,82 @@ describe('Background load resilience', () => {
         warnSpy.mockRestore();
     });
 
+    it('does not apply a provider result after the selected source changes', async () => {
+        let resolveProvider;
+        providerFetchRandomMock.mockImplementationOnce(() => new Promise((resolve) => {
+            resolveProvider = resolve;
+        }));
+        runBackgroundTransitionMock.mockResolvedValue(undefined);
+
+        const { backgroundSystem } = await import('../scripts/domains/backgrounds/controller.js');
+        backgroundSystem.settings = {
+            ...backgroundSystem.settings,
+            type: 'unsplash',
+            apiKeys: { ...backgroundSystem.settings.apiKeys, unsplash: 'test-key' }
+        };
+
+        const pendingLoad = backgroundSystem.loadBackground(true);
+        await vi.waitFor(() => expect(providerFetchRandomMock).toHaveBeenCalledTimes(1));
+
+        backgroundSystem._handleSettingsChange({
+            ...backgroundSystem.settings,
+            type: 'pexels'
+        });
+        resolveProvider({
+            format: 'image',
+            id: 'stale-unsplash',
+            urls: {
+                full: 'https://example.com/stale-full.jpg',
+                small: 'https://example.com/stale-small.jpg'
+            }
+        });
+        await pendingLoad;
+
+        expect(runBackgroundTransitionMock).not.toHaveBeenCalled();
+    });
+
+    it('queues the latest load request instead of dropping it while locked', async () => {
+        let resolveFirstProvider;
+        providerFetchRandomMock
+            .mockImplementationOnce(() => new Promise((resolve) => {
+                resolveFirstProvider = resolve;
+            }))
+            .mockResolvedValueOnce({
+                format: 'image',
+                id: 'latest-provider',
+                urls: {
+                    full: 'https://example.com/latest-full.jpg',
+                    small: 'https://example.com/latest-small.jpg'
+                }
+            });
+        runBackgroundTransitionMock.mockResolvedValue(undefined);
+
+        const { backgroundSystem } = await import('../scripts/domains/backgrounds/controller.js');
+        backgroundSystem.settings = {
+            ...backgroundSystem.settings,
+            type: 'unsplash',
+            apiKeys: { ...backgroundSystem.settings.apiKeys, unsplash: 'test-key' }
+        };
+
+        const firstLoad = backgroundSystem.loadBackground(true);
+        await vi.waitFor(() => expect(providerFetchRandomMock).toHaveBeenCalledTimes(1));
+        const latestLoad = backgroundSystem.loadBackground(true);
+
+        resolveFirstProvider({
+            format: 'image',
+            id: 'first-provider',
+            urls: {
+                full: 'https://example.com/first-full.jpg',
+                small: 'https://example.com/first-small.jpg'
+            }
+        });
+        await Promise.all([firstLoad, latestLoad]);
+
+        expect(providerFetchRandomMock).toHaveBeenCalledTimes(2);
+        expect(runBackgroundTransitionMock).toHaveBeenCalledTimes(1);
+        expect(runBackgroundTransitionMock.mock.calls[0][1].background.id).toBe('latest-provider');
+    });
+
     it.each(['圖片載入超時', '圖片載入失敗'])(
         'suppresses recoverable zh-TW provider fetch notification during startup (%s)',
         async (recoverableMessage) => {

@@ -10,10 +10,6 @@ const CONFIG = {
 
     MIN_PAGE_FILL_TARGET: 12,
 
-    BATCH_SIZE: 20,
-
-    BATCH_DELAY: 50,
-
     EXTREME_COUNT_THRESHOLD: 1000,
 
     UNCATEGORIZED_PAGE_NAME: 'uncategorized'

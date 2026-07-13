@@ -20,6 +20,7 @@ rm -f aura-tab-v*.zip
 # Excludes by omission: .git, .github, tests, node_modules, docs, tooling, dev assets (e.g. assets/other).
 zip -r "$OUTPUT_FILE" \
     manifest.json \
+    favicon-offscreen.html \
     newtab.html \
     background-worker.js \
     LICENSE \

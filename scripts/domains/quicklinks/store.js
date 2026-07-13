@@ -159,7 +159,6 @@ const CONFIG = {
     MAX_TITLE_LENGTH: 200,
     MAX_URL_LENGTH: 2000,
     MAX_ICON_LENGTH: 2000,
-    ICON_TRUNCATE_THRESHOLD: 1000,
     MAX_TAGS_PER_ITEM: 5,
     MAX_TAG_LENGTH: 10,
     MAX_TOTAL_TAGS: 100,
@@ -201,6 +200,7 @@ class Store {
         };
         this._listeners = new Set();
         this._writeQueue = Promise.resolve();
+        this._reloadQueue = Promise.resolve();
         this._storageChangeHandler = null;
         this._lastLocalStorageRevision = null;
         this._dockCleanupScheduled = false;
@@ -241,6 +241,7 @@ class Store {
         }
         this._listeners.clear();
         this._writeQueue = Promise.resolve();
+        this._reloadQueue = Promise.resolve();
     }
     _assertNotDestroyed() {
         if (this._destroyed) {
@@ -751,7 +752,7 @@ class Store {
             tags: this._normalizeTags(item.tags),
             createdAt: item.createdAt || Date.now()
         };
-        const iconAppearance = normalizeIconAppearance(item.iconAppearance, normalized);
+        const iconAppearance = normalizeIconAppearance(item.iconAppearance);
         if (iconAppearance) normalized.iconAppearance = iconAppearance;
         return normalized;
     }
@@ -772,10 +773,6 @@ class Store {
     _isFolderId(id) {
         return typeof id === 'string' && id.startsWith(CONFIG.FOLDER_PREFIX);
     }
-    isFolder(id) {
-        const item = this._itemsCache.get(id);
-        return Boolean(item && item.type === 'folder');
-    }
     getFolderForItem(itemId) {
         if (!itemId) return null;
         for (const [, item] of this._itemsCache) {
@@ -794,63 +791,6 @@ class Store {
         let hex = '';
         for (const b of bytes) hex += b.toString(16).padStart(2, '0');
         return `${CONFIG.FOLDER_PREFIX}${hex || `${Date.now()}_${Math.random().toString(36).slice(2)}`}`;
-    }
-    async addTag(tag) {
-        const normalized = this._normalizeTag(tag);
-        if (!normalized) return false;
-        const normalizedLower = normalized.toLowerCase();
-        if (this.tags.some((t) => String(t).toLowerCase() === normalizedLower)) return true;
-        if (this.tags.length >= CONFIG.MAX_TOTAL_TAGS) return false;
-        await this._enqueueWrite(async () => {
-            const committed = await this._commit({
-                apply: ({ items, dockPins, tags }) => ({
-                    items,
-                    dockPins,
-                    tags: this._normalizeTagLibrary([...(tags || []), normalized])
-                })
-            });
-            this.tags = committed.tags;
-        });
-        this._notify('tagsChanged', this.getTags());
-        return true;
-    }
-    async addTags(tags) {
-        if (!Array.isArray(tags) || tags.length === 0) return false;
-        const normalizedTags = this._normalizeTagLibrary(tags);
-        if (normalizedTags.length === 0) return false;
-        const existingLower = new Set(this.tags.map((t) => String(t).toLowerCase()));
-        const allExist = normalizedTags.every((t) => existingLower.has(String(t).toLowerCase()));
-        if (allExist) return true;
-        await this._enqueueWrite(async () => {
-            const committed = await this._commit({
-                apply: ({ items, dockPins, tags: current }) => ({
-                    items,
-                    dockPins,
-                    tags: this._normalizeTagLibrary([...(current || []), ...normalizedTags])
-                })
-            });
-            this.tags = committed.tags;
-        });
-        this._notify('tagsChanged', this.getTags());
-        return true;
-    }
-    async removeTag(tag) {
-        const normalized = this._normalizeTag(tag);
-        if (!normalized) return;
-        const targetLower = normalized.toLowerCase();
-        await this._enqueueWrite(async () => {
-            const committed = await this._commit({
-                apply: ({ items, dockPins, tags }) => ({
-                    items,
-                    dockPins,
-                    tags: this._normalizeTagLibrary(
-                        (tags || []).filter((t) => String(t).toLowerCase() !== targetLower)
-                    )
-                })
-            });
-            this.tags = committed.tags;
-        });
-        this._notify('tagsChanged', this.getTags());
     }
     getItemsByTag(tagQuery) {
         const normalizedQuery = this._normalizeTag(tagQuery).toLowerCase();
@@ -998,6 +938,7 @@ class Store {
                 this.dockPins = committed.dockPins;
             });
         }
+        this._reconcileDockPins();
         this._initStorageListener();
     }
     _initStorageListener() {
@@ -1015,10 +956,11 @@ class Store {
         const itemsStructureChanged = Boolean(changes.quicklinksItems);
         const dockPinsChanged = Boolean(changes.quicklinksDockPins);
         const tagsChanged = Boolean(changes.quicklinksTags);
+        // Chunk sets are immutable staging data. A new snapshot becomes visible
+        // only when ACTIVE_SET_KEY changes; reacting to individual chunk writes
+        // can reload the previous active set in the middle of our own commit.
         const itemDataChanged = changeKeys.some(key =>
-            key.startsWith(CONFIG.LINK_PREFIX) ||
-            key.startsWith(CONFIG.CHUNK_SET_PREFIX) ||
-            key === CONFIG.ACTIVE_SET_KEY
+            key.startsWith(CONFIG.LINK_PREFIX) || key === CONFIG.ACTIVE_SET_KEY
         );
         if (!itemsStructureChanged && !dockPinsChanged && !itemDataChanged && !tagsChanged) return;
         if (tagsChanged) {
@@ -1083,17 +1025,21 @@ class Store {
             ? changes.quicklinksDockPins.newValue.filter(Boolean)
             : [];
         this.dockPins = nextPins;
+        this._reconcileDockPins();
         this._notify('dockChanged', { dockPins: this.dockPins, reason: 'storage' });
     }
     _reloadDataFromStorage() {
-        (async () => {
+        const reload = async () => {
             try {
                 await this.loadData();
+                this._reconcileDockPins();
                 this._notify('reordered', { pages: this.pages, dockPins: this.dockPins, source: 'storage' });
             } catch (error) {
                 console.warn('[Store] Cross-tab reload failed:', error);
             }
-        })();
+        };
+        this._reloadQueue = this._reloadQueue.then(reload, reload);
+        return this._reloadQueue;
     }
     async loadSettings() {
         try {
@@ -1309,28 +1255,22 @@ class Store {
     getDockItems() {
         if (!Array.isArray(this.dockPins) || this.dockPins.length === 0) return [];
         const dockLimit = this._getDockLimit();
-        const allValidPins = [];  // All valid pins (for cleanup)
-        const displayItems = [];  // Items for display (limited by dockLimit)
-        let hasInvalidPins = false;
+        const displayItems = [];
         for (const id of this.dockPins) {
-            if (!id) {
-                hasInvalidPins = true;
-                continue;
-            }
+            if (!id) continue;
             const item = this.getItem(id);
-            if (!item) {
-                hasInvalidPins = true;
-                continue;
-            }
-            allValidPins.push(id);
+            if (!item) continue;
             if (displayItems.length < dockLimit) {
                 displayItems.push(item);
             }
         }
-        if (hasInvalidPins) {
-            this._scheduleDockCleanup(allValidPins);
-        }
         return displayItems;
+    }
+    _reconcileDockPins() {
+        const validPins = this._getValidUniqueDockPinIds(this.dockPins);
+        if (!this._arraysEqual(this.dockPins, validPins)) {
+            this._scheduleDockCleanup(validPins);
+        }
     }
     _scheduleDockCleanup(validPins) {
         if (this._destroyed) return;
@@ -1427,23 +1367,17 @@ class Store {
     _getValidUniqueDockPinIds(pins) {
         const out = [];
         const seen = new Set();
-        let hasInvalid = false;
         for (const id of this._normalizeDockPins(pins)) {
             if (!id || seen.has(id)) {
-                hasInvalid = true;
                 continue;
             }
             const item = this.getItem(id);
             // Exclude folders from dock — they cannot be pinned
             if (!item || item.type === 'folder') {
-                hasInvalid = true;
                 continue;
             }
             seen.add(id);
             out.push(id);
-        }
-        if (hasInvalid && Array.isArray(pins) && pins.length > 0) {
-            this._scheduleDockCleanup(out);
         }
         return out;
     }
@@ -1584,7 +1518,7 @@ class Store {
             tags: this._normalizeTags(itemData.tags),
             createdAt: Date.now()
         };
-        const iconAppearance = normalizeIconAppearance(itemData.iconAppearance, item);
+        const iconAppearance = normalizeIconAppearance(itemData.iconAppearance);
         if (iconAppearance) item.iconAppearance = iconAppearance;
         const committed = await this._enqueueWrite(async () => {
             return this._commit({
@@ -1680,7 +1614,7 @@ class Store {
                 tags: this._normalizeTags(entry.item.tags),
                 createdAt: Number.isFinite(Number(entry.item.createdAt)) ? Number(entry.item.createdAt) : Date.now()
             };
-            const iconAppearance = normalizeIconAppearance(entry.item.iconAppearance, restored);
+            const iconAppearance = normalizeIconAppearance(entry.item.iconAppearance);
             if (iconAppearance) restored.iconAppearance = iconAppearance;
             else delete restored.iconAppearance;
             itemsToSet[id] = restored;
@@ -2064,82 +1998,6 @@ class Store {
         if (!silent) {
             this._notify('pageRemoved', { pageIndex });
         }
-        return true;
-    }
-    async moveItem(fromPageIndex, fromItemIndex, toPageIndex, toItemIndex) {
-        this._assertNotDestroyed();
-        if (!this.pages[fromPageIndex] || fromItemIndex >= this.pages[fromPageIndex].length) {
-            return false;
-        }
-        const id = this.pages[fromPageIndex][fromItemIndex]?._id;
-        if (!id) return false;
-        const committed = await this._enqueueWrite(async () => {
-            return this._commit({
-                apply: ({ items, dockPins }) => {
-                    let nextItems = items.filter(entry => entry !== id);
-                    const pageSize = (Number.isFinite(this._pageSizeHint) && this._pageSizeHint > 0)
-                        ? this._pageSizeHint
-                        : CONFIG.DEFAULT_ITEMS_PER_PAGE;
-                    const targetPage = Number(toPageIndex);
-                    const targetPosRaw = Number(toItemIndex);
-                    const targetPos = Number.isFinite(targetPosRaw)
-                        ? Math.max(0, Math.min(pageSize, targetPosRaw))
-                        : 0;
-                    let targetIndex = nextItems.length;
-                    let currentPage = 0;
-                    let posInPage = 0;
-                    let lastIndexInTargetPage = null;
-                    let sawTargetPage = false;
-                    for (let i = 0; i < nextItems.length; i++) {
-                        const entry = nextItems[i];
-                        if (entry === CONFIG.PAGE_BREAK) {
-                            if (currentPage === targetPage) {
-                                sawTargetPage = true;
-                                targetIndex = i;
-                                break;
-                            }
-                            currentPage++;
-                            posInPage = 0;
-                            continue;
-                        }
-                        if (currentPage === targetPage) {
-                            sawTargetPage = true;
-                            if (posInPage === targetPos) {
-                                targetIndex = i;
-                                break;
-                            }
-                            lastIndexInTargetPage = i + 1;
-                        }
-                        if (isConcreteStoreEntry(entry, CONFIG.PAGE_BREAK)) {
-                            posInPage++;
-                        }
-                        if (posInPage >= pageSize) {
-                            if (currentPage === targetPage) {
-                                if (targetPos >= pageSize) {
-                                    targetIndex = i + 1;
-                                } else if (targetIndex === nextItems.length && lastIndexInTargetPage != null) {
-                                    targetIndex = lastIndexInTargetPage;
-                                }
-                                break;
-                            }
-                            currentPage++;
-                            posInPage = 0;
-                        }
-                    }
-                    if (sawTargetPage && targetIndex === nextItems.length && lastIndexInTargetPage != null) {
-                        targetIndex = lastIndexInTargetPage;
-                    }
-                    if (!sawTargetPage && currentPage < targetPage) {
-                        targetIndex = nextItems.length;
-                    }
-                    nextItems.splice(targetIndex, 0, id);
-                    return { items: nextItems, dockPins };
-                }
-            });
-        });
-        await this._applyCommittedStateToMemory(committed);
-        const item = this.getItem(id);
-        this._notify('itemMoved', { item, fromPageIndex, fromItemIndex, toPageIndex, toItemIndex });
         return true;
     }
     _getExplicitBreakIndexBeforePage(items, pageSize, pageIndex) {
@@ -2549,63 +2407,5 @@ class Store {
         return true;
     }
     // ─── End Folder CRUD ─────────────────────────────────────
-    async updateSettings(newSettings) {
-        this._assertNotDestroyed();
-        const normalized = { ...(newSettings || {}) };
-        const keys = QUICKLINKS_SYNC_KEYS;
-        const gridColumnsChanged = 'launchpadGridColumns' in normalized;
-        const gridRowsChanged = 'launchpadGridRows' in normalized;
-        if (gridColumnsChanged) {
-            normalized.launchpadGridColumns = clampLaunchpadGridColumns(normalized.launchpadGridColumns);
-        }
-        if ('launchpadGridRows' in normalized) {
-            normalized.launchpadGridRows = clampLaunchpadGridRows(normalized.launchpadGridRows);
-        }
-        if ('magnifyScale' in normalized) {
-            normalized.magnifyScale = clampQuicklinksMagnifyScale(normalized.magnifyScale);
-        }
-        if ('dockCount' in normalized) {
-            normalized.dockCount = clampQuicklinksDockCount(normalized.dockCount);
-        }
-        if ('dockPosition' in normalized) {
-            normalized.dockPosition = normalizeQuicklinksDockPosition(normalized.dockPosition);
-        }
-        if ('style' in normalized) {
-            normalized.style = normalizeQuicklinksStyle(normalized.style);
-        }
-        Object.assign(this.settings, normalized);
-        if (gridColumnsChanged || gridRowsChanged) {
-            this._syncPageSizeHint();
-        }
-        const dockLimit = this._getDockLimit();
-        if (this.dockPins.length > dockLimit) {
-            this._notify('dockChanged', { dockPins: this.dockPins, reason: 'limit' });
-        }
-        try {
-            const revision = this._generateStorageRevision();
-            this._lastLocalStorageRevision = revision;
-            const updates = {
-                [keys.enabled]: this.settings.enabled,
-                [keys.style]: normalizeQuicklinksStyle(this.settings.style),
-                [keys.newTab]: this.settings.newTab,
-                [keys.dockCount]: clampQuicklinksDockCount(this.settings.dockCount),
-                [keys.magnifyScale]: this.settings.magnifyScale,
-                [keys.showBackdrop]: this.settings.showBackdrop,
-                [CONFIG.STORAGE_REVISION_KEY]: revision
-            };
-            if (Object.prototype.hasOwnProperty.call(newSettings || {}, 'dockPosition')) {
-                updates[keys.dockPosition] = normalizeQuicklinksDockPosition(this.settings.dockPosition);
-            }
-            if (typeof this.settings.launchpadGridColumns !== 'undefined') {
-                updates[keys.gridColumns] = clampLaunchpadGridColumns(this.settings.launchpadGridColumns);
-            }
-            if (this.settings.launchpadGridRows != null) {
-                updates[keys.gridRows] = clampLaunchpadGridRows(this.settings.launchpadGridRows);
-            }
-            await chrome.storage.sync.set(updates);
-        } catch {
-        }
-        this._notify('settingsChanged', { ...this.settings });
-    }
 }
 export const store = new Store();

@@ -1,5 +1,5 @@
 import { iconCache } from '../platform/icon-cache.js';
-import { fetchIconBlobViaBackground } from '../platform/icon-fetch-bridge.js';
+import { discoverIconViaBackground, fetchIconBlobViaBackground } from '../platform/icon-fetch-bridge.js';
 import { normalizeIconCacheUrl } from './text.js';
 
 export { buildIconCacheKey } from './text.js';
@@ -44,20 +44,9 @@ export function getFaviconUrlCandidates(pageUrl, { size = 64 } = {}) {
   try {
     const origin = new URL(normalizedUrl).origin;
     candidates.push(`${origin}/apple-touch-icon.png`);
-    candidates.push(`${origin}/apple-touch-icon-precomposed.png`);
     candidates.push(`${origin}/favicon.ico`);
     candidates.push(`${origin}/favicon.png`);
   } catch {
-  }
-  if (hostname) {
-    const s2Sizes = [...new Set([px * 2, Math.max(px, 128), px].filter(n => Number.isFinite(n) && n > 0))];
-    for (const s of s2Sizes) {
-      candidates.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=${s}`);
-    }
-    const vSizes = [...new Set([px * 2, px].filter(n => Number.isFinite(n) && n > 0))];
-    for (const s of vSizes) {
-      candidates.push(`https://favicon.vemetric.com/${encodeURIComponent(hostname)}?size=${s}&format=png`);
-    }
   }
   return [...new Set(candidates.filter(Boolean))];
 }
@@ -70,7 +59,10 @@ export function setImageSrcWithFallback(img, urls, onExhausted, options = {}) {
     cacheKey,
     customIconUrl, 
     enableCache = true,
-    cacheMode = 'read-write'  // new: cache mode
+    cacheMode = 'read-write',
+    pageUrl,
+    onPending,
+    onResolved
   } = options;
   if (!img) return;
   const effectiveCacheKey = String(cacheKey || '').trim();
@@ -78,14 +70,14 @@ export function setImageSrcWithFallback(img, urls, onExhausted, options = {}) {
   if (effectiveCacheMode !== 'disabled' && effectiveCacheKey) {
     _loadIconWithCache(img, urls, onExhausted, { 
       minPx, skipSvg, skipSmall, desiredPx, cacheKey: effectiveCacheKey, customIconUrl,
-      cacheMode: effectiveCacheMode
+      cacheMode: effectiveCacheMode, pageUrl, onPending, onResolved
     });
     return;
   }
   _loadIconWithFallback(img, urls, onExhausted, { minPx, skipSvg, skipSmall, desiredPx });
 }
 const _loadingTokens = new WeakMap();
-async function _loadIconWithCache(img, urls, onExhausted, { minPx, skipSvg, skipSmall, desiredPx, cacheKey, customIconUrl, cacheMode = 'read-write' }) {
+async function _loadIconWithCache(img, urls, onExhausted, { minPx, skipSvg, skipSmall, desiredPx, cacheKey, customIconUrl, cacheMode = 'read-write', pageUrl, onPending, onResolved }) {
   const token = Symbol('loadToken');
   _loadingTokens.set(img, token);
   const isTokenValid = () => _loadingTokens.get(img) === token;
@@ -141,6 +133,7 @@ async function _loadIconWithCache(img, urls, onExhausted, { minPx, skipSvg, skip
         handleCachedBlobError();
         return;
       }
+      onResolved?.();
       if (needsRefresh && canWriteCache) {
         const refreshUrls = customIconUrl ? [customIconUrl] : urls;
         _refreshCacheFromCandidates(cacheKey, refreshUrls);
@@ -166,14 +159,32 @@ async function _loadIconWithCache(img, urls, onExhausted, { minPx, skipSvg, skip
       return;
     }
     if (!isTokenValid()) return;
+    if (!customIconUrl && pageUrl) {
+      onPending?.();
+      const discovered = await discoverIconViaBackground(pageUrl);
+      if (!isTokenValid()) return;
+      if (discovered?.blob && _setImageFromBlob(img, discovered.blob)) {
+        if (canWriteCache) {
+          await iconCache.set(cacheKey, discovered.blob, discovered.meta?.sourceUrl || '', {
+            ...discovered.meta,
+            mimeType: discovered.blob.type || discovered.meta?.mimeType || ''
+          });
+          iconCache.removeFromNegativeCache(cacheKey);
+        }
+        onResolved?.();
+        return;
+      }
+    }
     _loadIconWithFallback(img, urls, onExhausted, {
       minPx, skipSvg, skipSmall, desiredPx,
-      onSuccess: canWriteCache ? (loadedUrl) => {
+      onSuccess: (loadedUrl) => {
+        onResolved?.();
+        if (!canWriteCache) return;
         if (loadedUrl) {
           iconCache.removeFromNegativeCache(cacheKey);
           _fetchAndCacheIcon(cacheKey, loadedUrl);
         }
-      } : undefined,
+      },
       onFailed: canWriteCache ? () => {
         iconCache.addToNegativeCache(cacheKey);
       } : undefined
@@ -346,12 +357,12 @@ function _isValidCacheEntry(entry) {
   }
   return typeof entry.size === 'number' && entry.size > 0;
 }
-async function _fetchAndCacheIcon(cacheKey, url) {
+async function _fetchAndCacheIcon(cacheKey, url, metadata = {}) {
   if (!cacheKey || !url) return null;
   try {
     const blob = await fetchIconBlobViaBackground(url);
     if (!blob) return null;
-    const success = await iconCache.set(cacheKey, blob, url);
+    const success = await iconCache.set(cacheKey, blob, url, metadata);
     return success ? blob : null;
   } catch (error) {
     if (!_isExpectedError(error)) {

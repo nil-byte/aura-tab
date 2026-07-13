@@ -23,7 +23,6 @@ const MODAL_ID = 'launchpad';
 class SortableManager {
     #SortableClass = null;
     #instances = new Map();
-    #isLoading = false;
     #loadPromise = null;
     #destroyed = false;
 
@@ -37,10 +36,6 @@ class SortableManager {
         } catch {
             return false;
         }
-    }
-
-    getClass() {
-        return this.#SortableClass;
     }
 
     createForPage(pageEl, config) {
@@ -89,15 +84,12 @@ class SortableManager {
     async #load() {
         if (this.#loadPromise) return this.#loadPromise;
 
-        this.#isLoading = true;
         this.#loadPromise = getSortable();
 
         try {
             const result = await this.#loadPromise;
-            this.#isLoading = false;
             return result;
         } catch (error) {
-            this.#isLoading = false;
             this.#loadPromise = null;
             throw error;
         }
@@ -107,13 +99,6 @@ class SortableManager {
         return !!this.#SortableClass;
     }
 
-    get isLoading() {
-        return this.#isLoading;
-    }
-
-    get instanceCount() {
-        return this.#instances.size;
-    }
 }
 
 export const CONFIG = {
@@ -130,14 +115,12 @@ export const CONFIG = {
     },
     MOTION: {
         justDraggedLockMs: 150,
-        focusDelayMs: 300,
         searchDebounceMs: 150,
         deferredRerenderMs: 250,
         postDragCleanupMs: 250,
         settledDelayMs: 300,
         deleteAnimationMs: 150,
-        pageAnimationMs: 400,
-        refocusDelayMs: 100
+        pageAnimationMs: 400
     },
     SORTABLE: {
         animationMs: 200,
@@ -177,7 +160,6 @@ class Launchpad {
             searchQuery: '',
             isInitialized: false,
             isDestroyed: false,
-            isSettled: false,
             isPaused: false,
             openFolderId: null
         };
@@ -227,7 +209,6 @@ class Launchpad {
         };
 
         this._gestureState = {
-            isActive: false,
             hasTriggered: false
         };
 
@@ -473,7 +454,6 @@ class Launchpad {
         this._state.currentPage = 0;
         this._state.isSearching = false;
         this._state.searchQuery = '';
-        this._state.isSettled = false;
 
         if (this._dom.searchInput) {
             this._dom.searchInput.value = '';
@@ -517,7 +497,6 @@ class Launchpad {
 
         this._timers.setTimeout('settled', () => {
             if (this._state.isOpen && this._dom.overlay) {
-                this._state.isSettled = true;
                 this._dom.overlay.classList.add('settled');
                 if (focusSearch) {
                     this._dom.searchInput?.focus();
@@ -536,7 +515,6 @@ class Launchpad {
         }
 
         this._state.isOpen = false;
-        this._state.isSettled = false;
         this._state.isPaused = false;
         this._state.openFolderId = null;
         this._dom.overlay.classList.remove('active', 'settled', 'paused');
@@ -623,7 +601,6 @@ class Launchpad {
         this._folderGhostPageState = { created: false, pending: false };
         this._folderGridDirty = false;
         this._folderGridNeedsFullRerender = false;
-        this._wheelLocked = false;
         this._clearSearch();
         this._resetFolderDragSession?.();
         this._restoreFallbackDragStyles(null);

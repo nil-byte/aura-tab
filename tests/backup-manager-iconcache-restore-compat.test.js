@@ -54,6 +54,30 @@ describe('BackupManager icon cache restore compatibility', () => {
         expect(normalized).toHaveLength(1);
         expect(normalized[0].cacheKey).toBe(modernKey);
         expect(normalized[0].blob).toBeInstanceOf(Blob);
+        expect(normalized[0].sourceKind).toBe('legacy');
+        expect(normalized[0].discoveryVersion).toBe(0);
+    });
+
+    it('preserves favicon discovery metadata from current backups', () => {
+        const manager = new BackupManager();
+        const cacheKey = buildIconCacheKey('https://example.com/path', '');
+        const normalized = manager._normalizeIconCacheEntriesForImport({
+            cacheKey,
+            sourceUrl: 'https://example.com/favicon.svg',
+            sourceKind: 'html-icon',
+            mimeType: 'image/svg+xml',
+            width: 128,
+            height: 128,
+            score: 95,
+            purpose: 'any',
+            discoveryVersion: 1,
+            blob: new Blob(['<svg/>'], { type: 'image/svg+xml' })
+        }, null);
+
+        expect(normalized[0]).toMatchObject({
+            sourceKind: 'html-icon', mimeType: 'image/svg+xml', width: 128,
+            height: 128, score: 95, purpose: 'any', discoveryVersion: 1
+        });
     });
 
     it('maps hostname-based legacy entry to all matching quicklinks keys', () => {

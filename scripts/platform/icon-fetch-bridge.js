@@ -1,4 +1,5 @@
 const FETCH_ICON_MESSAGE = 'fetchIcon';
+const DISCOVER_ICON_MESSAGE = 'discoverIcon';
 
 function _getOwnFaviconApiPrefixes() {
     if (typeof chrome === 'undefined' || !chrome?.runtime?.getURL) return [];
@@ -64,7 +65,7 @@ export function normalizeIconBinaryPayload(data) {
 export async function fetchIconPayloadViaBackground(url) {
     if (!isAllowedIconFetchUrl(url)) return null;
 
-    let response = null;
+    let response;
     try {
         response = await chrome.runtime.sendMessage({ type: FETCH_ICON_MESSAGE, url });
     } catch {
@@ -87,4 +88,20 @@ export async function fetchIconBlobViaBackground(url) {
 
     const blob = new Blob([payload.bytes], { type: payload.contentType });
     return blob.size > 0 ? blob : null;
+}
+
+export async function discoverIconViaBackground(pageUrl) {
+    if (!isAllowedIconFetchUrl(pageUrl)) return null;
+    let response;
+    try {
+        response = await chrome.runtime.sendMessage({ type: DISCOVER_ICON_MESSAGE, url: pageUrl });
+    } catch {
+        return null;
+    }
+    if (!response?.success || !response.data) return null;
+    const bytes = normalizeIconBinaryPayload(response.data);
+    if (!bytes?.byteLength) return null;
+    const blob = new Blob([bytes], { type: response.contentType || 'image/png' });
+    if (!blob.size) return null;
+    return { blob, meta: response.meta || {} };
 }

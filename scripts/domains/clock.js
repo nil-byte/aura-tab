@@ -75,6 +75,14 @@ async function writeSettings(patch) {
     scheduleNextTick();
 }
 
+function writeSettingsFromUi(patch, onSuccess) {
+    void writeSettings(patch)
+        .then(onSuccess)
+        .catch((error) => {
+            console.error('[Aura Tab] clock settings save failed:', error);
+        });
+}
+
 function handleStorageChange(changes, areaName) {
     if (areaName !== 'sync') return;
 
@@ -122,12 +130,12 @@ export async function initClock() {
 
     clockElement.addEventListener('click', () => {
         const next = clockState.settings.clockFormat === '24' ? '12' : '24';
-        void writeSettings({ clockFormat: next });
+        writeSettingsFromUi({ clockFormat: next });
     }, { signal: controller.signal });
 
     dateElement.addEventListener('click', () => {
         const next = clockState.settings.dateFormat === 'zh' ? 'en' : 'zh';
-        void writeSettings({ dateFormat: next }).then(() => {
+        writeSettingsFromUi({ dateFormat: next }, () => {
             dateElement.classList.add('date-switch');
             clearTimeout(clockState.dateAnimationTimer);
             clockState.dateAnimationTimer = setTimeout(() => {

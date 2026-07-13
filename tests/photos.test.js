@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LayoutManager } from '../scripts/domains/layout.js';
 import { favoriteToWallpaperItem, libraryRemoteToWallpaperItem } from '../scripts/domains/photos/mappers.js';
 
 function mountPhotosDom() {
     document.body.innerHTML = `
-        <div class="mac-window-overlay photos-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="mac-window-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true" aria-hidden="true">
             <div class="mac-window photos-window" id="photosWindow"></div>
         </div>
     `;
@@ -82,12 +82,34 @@ describe('photos domain', () => {
         mountPhotosDom();
         const { photosWindow } = await import('../scripts/domains/photos/window.js');
 
-        expect(() => photosWindow.open()).not.toThrow();
+        try {
+            expect(() => photosWindow.open()).not.toThrow();
 
-        const overlay = document.getElementById('photosOverlay');
-        expect(overlay).toBeTruthy();
-        expect(overlay.classList.contains('visible')).toBe(true);
-        expect(overlay.getAttribute('aria-hidden')).toBe('false');
+            const overlay = document.getElementById('photosOverlay');
+            expect(overlay).toBeTruthy();
+            expect(overlay.classList.contains('visible')).toBe(true);
+            expect(overlay.getAttribute('aria-hidden')).toBe('false');
+        } finally {
+            photosWindow.close();
+        }
+    });
+
+    it('cancels deferred window work when closed', async () => {
+        vi.useFakeTimers();
+        mountPhotosDom();
+        const { getPhotosWindow } = await import('../scripts/domains/photos/window.js');
+        const instance = getPhotosWindow();
+        const statsSpy = vi.spyOn(instance, '_updateStorageStats').mockResolvedValue(undefined);
+
+        try {
+            instance.open();
+            instance.close();
+            await vi.runAllTimersAsync();
+            expect(statsSpy).not.toHaveBeenCalled();
+        } finally {
+            statsSpy.mockRestore();
+            vi.useRealTimers();
+        }
     });
 
     describe('photo info visibility', () => {
@@ -117,6 +139,69 @@ describe('photos domain', () => {
             expect(authorName?.textContent).toBe('Alice');
             expect(photoAuthor?.getAttribute('href')).toBe('https://example.com');
             expect(photoInfo?.classList.contains('hidden')).toBe(false);
+        });
+
+        it('uses the newly applied background instead of stale controller state', async () => {
+            document.body.insertAdjacentHTML('afterbegin', `
+                <div class="layout-container"></div>
+                <div id="searchContainer"></div>
+                <input id="searchInput">
+            `);
+            const previous = { id: 'favorite-old', username: 'Old author', page: 'https://old.example' };
+            const applied = { id: 'fresh-new', username: 'New author', page: 'https://new.example' };
+            const backgroundSystem = {
+                whenReady: () => Promise.resolve(),
+                getCurrentBackground: () => previous
+            };
+            const layout = new LayoutManager({ backgroundSystem });
+            const favoriteSpy = vi.spyOn(layout, '_updateFavoriteButtonState').mockResolvedValue(undefined);
+
+            try {
+                await layout.init();
+                favoriteSpy.mockClear();
+
+                window.dispatchEvent(new CustomEvent('background:applied', {
+                    detail: { background: applied }
+                }));
+
+                await vi.waitFor(() => {
+                    expect(favoriteSpy).toHaveBeenCalledWith(applied, expect.any(Number));
+                });
+                expect(document.getElementById('authorName').textContent).toBe('New author');
+            } finally {
+                layout.destroy();
+                favoriteSpy.mockRestore();
+            }
+        });
+
+        it('does not let an older photo-info update overwrite a newer background', async () => {
+            let releaseOlder;
+            const olderReady = new Promise((resolve) => {
+                releaseOlder = resolve;
+            });
+            const backgroundSystem = {
+                whenReady: vi.fn()
+                    .mockReturnValueOnce(olderReady)
+                    .mockResolvedValueOnce(undefined),
+                getCurrentBackground: vi.fn()
+            };
+            const layout = new LayoutManager({ backgroundSystem });
+            const favoriteSpy = vi.spyOn(layout, '_updateFavoriteButtonState').mockResolvedValue(undefined);
+            const older = { id: 'older', username: 'Older', page: 'https://older.example' };
+            const newer = { id: 'newer', username: 'Newer', page: 'https://newer.example' };
+
+            try {
+                const olderUpdate = layout._updatePhotoInfo(older);
+                const newerUpdate = layout._updatePhotoInfo(newer);
+                await newerUpdate;
+                releaseOlder();
+                await olderUpdate;
+
+                expect(document.getElementById('authorName').textContent).toBe('Newer');
+                expect(favoriteSpy).toHaveBeenLastCalledWith(newer, expect.any(Number));
+            } finally {
+                favoriteSpy.mockRestore();
+            }
         });
 
         it('removes author link href when no page URL is provided', async () => {

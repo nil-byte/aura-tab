@@ -127,7 +127,6 @@ function createSections() {
         fromInput: clampQuicklinksMagnifyScale,
       },
     ]),
-    // Icon cache UI stays hidden, but runtime/cache/backup compatibility remains supported.
   ];
 }
 

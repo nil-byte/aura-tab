@@ -9,9 +9,9 @@ import { buildIconCacheKey, getFaviconUrlCandidates, setImageSrcWithFallback } f
 import { modalLayer } from '../../platform/modal-layer.js';
 import { iconCache } from '../../platform/icon-cache.js';
 import { DisposableComponent, createDebounce } from '../../platform/lifecycle.js';
-import { fetchIconBlobViaBackground } from '../../platform/icon-fetch-bridge.js';
+import { discoverIconViaBackground, fetchIconBlobViaBackground } from '../../platform/icon-fetch-bridge.js';
 import { getInitial, isValidQuicklinkUrl, normalizeUrlForNavigation } from '../../shared/text.js';
-import { ICON_PALETTE, createTextIconContent, normalizeCustomIconColor, normalizeIconAppearance, resolveIconColor, truncateIconText } from './icon-appearance.js';
+import { ICON_PALETTE, createTextIconContent, normalizeCustomIconColor, normalizeIconAppearance, resolveIconColor, resolveIconMode, truncateIconText } from './icon-appearance.js';
 
 const MODAL_ID = 'quicklink-dialog';
 
@@ -68,6 +68,7 @@ class QuickLinksApp extends DisposableComponent {
         this.refs = {
             dialogOverlay: byId('quicklinkDialogOverlay'),
             dialogClose: byId('quicklinkDialogClose'),
+            cancelBtn: byId('quicklinkCancelBtn'),
             saveBtn: byId('quicklinkSaveBtn'),
             deleteBtn: byId('quicklinkDeleteBtn'),
             dialogTitle: byId('quicklinkDialogTitle'),
@@ -77,10 +78,8 @@ class QuickLinksApp extends DisposableComponent {
             iconInput: byId('quicklinkIconInput'),
             iconTextInput: byId('quicklinkIconTextInput'),
             iconMode: byId('quicklinkIconMode'),
-            colorPalette: byId('quicklinkColorPalette'),
-            customColorPopover: byId('quicklinkCustomColorPopover'),
+            colorWell: byId('quicklinkColorWell'),
             customColorInput: byId('quicklinkCustomColorInput'),
-            customColorValue: byId('quicklinkCustomColorValue'),
             dockCheckbox: byId('quicklinkDockCheckbox'),
             previewIcon: byId('quicklinkPreviewIcon'),
             refreshIconRow: byId('quicklinkRefreshIconRow'),
@@ -102,6 +101,10 @@ class QuickLinksApp extends DisposableComponent {
 
         if (this.refs.dialogClose) {
             this._events.add(this.refs.dialogClose, 'click', () => this.closeDialog());
+        }
+
+        if (this.refs.cancelBtn) {
+            this._events.add(this.refs.cancelBtn, 'click', () => this.closeDialog());
         }
 
         if (this.refs.saveBtn) {
@@ -135,31 +138,13 @@ class QuickLinksApp extends DisposableComponent {
             if (button) this._setIconMode(button.dataset.mode);
         });
         this._events.add(this.refs.iconTextInput, 'input', () => this._updatePreviewIcon());
-        this._events.add(this.refs.colorPalette, 'click', (event) => {
-            const button = event.target.closest('[data-color]');
-            if (!button) return;
-            if (button.dataset.color === 'custom') {
-                this.refs.customColorPopover?.classList.toggle('hidden');
-                return;
-            }
-            this.editState.iconColor = button.dataset.color;
-            this.refs.customColorPopover?.classList.add('hidden');
-            this._renderColorPalette();
-            this._updatePreviewIcon();
+        this._events.add(this.refs.colorWell, 'click', () => {
+            const color = resolveIconColor(this.editState.iconColor) || ICON_PALETTE.slate;
+            if (this.refs.customColorInput) this.refs.customColorInput.value = color;
+            this.refs.customColorInput?.click();
         });
         this._events.add(this.refs.customColorInput, 'input', (event) => {
-            const color = normalizeCustomIconColor(event.target.value);
-            if (!color) return;
-            this.editState.iconColor = color;
-            event.target.value = color;
-            if (this.refs.customColorValue) this.refs.customColorValue.textContent = color;
-            this._renderColorPalette();
-            this._updatePreviewIcon();
-        });
-        this._events.add(document, 'click', (event) => {
-            if (!event.target.closest('.quicklink-color-picker-anchor')) {
-                this.refs.customColorPopover?.classList.add('hidden');
-            }
+            this._setCustomColor(event.target.value, { updateNative: false });
         });
 
         const tagsInput = this.refs.tagsInput;
@@ -200,13 +185,11 @@ class QuickLinksApp extends DisposableComponent {
         this.editState.isEditing = Boolean(link && link._id);
         this.editState.editingId = link ? link._id : null;
         this.editState.source = source;
-        const appearance = !link?.icon ? normalizeIconAppearance(link?.iconAppearance, link) : null;
-        this.editState.iconMode = link?.icon ? 'custom' : (appearance ? 'text' : 'auto');
+        const appearance = !link?.icon ? normalizeIconAppearance(link?.iconAppearance) : null;
+        this.editState.iconMode = resolveIconMode(link || {});
         this.editState.iconColor = appearance?.color || 'slate';
         const customColor = resolveIconColor(this.editState.iconColor) || ICON_PALETTE.slate;
         if (this.refs.customColorInput) this.refs.customColorInput.value = customColor;
-        if (this.refs.customColorValue) this.refs.customColorValue.textContent = customColor;
-        this.refs.customColorPopover?.classList.add('hidden');
 
         const rawTags = link && Array.isArray(link.tags) ? link.tags : [];
         const nextTags = [];
@@ -238,7 +221,7 @@ class QuickLinksApp extends DisposableComponent {
         if (urlInput) urlInput.value = link ? link.url : '';
         if (iconInput) iconInput.value = link ? (link.icon || '') : '';
         if (this.refs.iconTextInput) this.refs.iconTextInput.value = appearance?.text || '';
-        this._renderColorPalette();
+        this._syncColorWell();
         this._setIconMode(this.editState.iconMode, false);
 
         if (dockCheckbox) {
@@ -298,6 +281,16 @@ class QuickLinksApp extends DisposableComponent {
             urlInput.removeAttribute('aria-invalid');
             urlInput.classList.remove('quicklink-input-invalid');
         }
+    }
+
+    _setCustomColor(value, { updateNative = true } = {}) {
+        const color = normalizeCustomIconColor(value);
+        if (!color) return false;
+        this.editState.iconColor = color;
+        if (updateNative && this.refs.customColorInput) this.refs.customColorInput.value = color;
+        this._syncColorWell();
+        this._updatePreviewIcon();
+        return true;
     }
 
     _setUrlInvalid(message) {
@@ -422,11 +415,9 @@ class QuickLinksApp extends DisposableComponent {
             await iconCache.init();
             iconCache.removeFromNegativeCache(cacheKey);
 
-            const urls = customIconUrl
-                ? [customIconUrl]
-                : getFaviconUrlCandidates(normalizedUrl, { size: 64 });
-
-            const success = await iconCache.refreshIcon(cacheKey, urls);
+            const success = customIconUrl
+                ? await iconCache.refreshIcon(cacheKey, [customIconUrl])
+                : await this._discoverAndCacheIcon(cacheKey, normalizedUrl);
 
             if (success) {
                 toast(t('iconCacheRefreshed'));
@@ -481,24 +472,33 @@ class QuickLinksApp extends DisposableComponent {
             const img = document.createElement('img');
             img.alt = '';
 
+            let fallbackNode = null;
             const fallbackToInitial = () => {
+                if (fallbackNode) return;
                 if (img.src?.startsWith('blob:')) {
                     try {
                         URL.revokeObjectURL(img.src);
                     } catch { /* revokeObjectURL may fail for non-blob URLs */ }
                 }
                 img.style.display = 'none';
-                const fallback = document.createElement('span');
-                fallback.className = 'preview-fallback';
-                fallback.textContent = this._getInitial(title || url || '?');
-                previewIcon.appendChild(fallback);
+                fallbackNode = document.createElement('span');
+                fallbackNode.className = 'preview-fallback';
+                fallbackNode.textContent = this._getInitial(title || url || '?');
+                previewIcon.appendChild(fallbackNode);
             };
 
             const cacheKey = buildIconCacheKey(normalizedUrl, customIcon || '');
             setImageSrcWithFallback(img, urls, fallbackToInitial, {
                 cacheKey,
                 customIconUrl: customIcon || undefined,
-                cacheMode: 'read-only'
+                cacheMode: 'read-only',
+                pageUrl: customIcon ? undefined : normalizedUrl,
+                onPending: customIcon ? undefined : fallbackToInitial,
+                onResolved: () => {
+                    fallbackNode?.remove();
+                    fallbackNode = null;
+                    img.style.display = '';
+                }
             });
             previewIcon.appendChild(img);
             return;
@@ -522,28 +522,10 @@ class QuickLinksApp extends DisposableComponent {
         if (updatePreview) this._updatePreviewIcon();
     }
 
-    _renderColorPalette() {
-        if (!this.refs.colorPalette) return;
-        const buttons = Object.entries(ICON_PALETTE).map(([token, value]) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.dataset.color = token;
-            button.style.backgroundColor = value;
-            button.setAttribute('role', 'radio');
-            button.setAttribute('aria-label', token);
-            button.setAttribute('aria-checked', String(token === this.editState.iconColor));
-            return button;
-        });
-        const customButton = document.createElement('button');
-        customButton.type = 'button';
-        customButton.className = 'quicklink-custom-color-btn';
-        customButton.dataset.color = 'custom';
-        customButton.setAttribute('role', 'radio');
-        customButton.setAttribute('aria-label', t('dialogIconCustomColor'));
-        customButton.setAttribute('aria-checked', String(String(this.editState.iconColor).startsWith('#')));
-        customButton.style.setProperty('--selected-custom-color', resolveIconColor(this.editState.iconColor) || ICON_PALETTE.slate);
-        buttons.push(customButton);
-        this.refs.colorPalette.replaceChildren(...buttons);
+    _syncColorWell() {
+        const color = resolveIconColor(this.editState.iconColor) || ICON_PALETTE.slate;
+        this.refs.colorWell?.style.setProperty('--quicklink-color', color);
+        if (this.refs.customColorInput) this.refs.customColorInput.value = color;
     }
 
     _handleTagKeydown(e) {
@@ -751,13 +733,9 @@ class QuickLinksApp extends DisposableComponent {
                 return;
             }
 
-            const candidates = getFaviconUrlCandidates(url, { size: 64 });
-            for (const candidateUrl of candidates) {
-                const success = await this._fetchAndCacheIcon(cacheKey, candidateUrl);
-                if (success) {
-                    iconCache.removeFromNegativeCache(cacheKey);
-                    return;
-                }
+            if (await this._discoverAndCacheIcon(cacheKey, url)) {
+                iconCache.removeFromNegativeCache(cacheKey);
+                return;
             }
 
             iconCache.addToNegativeCache(cacheKey);
@@ -776,6 +754,15 @@ class QuickLinksApp extends DisposableComponent {
         } catch {
             return false;
         }
+    }
+
+    async _discoverAndCacheIcon(cacheKey, pageUrl) {
+        const discovered = await discoverIconViaBackground(pageUrl);
+        if (!discovered?.blob) return false;
+        return iconCache.set(cacheKey, discovered.blob, discovered.meta?.sourceUrl || '', {
+            ...discovered.meta,
+            mimeType: discovered.blob.type || discovered.meta?.mimeType || ''
+        });
     }
 
     destroy() {
@@ -799,15 +786,4 @@ class QuickLinksApp extends DisposableComponent {
 export async function initQuickLinks() {
     const app = new QuickLinksApp();
     await app.init();
-
-    const api = Object.freeze({
-        show: () => store.updateSettings({ enabled: true }),
-        hide: () => store.updateSettings({ enabled: false }),
-        updateStyle: (style) => store.updateSettings({ style }),
-        setDockCount: (dockCount) => store.updateSettings({ dockCount }),
-        setNewTab: (newTab) => store.updateSettings({ newTab }),
-        setShowBackdrop: (showBackdrop) => store.updateSettings({ showBackdrop })
-    });
-
-    return { app, api };
 }

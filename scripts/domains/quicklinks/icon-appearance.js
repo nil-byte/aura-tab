@@ -69,11 +69,11 @@ export function normalizeIconAppearance(value) {
 
 export function resolveIconMode(item = {}) {
     if (String(item.icon || '').trim()) return 'custom';
-    return normalizeIconAppearance(item.iconAppearance, item) ? 'text' : 'auto';
+    return normalizeIconAppearance(item.iconAppearance) ? 'text' : 'auto';
 }
 
 export function createTextIconContent(item, classPrefix, appearance = null) {
-    const normalized = appearance || normalizeIconAppearance(item?.iconAppearance, item);
+    const normalized = appearance || normalizeIconAppearance(item?.iconAppearance);
     const span = document.createElement('span');
     span.className = `${classPrefix}-icon-fallback icon-text-content`;
     span.textContent = normalized?.text || getAutomaticIconText(item);

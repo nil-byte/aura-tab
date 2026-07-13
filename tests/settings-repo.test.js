@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetMocks, setStorageData } from './setup.js';
+import { getStorageData, resetMocks, setStorageData } from './setup.js';
 
 describe('settings-repo', () => {
     beforeEach(() => {
@@ -68,6 +68,28 @@ describe('settings-repo', () => {
         const { patchBackgroundSettings } = await import('../scripts/platform/settings-repo.js');
         await expect(patchBackgroundSettings({ overlay: 20 })).rejects.toThrow('quota');
         chrome.storage.sync.set = originalSet;
+    });
+
+    it('patchBackgroundSettings should preserve concurrent independent patches', async () => {
+        setStorageData({
+            backgroundSettings: {
+                type: 'files',
+                overlay: 0,
+                blur: 0,
+                texture: { type: 'none' },
+                apiKeys: {}
+            }
+        }, 'sync');
+
+        const { patchBackgroundSettings } = await import('../scripts/platform/settings-repo.js');
+        await Promise.all([
+            patchBackgroundSettings({ overlay: 25 }),
+            patchBackgroundSettings({ blur: 8 })
+        ]);
+
+        const persisted = getStorageData('sync').backgroundSettings;
+        expect(persisted.overlay).toBe(25);
+        expect(persisted.blur).toBe(8);
     });
 
     it('patchSyncSettings should surface storage write errors', async () => {

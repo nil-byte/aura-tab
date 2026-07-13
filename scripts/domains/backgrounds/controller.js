@@ -13,7 +13,6 @@ import {
 } from './image-pipeline.js';
 import {
     getApplyOptions as getBackgroundApplyOptions,
-    getPrepareTimeoutMs as getBackgroundPrepareTimeoutMs,
     isOnlineBackgroundType,
     BackgroundMetadataCache,
     Mutex,
@@ -46,10 +45,9 @@ class BackgroundSystem {
 
         this.initialized = false;
         this._instanceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        this._lastStorageWrite = 0;
-        this._storageWriteDebounce = 100;
-
         this._loadMutex = new Mutex();
+        this._loadGeneration = 0;
+        this._storageApplyGeneration = 0;
 
         this._metadataCache = new BackgroundMetadataCache();
 
@@ -60,7 +58,6 @@ class BackgroundSystem {
 
         this.localDefaultPath = 'assets/backgrounds/Background1.jpg';
 
-        this._saveTimeout = null;
         this._visibilityHandler = null;
         this._startupPhaseResetTimer = null;
         this._pendingStartupRefreshOnVisible = false;
@@ -373,9 +370,7 @@ class BackgroundSystem {
     }
 
     async loadBackground(forceOrOptions = false) {
-        if (this._loadMutex.isLocked) {
-            return;
-        }
+        const loadGeneration = ++this._loadGeneration;
 
         const {
             force,
@@ -386,16 +381,19 @@ class BackgroundSystem {
         await this._loadMutex.acquire();
 
         try {
-            const needNew = force || needsBackgroundChange(this.settings.frequency, this.lastChange, this.settings.type);
+            if (loadGeneration !== this._loadGeneration) return;
 
-            if (needNew && this.settings.type !== 'color') {
+            const requestedType = this.settings.type;
+            const needNew = force || needsBackgroundChange(this.settings.frequency, this.lastChange, requestedType);
+
+            if (needNew && requestedType !== 'color') {
                 this._ensurePlaceholderBackground();
             }
 
             if (!needNew && this.currentBackground) {
                 await runBackgroundTransition(this, {
                     background: this.currentBackground,
-                    type: this.settings.type,
+                    type: requestedType,
                     basePrepareTimeoutMs: 140,
                     updateTimestamp: false,
                     save: false,
@@ -407,7 +405,7 @@ class BackgroundSystem {
 
             let background = null;
 
-            switch (this.settings.type) {
+            switch (requestedType) {
                 case 'files':
                     background = await this.getLocalFileBackground();
                     break;
@@ -418,7 +416,7 @@ class BackgroundSystem {
                 case 'pixabay':
                 case 'pexels':
                 case 'bing':
-                    background = await this.getProviderBackground(this.settings.type, {
+                    background = await this.getProviderBackground(requestedType, {
                         suppressRecoverableErrors
                     });
                     break;
@@ -426,10 +424,10 @@ class BackgroundSystem {
                     background = await this.getLocalFileBackground();
             }
 
-            if (background) {
+            if (background && loadGeneration === this._loadGeneration) {
                 await runBackgroundTransition(this, {
                     background,
-                    type: this.settings.type,
+                    type: requestedType,
                     basePrepareTimeoutMs: 140,
                     updateTimestamp: true,
                     save: true,
@@ -439,6 +437,7 @@ class BackgroundSystem {
             }
 
         } catch (error) {
+            if (loadGeneration !== this._loadGeneration) return;
             logWithDedup('error', '[Background] Failed to load:', error, {
                 skipIfRecoverable: suppressRecoverableErrors
             });
@@ -460,12 +459,6 @@ class BackgroundSystem {
     }
 
     async _saveBackgroundState(background) {
-        const now = Date.now();
-        if (now - this._lastStorageWrite < this._storageWriteDebounce) {
-            return;
-        }
-        this._lastStorageWrite = now;
-
         try {
             await chrome.storage.local.set({
                 currentBackground: this._serializeBackgroundForStorage(background),
@@ -532,14 +525,6 @@ class BackgroundSystem {
 
     _isOnlineBackgroundType(type = this.settings.type) {
         return isOnlineBackgroundType(type);
-    }
-
-    _getPrepareTimeoutMs(defaultTimeoutMs = 140, type = this.settings.type) {
-        return getBackgroundPrepareTimeoutMs(this.settings, defaultTimeoutMs, type);
-    }
-
-    _resolveRenderMode(type = this.settings.type, smartCropEnabled = this.settings.smartCropEnabled) {
-        return getBackgroundApplyOptions({ ...this.settings, smartCropEnabled }, type).renderMode;
     }
 
     _getApplyOptions(type = this.settings.type) {
@@ -617,57 +602,6 @@ class BackgroundSystem {
             };
             return background;
         }
-    }
-
-    async updateSettings(newSettings, options = {}) {
-        const oldType = this.settings.type;
-
-        this.settings = { ...this.settings, ...newSettings };
-        const effectiveFrequency = this._getEffectiveFrequency(this.settings.type, this.settings.frequency);
-        if (this.settings.type === 'color' || effectiveFrequency !== 'tabs') {
-            this._pendingStartupRefreshOnVisible = false;
-        }
-        await this.saveSettings();
-        this.applyFilters();
-
-        if (newSettings.texture) {
-            textureManager.apply(this.settings.texture);
-        }
-
-        if (newSettings.type && newSettings.type !== oldType) {
-            this.nextBackground = null;
-            const isOnlineSource = this._isOnlineBackgroundType(newSettings.type);
-            if (!isOnlineSource || options.forceRefresh) {
-                await this.loadBackground(true);
-            }
-        }
-    }
-
-    updateOverlay(value) {
-        this.settings.overlay = value;
-        document.documentElement.style.setProperty('--bg-overlay', (value / 100).toString());
-        this.debouncedSave();
-    }
-
-    updateBlur(value) {
-        this.settings.blur = value;
-        document.documentElement.style.setProperty('--bg-blur', `${value}px`);
-        this.debouncedSave();
-    }
-
-    updateBrightness(value) {
-        this.settings.brightness = value;
-        document.documentElement.style.setProperty('--bg-brightness', (value / 100).toString());
-        this.debouncedSave();
-    }
-
-    debouncedSave() {
-        if (this._saveTimeout) {
-            clearTimeout(this._saveTimeout);
-        }
-        this._saveTimeout = setTimeout(() => {
-            this.saveSettings();
-        }, 500);
     }
 
     initMessageListener() {
@@ -818,6 +752,8 @@ class BackgroundSystem {
         }
 
         if (typeChanged) {
+            // Invalidate any provider result fetched for the previous source.
+            this._loadGeneration += 1;
             this.nextBackground = null;
             const isOnlineSource = this._isOnlineBackgroundType(this.settings.type);
             if (!isOnlineSource) {
@@ -832,24 +768,29 @@ class BackgroundSystem {
         }
 
         if (changes.currentBackground) {
+            const applyGeneration = ++this._storageApplyGeneration;
             const hydrated = await this._hydrateStoredBackground(changes.currentBackground.newValue);
-            if (!hydrated) return;
+            if (!hydrated || applyGeneration !== this._storageApplyGeneration) return;
 
-            this.currentBackground = hydrated;
-
-            if (changes.lastBackgroundChange?.newValue) {
-                this.lastChange = changes.lastBackgroundChange.newValue;
-            }
-
-            if (this.settings.type === 'color') return;
-
+            await this._loadMutex.acquire();
             try {
+                if (applyGeneration !== this._storageApplyGeneration) return;
+                this.currentBackground = hydrated;
+
+                if (changes.lastBackgroundChange?.newValue) {
+                    this.lastChange = changes.lastBackgroundChange.newValue;
+                }
+
+                if (this.settings.type === 'color') return;
+
                 const applyType = hydrated.file ? 'files' : this.settings.type;
                 await this._applyBackgroundInternal(hydrated, this._getApplyOptions(applyType));
             } catch (error) {
                 logWithDedup('warn', '[Background] Failed to apply synced background change:', error, {
                     skipIfRecoverable: true
                 });
+            } finally {
+                this._loadMutex.release();
             }
         }
 
@@ -904,10 +845,6 @@ class BackgroundSystem {
         }
     }
 
-    getSettings() {
-        return { ...this.settings };
-    }
-
     getCurrentBackground() {
         return this.currentBackground;
     }
@@ -938,9 +875,6 @@ class BackgroundSystem {
         }
         this._pendingStartupRefreshOnVisible = false;
 
-        if (this._saveTimeout) {
-            clearTimeout(this._saveTimeout);
-        }
         if (this._runtimeMessageHandler) {
             const runtimeOnMessage = chrome?.runtime?.onMessage;
             runtimeOnMessage?.removeListener?.(this._runtimeMessageHandler);

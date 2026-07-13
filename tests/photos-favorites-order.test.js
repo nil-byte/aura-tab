@@ -10,7 +10,7 @@ let originalCancelIdleCallback;
 
 function mountPhotosDom() {
     document.body.innerHTML = `
-        <div class="mac-window-overlay photos-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="mac-window-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true" aria-hidden="true">
             <div class="mac-window photos-window" id="photosWindow"></div>
         </div>
     `;

@@ -15,7 +15,7 @@ describe('Background whenReady local files init gating', () => {
             }
         }, 'sync');
 
-        const originalLocalGet = chrome.storage.local.get.bind(chrome.storage.local);
+        const originalLocalGet = chrome.storage.local.get.getMockImplementation();
         let releaseBackgroundFilesGet;
         const backgroundFilesGate = new Promise((resolve) => {
             releaseBackgroundFilesGet = resolve;

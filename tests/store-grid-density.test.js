@@ -2,13 +2,12 @@
  * Store grid density (Launchpad columns/rows) tests
  *
  * Focus:
- * - updateSettings clamps to CONFIG.GRID_DENSITY bounds
- * - clamp affects pageSizeHint (pagination view)
- * - storage onChanged path clamps too
+ * - storage changes clamp to CONFIG.GRID_DENSITY bounds
+ * - clamped values update pageSizeHint (pagination view)
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { getStorageData, setStorageData, triggerStorageChange } from './setup.js';
+import { setStorageData, triggerStorageChange } from './setup.js';
 
 async function freshStore() {
     vi.resetModules();
@@ -49,27 +48,6 @@ function seedItems(count) {
 }
 
 describe('Store grid density settings', () => {
-    it('updateSettings should clamp columns/rows and persist clamped values', async () => {
-        seedItems(1);
-        const store = await freshStore();
-        await store.init();
-
-        await store.updateSettings({
-            launchpadGridColumns: 999,
-            launchpadGridRows: -123
-        });
-
-        // Bounds come from store.CONFIG.GRID_DENSITY
-        expect(store.settings.launchpadGridColumns).toBe(store.CONFIG.GRID_DENSITY.COL_MAX);
-        expect(store.settings.launchpadGridRows).toBe(store.CONFIG.GRID_DENSITY.ROW_MIN);
-
-        const persisted = getStorageData('sync');
-        expect(persisted.launchpadGridColumns).toBe(store.CONFIG.GRID_DENSITY.COL_MAX);
-        expect(persisted.launchpadGridRows).toBe(store.CONFIG.GRID_DENSITY.ROW_MIN);
-
-        store.destroy?.();
-    });
-
     it('grid density should update pageSizeHint and therefore page count', async () => {
         seedItems(30);
         const store = await freshStore();
@@ -79,13 +57,19 @@ describe('Store grid density settings', () => {
         expect(store.getPageCount()).toBe(2);
 
         // Clamp low (cols=1, rows=1) => (4 * 2) = 8 capacity
-        await store.updateSettings({ launchpadGridColumns: 1, launchpadGridRows: 1 });
+        triggerStorageChange({
+            launchpadGridColumns: { newValue: 1 },
+            launchpadGridRows: { newValue: 1 }
+        }, 'sync');
         expect(store.settings.launchpadGridColumns).toBe(store.CONFIG.GRID_DENSITY.COL_MIN);
         expect(store.settings.launchpadGridRows).toBe(store.CONFIG.GRID_DENSITY.ROW_MIN);
         expect(store.getPageCount()).toBe(4); // ceil(30/8)
 
         // Clamp high (cols=10, rows=6) => 60 capacity
-        await store.updateSettings({ launchpadGridColumns: 10, launchpadGridRows: 6 });
+        triggerStorageChange({
+            launchpadGridColumns: { newValue: 10 },
+            launchpadGridRows: { newValue: 6 }
+        }, 'sync');
         expect(store.getPageCount()).toBe(1);
 
         store.destroy?.();

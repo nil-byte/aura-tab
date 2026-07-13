@@ -210,22 +210,8 @@ class ModalLayerManager {
         return maxPriority;
     }
 
-    getModalsAtLevel(level) {
-        const result = [];
-        for (const [id, modal] of this.#modals) {
-            if (modal.level === level) result.push(id);
-        }
-        return result;
-    }
-
     shouldHandleClick(level) {
         return this.getTopLevel() <= this.#getPriority(level);
-    }
-
-    isClickInside(id, target) {
-        const modal = this.#modals.get(id);
-        if (!modal?.hitTestElement || !target) return false;
-        return modal.hitTestElement.contains(target);
     }
 
     #getTopModals() {

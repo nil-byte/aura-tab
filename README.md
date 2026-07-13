@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/nil-byte/aura-tab/actions/workflows/ci.yml/badge.svg)](https://github.com/nil-byte/aura-tab/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-3.5.2-blue.svg)](https://github.com/nil-byte/aura-tab/releases)
+[![Version](https://img.shields.io/badge/version-3.5.3-blue.svg)](https://github.com/nil-byte/aura-tab/releases)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-brightgreen)](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja)
 
 A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backgrounds, quick links management, and immersive photo viewing.
@@ -20,7 +20,6 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 - 🎬 **Smooth Transitions**: Beautiful fade animations when switching backgrounds with configurable interval
 - 🌐 **i18n Support**: Full Chinese (Simplified/Traditional) and English localization
 - ⚡ **Performance First**: First Paint optimization, background caching with TTL, lazy loading
-- 🎭 **Toolbar Icon Customization**: Upload and apply your own toolbar icons with instant preview
 - 📱 **Responsive Design**: Adapts to different screen sizes, densities, and orientations
 - 🔒 **Privacy Focused**: WebDAV backup support for Nutstore, Synology NAS, etc., no data collection
 - 🖼️ **Immersive Photo Viewer**: Fullscreen browsing with keyboard navigation and EXIF display
@@ -75,7 +74,7 @@ Or install directly from [Chrome Web Store](https://chromewebstore.google.com/de
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 20.19+
 - npm or pnpm
 
 ### Setup

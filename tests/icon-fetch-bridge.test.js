@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    discoverIconViaBackground,
     fetchIconPayloadViaBackground,
     normalizeIconBinaryPayload
 } from '../scripts/platform/icon-fetch-bridge.js';
@@ -69,6 +70,22 @@ describe('Icon fetch bridge', () => {
         chrome.runtime.sendMessage.mockRejectedValueOnce(new Error('Could not establish connection'));
 
         await expect(fetchIconPayloadViaBackground('https://example.com/favicon.ico')).resolves.toBeNull();
+    });
+
+    it('icon_discovery_bridge_returns_blob_and_quality_metadata', async () => {
+        chrome.runtime.sendMessage.mockResolvedValueOnce({
+            success: true,
+            data: [1, 2, 3],
+            contentType: 'image/png',
+            meta: { sourceKind: 'html-icon', width: 128, height: 128, score: 95 }
+        });
+
+        const result = await discoverIconViaBackground('https://example.com/page');
+
+        expect(result?.blob).toBeInstanceOf(Blob);
+        expect(result?.blob.size).toBe(3);
+        expect(result?.meta).toMatchObject({ sourceKind: 'html-icon', width: 128, score: 95 });
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'discoverIcon', url: 'https://example.com/page' });
     });
 });
 
@@ -211,6 +228,16 @@ describe('IconCacheManager cleanup by cacheKey', () => {
         await vi.runAllTimersAsync();
 
         expect(deleteSpy).not.toHaveBeenCalled();
+
+        cache.destroy();
+    });
+});
+
+describe('IconCacheManager default TTL', () => {
+    it('uses permanent caching by default', () => {
+        const cache = new IconCacheManager();
+
+        expect(cache.isStale({ cachedAt: 0 })).toBe(false);
 
         cache.destroy();
     });

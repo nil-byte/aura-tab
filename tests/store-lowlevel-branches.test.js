@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getStorageData, setStorageData } from './setup.js';
+import { getStorageData, setStorageData, triggerStorageChange } from './setup.js';
 
 async function freshStore() {
     vi.resetModules();
@@ -48,11 +48,10 @@ describe('Store low-level defensive branches', () => {
         const store = await freshStore();
         await store.init();
 
-        await store.updateSettings({ launchpadGridColumns: 7, launchpadGridRows: 3 });
+        const item = await store.addItem({ title: 'Lock fallback', url: 'https://lock.example.com' });
 
         const persisted = getStorageData('sync');
-        expect(persisted.launchpadGridColumns).toBe(7);
-        expect(persisted.launchpadGridRows).toBe(3);
+        expect(persisted.quicklinksItems).toContain(item._id);
 
         store.destroy?.();
     });
@@ -109,16 +108,13 @@ describe('Store low-level defensive branches', () => {
         const store = await freshStore();
         await store.init();
 
-        await store.updateSettings({
-            // parseInt("NaN") -> NaN
-            launchpadGridColumns: NaN,
-            // parseInt("Infinity") -> NaN
-            launchpadGridRows: Infinity
-        });
+        triggerStorageChange({
+            launchpadGridColumns: { newValue: NaN },
+            launchpadGridRows: { newValue: Infinity }
+        }, 'sync');
 
-        const persisted = getStorageData('sync');
-        expect(persisted.launchpadGridColumns).toBe(store.CONFIG.GRID_DENSITY.DEFAULT_COLS);
-        expect(persisted.launchpadGridRows).toBe(store.CONFIG.GRID_DENSITY.DEFAULT_ROWS);
+        expect(store.settings.launchpadGridColumns).toBe(store.CONFIG.GRID_DENSITY.DEFAULT_COLS);
+        expect(store.settings.launchpadGridRows).toBe(store.CONFIG.GRID_DENSITY.DEFAULT_ROWS);
 
         store.destroy?.();
     });
@@ -153,7 +149,7 @@ describe('Store low-level defensive branches', () => {
         }, 'sync');
 
         const store = await freshStore();
-        const originalGet = chrome.storage.sync.get.bind(chrome.storage.sync);
+        const originalGet = chrome.storage.sync.get.getMockImplementation();
         const getSpy = vi.spyOn(chrome.storage.sync, 'get').mockImplementation(async (keys) => {
             if (Array.isArray(keys) && keys.length === 2 && keys.includes('quicklinksItems') && keys.includes('quicklinksDockPins')) {
                 throw new Error('temporary sync read failure');

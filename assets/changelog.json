@@ -1,4 +1,28 @@
 {
+  "3.5.3": {
+    "en": [
+      "Dock: You can now place Quick Links at the top or bottom of the page",
+      "Quick Links: Added text icons, custom colors, and more reliable site icon updates",
+      "Backgrounds: Improved reliability when refreshing and managing local images",
+      "Settings: Improved backup, restore, and cross-window updates",
+      "Cleanup: Removed the obsolete custom toolbar icon option"
+    ],
+    "zh_CN": [
+      "Dock：快速链接现在可以放在页面顶部或底部",
+      "快速链接：新增文字图标、自定义颜色，并改善网站图标更新效果",
+      "背景：刷新和管理本地图片时更加稳定",
+      "设置：优化备份、恢复和多窗口同步体验",
+      "整理：移除已废弃的自定义工具栏图标选项"
+    ],
+    "zh_TW": [
+      "Dock：快速連結現在可以放在頁面頂部或底部",
+      "快速連結：新增文字圖示、自訂顏色，並改善網站圖示更新效果",
+      "背景：重新整理和管理本機圖片時更加穩定",
+      "設定：優化備份、還原和多視窗同步體驗",
+      "整理：移除已廢棄的自訂工具列圖示選項"
+    ],
+    "moreUrl": ""
+  },
   "3.5.2": {
     "en": [
       "Settings: Reorganized General and Dock options so interface, Launchpad density, and Dock appearance controls are grouped more clearly",

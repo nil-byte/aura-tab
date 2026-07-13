@@ -13,9 +13,9 @@ class IconCacheManager {
     DB_VERSION: 2,
     STORE_NAME: 'icons',
     MAX_TOTAL_SIZE: 20 * 1024 * 1024,
-    MAX_SINGLE_SIZE: 500 * 1024,
+    MAX_SINGLE_SIZE: 512 * 1024,
     MAX_ENTRIES: 1000,
-    DEFAULT_TTL: 7 * 24 * 60 * 60 * 1000,
+    DEFAULT_TTL: -1,
     EVICTION_BATCH: 50,
     NEGATIVE_CACHE_TTL: 24 * 60 * 60 * 1000,
     MAX_NEGATIVE_CACHE_SIZE: 200
@@ -98,7 +98,12 @@ class IconCacheManager {
       if (settings && typeof settings.ttl === 'number') {
         const validTTLs = Object.values(IconCacheManager.TTL_OPTIONS);
         if (validTTLs.includes(settings.ttl)) {
-          this.#ttl = settings.ttl;
+          this.#ttl = IconCacheManager.TTL_OPTIONS.PERMANENT;
+          if (settings.ttl !== IconCacheManager.TTL_OPTIONS.PERMANENT) {
+            await chrome.storage.sync.set({
+              [IconCacheManager.STORAGE_KEY]: { ...settings, ttl: IconCacheManager.TTL_OPTIONS.PERMANENT }
+            });
+          }
         } else {
           console.warn('[IconCacheManager] Invalid TTL value in storage, using default');
         }
@@ -108,27 +113,6 @@ class IconCacheManager {
     } finally {
       this.#ttlLoaded = true;
     }
-  }
-
-  async setTTL(ttl) {
-    const validTTLs = Object.values(IconCacheManager.TTL_OPTIONS);
-    if (!validTTLs.includes(ttl)) {
-      console.warn('[IconCacheManager] Invalid TTL value:', ttl);
-      return false;
-    }
-
-    try {
-      await chrome.storage.sync.set({ [IconCacheManager.STORAGE_KEY]: { ttl } });
-      this.#ttl = ttl;
-      return true;
-    } catch (error) {
-      console.error('[IconCacheManager] Failed to save TTL settings:', error);
-      return false;
-    }
-  }
-
-  getTTL() {
-    return this.#ttl;
   }
 
   isDegraded() {
@@ -239,6 +223,13 @@ class IconCacheManager {
       return {
         blob,
         sourceUrl: entry.sourceUrl || '',
+        sourceKind: entry.sourceKind || 'legacy',
+        mimeType: entry.mimeType || blob.type || '',
+        width: Number(entry.width) || 0,
+        height: Number(entry.height) || 0,
+        score: Number(entry.score) || 0,
+        purpose: entry.purpose || '',
+        discoveryVersion: Number(entry.discoveryVersion) || 0,
         cachedAt: entry.cachedAt,
         lastAccessedAt: now,
         size: blob.size
@@ -293,7 +284,7 @@ class IconCacheManager {
     });
   }
 
-  async set(cacheKey, blob, sourceUrl) {
+  async set(cacheKey, blob, sourceUrl, metadata = {}) {
     if (this.#destroyed || !cacheKey || !blob) return false;
     if (this.isDegraded()) return false;
 
@@ -320,6 +311,13 @@ class IconCacheManager {
         cacheKey,
         blob,
         sourceUrl: sourceUrl || '',
+        sourceKind: metadata.sourceKind || 'legacy',
+        mimeType: metadata.mimeType || blob.type || '',
+        width: Number(metadata.width) || 0,
+        height: Number(metadata.height) || 0,
+        score: Number(metadata.score) || 0,
+        purpose: metadata.purpose || '',
+        discoveryVersion: Number(metadata.discoveryVersion) || 0,
         cachedAt: now,
         lastAccessedAt: now,
         size

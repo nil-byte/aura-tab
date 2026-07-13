@@ -35,11 +35,6 @@ function oneIn(container, selector) {
     return container.contains(el) ? el : null;
 }
 
-function allIn(container, selector) {
-    if (!container) return [];
-    return Array.from(document.querySelectorAll(selector)).filter((el) => container.contains(el));
-}
-
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
@@ -203,10 +198,6 @@ export class SettingsBuilder {
 
     query(selector) {
         return oneIn(this.container, selector);
-    }
-
-    queryAll(selector) {
-        return allIn(this.container, selector);
     }
 
     async _handleChange(row, section, control) {

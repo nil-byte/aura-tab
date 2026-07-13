@@ -79,6 +79,32 @@ const mockStorage = {
             mockStorage.local._data = {};
         })
     },
+    session: {
+        _data: {},
+        get: vi.fn(async (keys) => {
+            if (keys === null) return { ...mockStorage.session._data };
+            if (typeof keys === 'string') {
+                return { [keys]: mockStorage.session._data[keys] };
+            }
+            const result = {};
+            for (const [key, defaultValue] of Object.entries(keys || {})) {
+                result[key] = mockStorage.session._data[key] ?? defaultValue;
+            }
+            return result;
+        }),
+        set: vi.fn(async (items) => {
+            Object.assign(mockStorage.session._data, items);
+        }),
+        remove: vi.fn(async (keys) => {
+            const keyArray = Array.isArray(keys) ? keys : [keys];
+            for (const key of keyArray) {
+                delete mockStorage.session._data[key];
+            }
+        }),
+        clear: vi.fn(async () => {
+            mockStorage.session._data = {};
+        })
+    },
     onChanged: {
         _listeners: [],
         addListener: vi.fn((callback) => {
@@ -164,6 +190,7 @@ if (typeof queueMicrotask === 'undefined') {
 export function resetMocks() {
     mockStorage.sync._data = {};
     mockStorage.local._data = {};
+    mockStorage.session._data = {};
     mockStorage.onChanged._listeners = [];
     vi.clearAllMocks();
 }

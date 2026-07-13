@@ -49,17 +49,18 @@ describe('quicklink icon appearance', () => {
     });
 });
 
-describe('favicon candidate order', () => {
-    it('prefers Chrome, then origin icons, then third-party services', async () => {
+describe('favicon conventional fallback candidates', () => {
+    it('keeps Chrome and origin paths only; provider fallbacks are resolved by the background scorer', async () => {
         vi.stubGlobal('chrome', { runtime: { getURL: path => `chrome-extension://test${path}` } });
         const { getFaviconUrlCandidates } = await import('../scripts/shared/favicon.js');
         const urls = getFaviconUrlCandidates('https://example.com/page', { size: 64 });
         const chromeIndex = urls.findIndex(url => url.startsWith('chrome-extension://'));
         const originIndex = urls.findIndex(url => url === 'https://example.com/apple-touch-icon.png');
-        const thirdPartyIndex = urls.findIndex(url => url.includes('google.com/s2'));
         expect(chromeIndex).toBeGreaterThanOrEqual(0);
         expect(originIndex).toBeGreaterThan(chromeIndex);
-        expect(thirdPartyIndex).toBeGreaterThan(originIndex);
+        expect(urls.some(url => url.includes('apple-touch-icon-precomposed'))).toBe(false);
+        expect(urls.some(url => url.includes('favicon.vemetric.com'))).toBe(false);
+        expect(urls.some(url => url.includes('google.com/s2'))).toBe(false);
         vi.unstubAllGlobals();
     });
 });

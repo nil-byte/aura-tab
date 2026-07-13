@@ -408,7 +408,6 @@
     --viewer-action-hover-bg: var(--overlay-highlight);
     --viewer-action-active-bg: rgba(255, 255, 255, 0.25);
     --viewer-transition-show: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    --viewer-transition-hide: 0.2s ease-out;
     position: absolute;
     inset: 0;
     z-index: var(--z-window-viewer);

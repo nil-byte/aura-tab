@@ -473,7 +473,7 @@ async function _handleWebDAVBackup(container) {
             await client.ensureDir();
 
             const filename = generateBackupFilename();
-            let uploadOk = false;
+            let uploadOk;
             try {
                 uploadOk = await client.putFile(filename, zipBlob);
             } finally {

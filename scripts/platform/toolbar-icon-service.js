@@ -30,19 +30,6 @@ export async function restoreToolbarIcon() {
     }
 }
 
-export async function saveAndApplyCustomIcon(blob, imageDataMap) {
-    const id = `toolbar_${Date.now()}`;
-
-    await _saveToIdb(id, blob);
-    await applyImageData(imageDataMap);
-    const config = {
-        type: 'custom',
-        customImageId: id,
-        _cachedImageData: serializeImageDataForCache(imageDataMap)
-    };
-    await chrome.storage.local.set({ [STORAGE_KEY]: config });
-}
-
 export async function clearCustomIcon() {
     await resetToDefault();
     await chrome.storage.local.set({ [STORAGE_KEY]: null });
@@ -51,34 +38,6 @@ export async function clearCustomIcon() {
         await _clearIdb();
     } catch (error) {
         console.warn('[toolbar-icon-service] IDB cleanup failed:', error);
-    }
-}
-
-export async function getToolbarIconConfig() {
-    const { [STORAGE_KEY]: config = null } = await chrome.storage.local.get({ [STORAGE_KEY]: null });
-    return config;
-}
-
-async function _saveToIdb(id, blob) {
-    const db = await _openDb();
-    try {
-        await new Promise((resolve, reject) => {
-            const tx = db.transaction(IDB_STORE, 'readwrite');
-            const store = tx.objectStore(IDB_STORE);
-
-            store.clear();
-            const request = store.put({
-                id,
-                imageBlob: blob,
-                size: blob.size,
-                updatedAt: Date.now()
-            });
-
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        });
-    } finally {
-        db.close();
     }
 }
 

@@ -79,12 +79,12 @@
             <div class="launchpad-indicator" id="launchpadIndicator"></div>
         </div>
     </div>
-    <div class="mac-window-overlay mac-settings-overlay" id="macSettingsOverlay" data-modal="true" role="dialog"
+    <div class="mac-window-overlay" id="macSettingsOverlay" data-modal="true" role="dialog"
         aria-modal="true" aria-labelledby="macSettingsTitle" aria-hidden="true">
-        <div class="mac-window mac-settings-window" id="macSettingsWindow">
+        <div class="mac-window" id="macSettingsWindow">
         </div>
     </div>
-    <div class="mac-window-overlay photos-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true"
+    <div class="mac-window-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true"
         aria-labelledby="photosTitle" aria-hidden="true">
         <div class="mac-window photos-window" id="photosWindow">
         </div>
@@ -100,91 +100,95 @@
         aria-labelledby="quicklinkDialogTitle" aria-hidden="true">
         <div class="quicklink-dialog" id="quicklinkDialog">
             <div class="quicklink-dialog-header">
-                <h3 id="quicklinkDialogTitle" data-i18n="dialogAddLink"></h3>
-                <button class="close-btn" id="quicklinkDialogClose" data-i18n="ariaClose" data-i18n-attr="aria-label"
-                    aria-label="">
-                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 6L6 18" />
-                        <path d="M6 6l12 12" />
+                <div class="quicklink-dialog-header-start">
+                    <div class="quicklink-dialog-header-icon" aria-hidden="true">
+                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.5 14.5 14.5 9.5"/>
+                            <path d="m7.25 17.75-1 1a3.536 3.536 0 0 1-5-5l3-3a3.536 3.536 0 0 1 5 0" transform="translate(3)"/>
+                            <path d="m16.75 6.25 1-1a3.536 3.536 0 0 1 5 5l-3 3a3.536 3.536 0 0 1-5 0" transform="translate(-3)"/>
+                        </svg>
+                    </div>
+                    <h3 id="quicklinkDialogTitle" data-i18n="dialogAddLink"></h3>
+                </div>
+                <button class="quicklink-dialog-close" id="quicklinkDialogClose" data-i18n="ariaClose" data-i18n-attr="aria-label" aria-label="">
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
             <div class="quicklink-dialog-content">
-                <aside class="quicklink-dialog-icon-editor">
+                <section class="quicklink-identity-editor">
                     <div class="quicklink-dialog-preview">
                         <div class="quicklink-preview-icon" id="quicklinkPreviewIcon">
                             <span class="preview-fallback">?</span>
                         </div>
                     </div>
-                    <div class="quicklink-icon-mode" id="quicklinkIconMode" role="radiogroup" aria-label="Icon style">
-                        <button type="button" data-mode="auto" role="radio" aria-checked="true" data-i18n="dialogIconModeAuto"></button>
-                        <button type="button" data-mode="custom" role="radio" aria-checked="false" data-i18n="dialogIconModeCustom"></button>
-                        <button type="button" data-mode="text" role="radio" aria-checked="false" data-i18n="dialogIconModeText"></button>
-                    </div>
-                    <div class="quicklink-icon-options" data-icon-panel="auto">
-                        <p data-i18n="dialogIconAutoHint"></p>
-                        <div class="quicklink-form-action hidden" id="quicklinkRefreshIconRow">
-                            <button type="button" class="quicklink-btn quicklink-btn-text" id="quicklinkRefreshIconBtn">
-                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-2.636-6.364"/><path d="M21 3v6h-6"/></svg>
-                                <span id="quicklinkRefreshIconLabel" data-i18n="iconCacheRefreshBtn"></span>
-                            </button>
+                    <div class="quicklink-identity-main">
+                        <div class="quicklink-primary-fields">
+                            <label class="quicklink-form-label">
+                                <span data-i18n="dialogUrl"></span>
+                                <div class="quicklink-input-shell">
+                                    <svg class="quicklink-input-leading-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                    <input type="url" id="quicklinkUrlInput" data-i18n="dialogUrlPlaceholder" placeholder="" maxlength="512" autocomplete="url" aria-describedby="quicklinkUrlError">
+                                </div>
+                                <p class="quicklink-url-error" id="quicklinkUrlError" role="alert" aria-live="polite"></p>
+                            </label>
+                            <label class="quicklink-form-label">
+                                <span data-i18n="dialogTitle"></span>
+                                <input type="text" id="quicklinkTitleInput" data-i18n="dialogTitlePlaceholder" placeholder="" maxlength="64">
+                            </label>
                         </div>
-                    </div>
-                    <div class="quicklink-icon-options hidden" data-icon-panel="custom">
-                        <label class="quicklink-form-label">
-                            <span data-i18n="dialogCustomIcon"></span>
-                            <input type="url" id="quicklinkIconInput" data-i18n="dialogCustomIconPlaceholder" placeholder="" maxlength="512">
-                        </label>
-                    </div>
-                    <div class="quicklink-icon-options hidden" data-icon-panel="text">
-                        <label class="quicklink-form-label">
-                            <span data-i18n="dialogIconText"></span>
-                            <input type="text" id="quicklinkIconTextInput" maxlength="8" autocomplete="off">
-                        </label>
-                        <div class="quicklink-color-picker-anchor">
-                            <div class="quicklink-color-palette" id="quicklinkColorPalette" role="radiogroup" aria-label="Icon color"></div>
-                            <div class="quicklink-custom-color-popover hidden" id="quicklinkCustomColorPopover">
-                                <label for="quicklinkCustomColorInput" data-i18n="dialogIconCustomColor"></label>
-                                <input type="color" id="quicklinkCustomColorInput" value="#475569">
-                                <output id="quicklinkCustomColorValue">#475569</output>
+                        <div class="quicklink-appearance-row">
+                            <div class="quicklink-mode-slot">
+                                <div class="quicklink-icon-options" data-icon-panel="auto">
+                                    <p data-i18n="dialogIconAutoHint"></p>
+                                    <div class="quicklink-form-action hidden" id="quicklinkRefreshIconRow">
+                                        <button type="button" class="quicklink-btn-text" id="quicklinkRefreshIconBtn">
+                                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-2.636-6.364"/><path d="M21 3v6h-6"/></svg>
+                                            <span id="quicklinkRefreshIconLabel" data-i18n="iconCacheRefreshBtn"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="quicklink-icon-options hidden" data-icon-panel="custom">
+                                    <input class="quicklink-mode-input" type="url" id="quicklinkIconInput" data-i18n="dialogCustomIconPlaceholder" placeholder="" maxlength="512" aria-labelledby="quicklinkIconModeCustom">
+                                </div>
+                                <div class="quicklink-icon-options hidden" data-icon-panel="text">
+                                    <input class="quicklink-mode-input" type="text" id="quicklinkIconTextInput" maxlength="8" autocomplete="off" data-i18n="dialogIconText" placeholder="" aria-labelledby="quicklinkIconModeText">
+                                    <button class="quicklink-color-well" type="button" id="quicklinkColorWell" data-i18n="dialogIconCustomColor" data-i18n-attr="aria-label" aria-label="">
+                                        <span class="quicklink-color-well-swatch" aria-hidden="true"></span>
+                                    </button>
+                                    <input class="quicklink-native-color-input" type="color" id="quicklinkCustomColorInput" value="#475569" tabindex="-1" aria-hidden="true">
+                                </div>
+                            </div>
+                            <div class="quicklink-icon-mode" id="quicklinkIconMode" role="radiogroup" aria-label="Icon style">
+                                <button type="button" data-mode="auto" role="radio" aria-checked="true" data-i18n="dialogIconModeAuto"></button>
+                                <button type="button" id="quicklinkIconModeCustom" data-mode="custom" role="radio" aria-checked="false" data-i18n="dialogIconModeCustom"></button>
+                                <button type="button" id="quicklinkIconModeText" data-mode="text" role="radio" aria-checked="false" data-i18n="dialogIconModeText"></button>
                             </div>
                         </div>
                     </div>
-                </aside>
-                <div class="quicklink-dialog-form">
+                </section>
+                <section class="quicklink-secondary-fields">
                     <label class="quicklink-form-label">
-                        <span data-i18n="dialogTitle"></span>
-                        <input type="text" id="quicklinkTitleInput" data-i18n="dialogTitlePlaceholder" placeholder=""
-                            maxlength="64">
-                    </label>
-                    <label class="quicklink-form-label">
-                        <span data-i18n="dialogUrl"></span>
-                        <input type="url" id="quicklinkUrlInput" data-i18n="dialogUrlPlaceholder" placeholder=""
-                            maxlength="512" autocomplete="url" aria-describedby="quicklinkUrlError">
-                        <p class="quicklink-url-error" id="quicklinkUrlError" role="alert" aria-live="polite"></p>
+                        <span><span data-i18n="dialogTags"></span> <small>(<span data-i18n="dialogOptional"></span>)</small></span>
+                        <div class="quicklink-tags-wrapper">
+                            <div class="quicklink-tags-container" id="quicklinkTagsContainer"></div>
+                            <input type="text" id="quicklinkTagsInput" data-i18n="dialogTagsPlaceholder" placeholder="" maxlength="10" autocomplete="off">
+                            <div class="quicklink-tags-suggestions" id="quicklinkTagsSuggestions"></div>
+                        </div>
                     </label>
                     <label class="quicklink-form-option" for="quicklinkDockCheckbox">
                         <input type="checkbox" id="quicklinkDockCheckbox">
                         <span data-i18n="dialogShowInDock"></span>
                     </label>
-                    <label class="quicklink-form-label">
-                        <span><span data-i18n="dialogTags"></span> <small>(<span
-                                    data-i18n="dialogOptional"></span>)</small></span>
-                        <div class="quicklink-tags-wrapper">
-                            <div class="quicklink-tags-container" id="quicklinkTagsContainer"></div>
-                            <input type="text" id="quicklinkTagsInput" data-i18n="dialogTagsPlaceholder" placeholder=""
-                                maxlength="10" autocomplete="off">
-                            <div class="quicklink-tags-suggestions" id="quicklinkTagsSuggestions"></div>
-                        </div>
-                    </label>
-                </div>
+                </section>
             </div>
             <div class="quicklink-dialog-footer">
-                <button class="quicklink-btn quicklink-btn-secondary hidden" id="quicklinkDeleteBtn"
-                    data-i18n="dialogDelete"></button>
-                <button class="quicklink-btn quicklink-btn-primary" id="quicklinkSaveBtn"
-                    data-i18n="dialogSave"></button>
+                <button class="quicklink-btn quicklink-btn-secondary hidden" id="quicklinkDeleteBtn" data-i18n="dialogDelete"></button>
+                <div class="quicklink-dialog-footer-end">
+                    <button class="quicklink-btn quicklink-btn-cancel" id="quicklinkCancelBtn" data-i18n="cancel"></button>
+                    <button class="quicklink-btn quicklink-btn-primary" id="quicklinkSaveBtn" data-i18n="dialogSave"></button>
+                </div>
             </div>
         </div>
     </div>

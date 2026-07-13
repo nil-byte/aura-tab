@@ -28,26 +28,29 @@ class LibraryStore {
         this._processingQueue = false;
     }
 
-    async _withLock(fn) {
-        try {
-            const locks = globalThis?.navigator?.locks;
-            if (locks && typeof locks.request === 'function') {
-                return await locks.request('aura-tab:library', async () => fn());
+    async _withNamedLock(name, fn) {
+        const locks = globalThis?.navigator?.locks;
+        if (locks && typeof locks.request === 'function') {
+            let taskStarted = false;
+            try {
+                return await locks.request(name, { mode: 'exclusive' }, async () => {
+                    taskStarted = true;
+                    return fn();
+                });
+            } catch (error) {
+                if (taskStarted) throw error;
+                console.warn(`[LibraryStore] ${name} lock unavailable, continuing without it:`, error);
             }
-        } catch {
         }
-        return await fn();
+        return fn();
+    }
+
+    async _withLock(fn) {
+        return this._withNamedLock('aura-tab:library', fn);
     }
 
     async _withQueueLock(fn) {
-        try {
-            const locks = globalThis?.navigator?.locks;
-            if (locks && typeof locks.request === 'function') {
-                return await locks.request('aura-tab:library-download', async () => fn());
-            }
-        } catch {
-        }
-        return await fn();
+        return this._withNamedLock('aura-tab:library-download', fn);
     }
 
     _toValidatedMap(obj) {
@@ -336,7 +339,6 @@ class LibraryStore {
                 const { assetsStore } = await import('./assets-store.js');
                 await assetsStore.init();
 
-                let ok = false;
                 try {
                     const hasThumb = await assetsStore.hasThumbnail(id);
                     if (!hasThumb) {
@@ -362,9 +364,7 @@ class LibraryStore {
                         }
                     }
 
-                    ok = true;
                 } catch (e) {
-                    ok = false;
                     const attempts = clampNumber(Number(next.meta.attempts) || 0, 0, 20) + 1;
                     const backoffMs = Math.min(24 * 60 * 60 * 1000, Math.max(60 * 1000, 2 ** Math.min(12, attempts) * 1000));
                     queue[id] = { attempts, nextAt: now + backoffMs };
@@ -375,12 +375,10 @@ class LibraryStore {
                     return;
                 }
 
-                if (ok) {
-                    delete queue[id];
-                    await chrome.storage.local.set({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
-                    const updated = { ...item, downloadState: 'ready', lastError: '' };
-                    await this.upsert(updated);
-                }
+                delete queue[id];
+                await chrome.storage.local.set({ [LIBRARY_DOWNLOAD_QUEUE_KEY]: queue });
+                const updated = { ...item, downloadState: 'ready', lastError: '' };
+                await this.upsert(updated);
 
                 nextScheduleDelayMs = computeNextDelayMs();
             });

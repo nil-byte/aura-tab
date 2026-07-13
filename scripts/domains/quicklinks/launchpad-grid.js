@@ -493,13 +493,11 @@ const launchpadGridMethods = {
 
         this._timers.clearTimeout('gestureEnd');
         this._timers.setTimeout('gestureEnd', () => {
-            this._gestureState.isActive = false;
             this._gestureState.hasTriggered = false;
         }, this._config.GESTURE_END_TIMEOUT);
 
         if (this._gestureState.hasTriggered) return;
 
-        this._gestureState.isActive = true;
         this._gestureState.hasTriggered = true;
 
         const direction = isHorizontalSwipe

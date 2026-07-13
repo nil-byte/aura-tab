@@ -18,6 +18,7 @@ vi.mock('../scripts/domains/backgrounds/image-pipeline.js', () => ({
         Object.assign(BackgroundSystemClass.prototype, {
             refresh: refreshMock,
             _applyBackgroundInternal: vi.fn(async () => {}),
+            _ensurePlaceholderBackground: vi.fn(async () => {}),
             preloadNextBackground: vi.fn(async () => {}),
             applyDefaultBackground: vi.fn(async () => {})
         });
@@ -91,6 +92,7 @@ describe('Background startup warm render path', () => {
         await backgroundSystem.init();
 
         expect(runBackgroundTransitionMock).toHaveBeenCalledTimes(1);
+        expect(chrome.storage.session.set).toHaveBeenCalledTimes(1);
         expect(refreshMock).not.toHaveBeenCalled();
 
         await vi.runAllTimersAsync();

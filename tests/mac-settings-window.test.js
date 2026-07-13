@@ -5,7 +5,7 @@ function mountSettingsDom() {
     document.body.innerHTML = '';
     document.body.insertAdjacentHTML('beforeend', `
         <div class="mac-window-overlay" id="macSettingsOverlay" aria-hidden="true">
-            <div class="mac-window mac-settings-window" id="macSettingsWindow"></div>
+            <div class="mac-window" id="macSettingsWindow"></div>
         </div>
     `);
 }

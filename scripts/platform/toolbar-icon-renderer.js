@@ -60,5 +60,3 @@ export function deserializeImageDataFromCache(cached) {
     }
     return imageData;
 }
-
-export { ICON_SIZES, DEFAULT_ICON_PATHS };

@@ -203,23 +203,23 @@ class ContextMenu {
         const action = menuItem.dataset.action;
 
         if (action === 'addToDock' && this.callbacks?.onAddToDock) {
-            this.callbacks.onAddToDock(this.currentItem);
+            this.callbacks.onAddToDock();
         } else if (action === 'removeFromDock' && this.callbacks?.onRemoveFromDock) {
-            this.callbacks.onRemoveFromDock(this.currentItem);
+            this.callbacks.onRemoveFromDock();
         } else if (action === 'edit' && this.callbacks?.onEdit) {
-            this.callbacks.onEdit(this.currentItem);
+            this.callbacks.onEdit();
         } else if (action === 'delete' && this.callbacks?.onDelete) {
-            this.callbacks.onDelete(this.currentItem);
+            this.callbacks.onDelete();
         } else if (action === 'renameFolder' && this.callbacks?.onRenameFolder) {
-            this.callbacks.onRenameFolder(this.currentItem);
+            this.callbacks.onRenameFolder();
         } else if (action === 'dissolveFolder' && this.callbacks?.onDissolveFolder) {
-            this.callbacks.onDissolveFolder(this.currentItem);
+            this.callbacks.onDissolveFolder();
         } else if (action === 'deleteFolder' && this.callbacks?.onDeleteFolder) {
-            this.callbacks.onDeleteFolder(this.currentItem);
+            this.callbacks.onDeleteFolder();
         } else if (action === 'removeFromFolder' && this.callbacks?.onRemoveFromFolder) {
-            this.callbacks.onRemoveFromFolder(this.currentItem);
+            this.callbacks.onRemoveFromFolder();
         } else if (action === 'createFolder' && this.callbacks?.onCreateFolder) {
-            this.callbacks.onCreateFolder(this.currentItem);
+            this.callbacks.onCreateFolder();
         }
 
         this.close();
@@ -434,4 +434,3 @@ class ContextMenu {
 }
 
 export const contextMenu = new ContextMenu();
-

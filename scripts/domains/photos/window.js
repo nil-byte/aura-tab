@@ -3,7 +3,7 @@ import { t, initHtmlI18n } from '../../platform/i18n.js';
 import { toast } from '../../shared/toast.js';
 import { assetsStore } from '../backgrounds/assets-store.js';
 import { ICONS } from './icons.js';
-import { favoriteToWallpaperItem, libraryRemoteToWallpaperItem } from './mappers.js';
+import { libraryRemoteToWallpaperItem } from './mappers.js';
 import { ImmersiveViewer } from './immersive-viewer.js';
 
 const REMOTE_PROVIDER_CATEGORIES = ['unsplash', 'pixabay', 'pexels', 'bing'];
@@ -44,7 +44,6 @@ export class PhotosWindow extends MacWindowBase {
         this._immersiveViewer = new ImmersiveViewer(this);
         this._pendingFavoriteRemoves = new Map();
         this._pendingLocalDeletes = new Map();
-        this._applyInProgress = false;
         this._hotReloadInFlight = 0;
         this._renderToken = 0;
         this._wheelThrottled = false;
@@ -59,8 +58,8 @@ export class PhotosWindow extends MacWindowBase {
         this._thumbLoadedCache = new Set(); // Loaded thumbnail cache
         this._categoryCache = new Map();
         this._categoryCacheExpiry = 30000; // Cache expiration 30 seconds
-        this._lastKnownCounts = { all: 0, favorites: 0, local: 0, ...createRemoteProviderCounts() };
         this._libraryItemsStorageHandler = null;
+        this._idleTasks = new Set();
         this._init();
     }
     _getModalId() {
@@ -111,6 +110,8 @@ export class PhotosWindow extends MacWindowBase {
     }
     _onBeforeClose() {
         this._timers.clearTimeout('photos.toolbarHide');
+        this._cancelIdleTasks();
+        this._renderToken++;
         this._setWindowDragging(false);
         if (this._thumbIntersectionObserver) {
             this._thumbIntersectionObserver.disconnect();
@@ -179,23 +180,52 @@ export class PhotosWindow extends MacWindowBase {
         while (el.firstChild) el.removeChild(el.firstChild);
     }
     _requestIdle(callback, { timeout = 250 } = {}) {
+        const task = { handle: null, cancel: null };
+        const run = (deadline) => {
+            this._idleTasks.delete(task);
+            callback(deadline);
+        };
         if (typeof requestIdleCallback === 'function') {
-            return requestIdleCallback(callback, { timeout });
+            task.handle = requestIdleCallback(run, { timeout });
+            task.cancel = typeof cancelIdleCallback === 'function'
+                ? cancelIdleCallback
+                : clearTimeout;
+        } else {
+            task.handle = setTimeout(() => {
+                run({ didTimeout: true, timeRemaining: () => 0 });
+            }, 16);
+            task.cancel = clearTimeout;
         }
-        return setTimeout(() => {
-            callback({ didTimeout: true, timeRemaining: () => 0 });
-        }, 16);
+        this._idleTasks.add(task);
+        return task.handle;
+    }
+    _cancelIdleTasks() {
+        for (const task of this._idleTasks) {
+            task.cancel(task.handle);
+        }
+        this._idleTasks.clear();
     }
     _setWindowDragging(isDragging) {
         this._isWindowDragging = isDragging === true;
         this._thumbLoadPaused = this._isWindowDragging;
         if (!this._isWindowDragging) {
             this._drainThumbQueue();
-            if (this._pendingExternalRefresh) {
-                this._pendingExternalRefresh = false;
-                void this._refreshAfterStateChange({ context: 'external' });
-            }
+            this._flushPendingExternalRefresh();
         }
+    }
+    _queueExternalRefresh() {
+        this._pendingExternalRefresh = true;
+    }
+    _flushPendingExternalRefresh() {
+        if (!this._pendingExternalRefresh || !this._isOpen) return;
+        if (this._isWindowDragging || this._hotReloadInFlight > 0) return;
+        this._pendingExternalRefresh = false;
+        this._invalidateCategoryCache(['favorites', 'all', ...REMOTE_PROVIDER_CATEGORIES]);
+        void this._refreshAfterStateChange({ context: 'external' });
+    }
+    _finishHotReload() {
+        this._hotReloadInFlight = Math.max(0, this._hotReloadInFlight - 1);
+        this._flushPendingExternalRefresh();
     }
     _initIntersectionObserver() {
         if (this._thumbIntersectionObserver) {
@@ -384,19 +414,6 @@ export class PhotosWindow extends MacWindowBase {
             }
         }, { timeout: 2000 });
     }
-    _cacheFullImageInBackground(wallpaperId, imageUrl) {
-        this._requestIdle(async () => {
-            try {
-                if (await assetsStore.hasFullImage(wallpaperId)) return;
-                if (!await assetsStore.hasThumbnail(wallpaperId)) return;
-                const blob = await assetsStore.downloadFullImage(imageUrl);
-                if (blob) {
-                    await assetsStore.saveFullImage(wallpaperId, blob);
-                }
-            } catch {
-            }
-        }, { timeout: 3000 });
-    }
     _markCardAsLoaded(img) {
         const card = img?.closest('.photos-card');
         if (card) {
@@ -431,9 +448,8 @@ export class PhotosWindow extends MacWindowBase {
     }
     _handleLibraryItemsStorageChange() {
         if (!this._isOpen) return;
-        if (this._hotReloadInFlight > 0) return;
-        if (this._isWindowDragging) {
-            this._pendingExternalRefresh = true;
+        if (this._hotReloadInFlight > 0 || this._isWindowDragging) {
+            this._queueExternalRefresh();
             return;
         }
         this._invalidateCategoryCache(['favorites', 'all', ...REMOTE_PROVIDER_CATEGORIES]);
@@ -571,13 +587,11 @@ export class PhotosWindow extends MacWindowBase {
         `;
         this._titlebar = this._window.querySelector('#photosTitlebar');
         this._photosBody = this._window.querySelector('#photosBody');
-        this._photosMenu = this._window.querySelector('#photosMenu');
         this._events.add(window, 'background:localfiles-changed', async (e) => {
             if (!this._isOpen) return;
             if (e?.detail?.origin === 'photos-window') return;
-            if (this._hotReloadInFlight > 0) return;
-            if (this._isWindowDragging) {
-                this._pendingExternalRefresh = true;
+            if (this._hotReloadInFlight > 0 || this._isWindowDragging) {
+                this._queueExternalRefresh();
                 return;
             }
             const detail = e?.detail || {};
@@ -589,7 +603,7 @@ export class PhotosWindow extends MacWindowBase {
             }
             if (action === 'delete' && id) {
                 this._removeGridCard(id);
-                this._syncImmersiveAfterStateChange({ removed: true });
+                this._syncImmersiveAfterStateChange();
                 this._scheduleCountRefresh();
                 return;
             }
@@ -892,12 +906,6 @@ export class PhotosWindow extends MacWindowBase {
                 return ICONS.grid;
         }
     }
-    _favoriteToWallpaperItem(fav) {
-        return favoriteToWallpaperItem(fav, {
-            isAppendableRemoteUrl: (url) => this._isAppendableRemoteUrl(url),
-            buildUrlWithParams: (url, params) => this._buildUrlWithParams(url, params)
-        });
-    }
     _libraryRemoteToWallpaperItem(lib) {
         return libraryRemoteToWallpaperItem(lib, {
             isAppendableRemoteUrl: (url) => this._isAppendableRemoteUrl(url),
@@ -1075,7 +1083,6 @@ export class PhotosWindow extends MacWindowBase {
                 }
             }
             counts.all = uniqueCount;
-            this._lastKnownCounts = { ...counts };
             this._updateCountDisplay('count-all', counts.all);
             this._updateCountDisplay('count-favorites', counts.favorites);
             this._updateCountDisplay('count-local', counts.local);
@@ -1392,7 +1399,7 @@ export class PhotosWindow extends MacWindowBase {
                     await libraryStore.enqueueDownload(id);
                 }
             } finally {
-                this._hotReloadInFlight--;
+                this._finishHotReload();
             }
             this._pendingFavoriteRemoves.delete(id);
             toast(t('photosFavorited') || 'Added to favorites');
@@ -1413,7 +1420,7 @@ export class PhotosWindow extends MacWindowBase {
             try {
                 await libraryStore.remove(id);
             } finally {
-                this._hotReloadInFlight--;
+                this._finishHotReload();
             }
             this._timers.setTimeout(timerName, async () => {
                 const entry = this._pendingFavoriteRemoves.get(id);
@@ -1454,7 +1461,7 @@ export class PhotosWindow extends MacWindowBase {
                                     await libraryStore.enqueueDownload(id);
                                 }
                             } finally {
-                                this._hotReloadInFlight--;
+                                this._finishHotReload();
                             }
                             this._pendingFavoriteRemoves.delete(id);
                             toast(t('photosFavorited') || 'Added to favorites');
@@ -1486,7 +1493,7 @@ export class PhotosWindow extends MacWindowBase {
                     toast(t('photosLocalRestored') || 'Local image restored');
                 }
             } finally {
-                this._hotReloadInFlight--;
+                this._finishHotReload();
             }
             if (this._currentCategory === 'local' || this._currentCategory === 'all') {
                 try {
@@ -1536,7 +1543,7 @@ export class PhotosWindow extends MacWindowBase {
         try {
             await localFilesManager.deleteFile(id, { silent: true, origin: 'photos-window' });
         } finally {
-            this._hotReloadInFlight--;
+            this._finishHotReload();
         }
         this._removeGridCard(id, { source: 'local' });
         this._requestIdle(() => void this._updateAllCounts(), { timeout: 800 });
@@ -1555,7 +1562,7 @@ export class PhotosWindow extends MacWindowBase {
                             toast(t('photosLocalRestored') || 'Local image restored');
                         }
                     } finally {
-                        this._hotReloadInFlight--;
+                        this._finishHotReload();
                     }
                     if (this._currentCategory === 'local' || this._currentCategory === 'all') {
                         try {
@@ -1592,55 +1599,6 @@ export class PhotosWindow extends MacWindowBase {
             return;
         }
         await this._syncImmersiveAfterStateChange();
-    }
-    async _downloadCurrent() {
-        if (!this._currentDetailItem) return;
-        const item = this._currentDetailItem;
-        const url = item.downloadUrl || item.urls?.raw || item.urls?.full || item.fullImage || item.thumbnail || item.urls?.small;
-        const safeUrl = this._safeUrl(url, { allowBlob: true, allowExtension: true });
-        if (!safeUrl) {
-            toast(t('downloadFailed') || 'Download not available');
-            return;
-        }
-        try {
-            const response = await fetch(safeUrl);
-            const blob = await response.blob();
-            const objectUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = objectUrl;
-            a.download = `${this._safeFilenamePart(`wallpaper-${item.id}`)}.jpg`;
-            a.click();
-            URL.revokeObjectURL(objectUrl);
-            toast(t('downloadStarted') || 'Download started');
-        } catch (e) {
-            console.error('[PhotosWindow] Download failed:', e);
-            toast(t('downloadFailed') || 'Download failed');
-        }
-    }
-    async _applyCurrent() {
-        if (!this._currentDetailItem) return;
-        if (this._applyInProgress) return;
-        const applyBtn = this._window?.querySelector('#immersiveApply');
-        const prevHtml = applyBtn?.innerHTML;
-        const prevTitle = applyBtn?.title;
-        try {
-            this._applyInProgress = true;
-            if (applyBtn) {
-                applyBtn.disabled = true;
-                applyBtn.classList.add('is-loading');
-                applyBtn.innerHTML = ICONS.spinner;
-                applyBtn.title = t('photosApplying') || 'Applying...';
-            }
-            await this._applyWallpaper(this._currentDetailItem.id, this._currentDetailItem.source, this._currentDetailItem);
-        } finally {
-            this._applyInProgress = false;
-            if (applyBtn) {
-                applyBtn.disabled = false;
-                applyBtn.classList.remove('is-loading');
-                if (typeof prevHtml === 'string') applyBtn.innerHTML = prevHtml;
-                if (typeof prevTitle === 'string') applyBtn.title = prevTitle;
-            }
-        }
     }
     async _updateStorageStats() {
         if (assetsStore.isDegraded()) {

@@ -91,7 +91,7 @@ async function fetchWithProviderRetry(url, options = {}) {
         });
     } catch (error) {
         if (error?.name === 'AbortError') {
-            throw new Error(t('bgRequestTimeout'));
+            throw new Error(t('bgRequestTimeout'), { cause: error });
         }
         throw error;
     }

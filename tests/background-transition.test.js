@@ -1,7 +1,36 @@
 import { describe, expect, it, vi } from 'vitest';
-import { runBackgroundTransition } from '../scripts/domains/backgrounds/image-pipeline.js';
+import { backgroundApplyMethods, runBackgroundTransition } from '../scripts/domains/backgrounds/image-pipeline.js';
 
 describe('background transition pipeline', () => {
+    it('includes the painted background in the applied event', () => {
+        const background = { id: 'new-bg', username: 'New author' };
+        const eventSpy = vi.fn();
+        window.addEventListener('background:applied', eventSpy, { once: true });
+
+        backgroundApplyMethods._emitBackgroundApplied.call({
+            wrapper: { dataset: { type: 'unsplash' } }
+        }, {
+            type: 'unsplash',
+            background,
+            element: null,
+            color: '#123456'
+        });
+
+        expect(eventSpy).toHaveBeenCalledOnce();
+        expect(eventSpy.mock.calls[0][0].detail.background).toBe(background);
+    });
+
+    it('queues a refresh request through loadBackground while another load is locked', async () => {
+        const system = {
+            _loadMutex: { isLocked: true },
+            loadBackground: vi.fn(async () => {})
+        };
+
+        await backgroundApplyMethods.refresh.call(system);
+
+        expect(system.loadBackground).toHaveBeenCalledWith(true);
+    });
+
     it('should run prepare, apply, persist and preload in a unified flow', async () => {
         const prepared = {
             format: 'image',

@@ -1,5 +1,6 @@
-import { idbRequest, idbBatch, idbCursorAll, idbCursorEach } from '../../shared/storage.js';
-export const ASSETS_CONFIG = Object.freeze({
+import { idbRequest, idbCursorAll, idbCursorEach } from '../../shared/storage.js';
+
+const ASSETS_CONFIG = Object.freeze({
     DB_NAME: 'aura-tab-assets',
     DB_VERSION: 1,
     STORE_NAME: 'images',
@@ -13,12 +14,6 @@ export const ASSETS_CONFIG = Object.freeze({
         maxCacheSize: 1024 * 1024 * 1024,
         maxEntries: 300,
         lruExcludePinned: true  // Pinned images are not evicted
-    }),
-    healthCheck: Object.freeze({
-        enabled: true,
-        intervalDays: 3,
-        batchSize: 50,
-        storageKey: 'assetsHealthCheckLastRun'
     }),
     EVICTION_BATCH: 20
 });
@@ -240,43 +235,6 @@ class AssetsStore {
             return false;
         }
     }
-    async setUserPinned(id, isPinned) {
-        if (!id || this.isDegraded()) return false;
-        try {
-            await this.init();
-            const db = await this._openDb();
-            const existing = await idbRequest(db, ASSETS_CONFIG.STORE_NAME, 'readonly',
-                (store) => store.get(id)
-            );
-            if (!existing) return false;
-            existing.isUserPinned = isPinned;
-            existing.lastAccessedAt = Date.now();
-            await idbRequest(db, ASSETS_CONFIG.STORE_NAME, 'readwrite',
-                (store) => store.put(existing)
-            );
-            this._resetDegradedState();
-            return true;
-        } catch (error) {
-            this._recordFailure();
-            console.error('[AssetsStore] setUserPinned error:', error);
-            return false;
-        }
-    }
-    async isUserPinned(id) {
-        if (!id || this.isDegraded()) return false;
-        try {
-            await this.init();
-            const db = await this._openDb();
-            const entry = await idbRequest(db, ASSETS_CONFIG.STORE_NAME, 'readonly',
-                (store) => store.get(id)
-            );
-            this._resetDegradedState();
-            return Boolean(entry?.isUserPinned);
-        } catch {
-            this._recordFailure();
-            return false;
-        }
-    }
     async setStatus(id, status) {
         if (!id || this.isDegraded()) return false;
         try {
@@ -296,21 +254,6 @@ class AssetsStore {
             this._recordFailure();
             console.error('[AssetsStore] setStatus error:', error);
             return false;
-        }
-    }
-    async getStatus(id) {
-        if (!id || this.isDegraded()) return null;
-        try {
-            await this.init();
-            const db = await this._openDb();
-            const entry = await idbRequest(db, ASSETS_CONFIG.STORE_NAME, 'readonly',
-                (store) => store.get(id)
-            );
-            this._resetDegradedState();
-            return entry?.status || null;
-        } catch {
-            this._recordFailure();
-            return null;
         }
     }
     async delete(id) {
@@ -403,23 +346,6 @@ class AssetsStore {
             return { thumbnailCount: 0, thumbnailSize: 0, fullCount: 0, fullSize: 0, pinnedCount: 0, invalidCount: 0 };
         }
     }
-    async getAllIds() {
-        if (this.isDegraded()) return [];
-        try {
-            await this.init();
-            const db = await this._openDb();
-            const ids = [];
-            await idbCursorEach(db, ASSETS_CONFIG.STORE_NAME, (entry) => {
-                ids.push(entry.id);
-            });
-            this._resetDegradedState();
-            return ids;
-        } catch (error) {
-            this._recordFailure();
-            console.error('[AssetsStore] getAllIds error:', error);
-            return [];
-        }
-    }
     _scheduleEviction() {
         const doEviction = () => {
             this._evictIfNeeded().catch(error => {
@@ -490,80 +416,11 @@ class AssetsStore {
             }
         });
     }
-    async shouldRunHealthCheck() {
-        if (!ASSETS_CONFIG.healthCheck.enabled) return false;
-        try {
-            const { storageKey, intervalDays } = ASSETS_CONFIG.healthCheck;
-            const { [storageKey]: lastRun = null } = await chrome.storage.local.get({ [storageKey]: null });
-            if (!lastRun) return true;
-            const daysSinceLastRun = (Date.now() - lastRun) / (24 * 60 * 60 * 1000);
-            return daysSinceLastRun >= intervalDays;
-        } catch {
-            return false;
-        }
-    }
-    async markHealthCheckRun() {
-        try {
-            const { storageKey } = ASSETS_CONFIG.healthCheck;
-            await chrome.storage.local.set({ [storageKey]: Date.now() });
-        } catch {
-        }
-    }
-    async getEntriesForHealthCheck() {
-        if (this.isDegraded()) return [];
-        try {
-            await this.init();
-            const db = await this._openDb();
-            const { batchSize } = ASSETS_CONFIG.healthCheck;
-            const entries = [];
-            await idbCursorEach(db, ASSETS_CONFIG.STORE_NAME, (entry) => {
-                if (entries.length >= batchSize) return;
-                if (entry.sourceUrl && entry.status !== 'invalid') {
-                    entries.push({
-                        id: entry.id,
-                        sourceUrl: entry.sourceUrl
-                    });
-                }
-            });
-            this._resetDegradedState();
-            return entries;
-        } catch (error) {
-            this._recordFailure();
-            console.error('[AssetsStore] getEntriesForHealthCheck error:', error);
-            return [];
-        }
-    }
-    async markAsInvalid(ids) {
-        if (!ids || ids.length === 0 || this.isDegraded()) return;
-        try {
-            await this.init();
-            const db = await this._openDb();
-            await idbBatch(db, ASSETS_CONFIG.STORE_NAME, (store) => {
-                for (const id of ids) {
-                    const getRequest = store.get(id);
-                    getRequest.onsuccess = () => {
-                        const entry = getRequest.result;
-                        if (entry) {
-                            entry.status = 'invalid';
-                            store.put(entry);
-                        }
-                    };
-                }
-            });
-            this._resetDegradedState();
-        } catch (error) {
-            this._recordFailure();
-            console.error('[AssetsStore] markAsInvalid error:', error);
-        }
-    }
     createObjectUrl(id, blob) {
         this._revokeObjectUrl(id);
         const url = URL.createObjectURL(blob);
         this._objectUrls.set(id, url);
         return url;
-    }
-    getObjectUrl(id) {
-        return this._objectUrls.get(id) || null;
     }
     _revokeObjectUrl(id) {
         const url = this._objectUrls.get(id);
@@ -646,18 +503,6 @@ class AssetsStore {
             };
             img.src = url;
         });
-    }
-    async validateUrl(url) {
-        if (!url) return false;
-        try {
-            const response = await fetch(url, {
-                method: 'HEAD',
-                mode: 'cors'
-            });
-            return response.ok;
-        } catch {
-            return false;
-        }
     }
     destroy() {
         this._revokeAllObjectUrls();

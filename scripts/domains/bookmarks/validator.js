@@ -233,16 +233,8 @@ class LinkValidator {
         this._isValidating = false;
     }
 
-    /**
-     * Check if validation is in progress
-     * @returns {boolean}
-     */
-    isValidating() {
-        return this._isValidating;
-    }
 }
 
 // ========== Singleton Export ==========
 
 export const linkValidator = new LinkValidator();
-

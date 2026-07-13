@@ -130,7 +130,6 @@ export class BackgroundMetadataCache {
 class TextureManager {
     constructor() {
         this.textureEl = null;
-        this._currentType = 'none';
     }
 
     init(element) {
@@ -147,8 +146,6 @@ class TextureManager {
             wrapper.dataset.texture = type;
         }
 
-        this._currentType = type;
-
         const root = document.documentElement;
         root.style.setProperty('--texture-opacity', (opacity / 100).toString());
         root.style.setProperty('--texture-size', `${size}px`);
@@ -162,11 +159,6 @@ class TextureManager {
         if (wrapper) {
             wrapper.dataset.texture = 'none';
         }
-        this._currentType = 'none';
-    }
-
-    get currentType() {
-        return this._currentType;
     }
 }
 

@@ -49,6 +49,37 @@ export function getCacheKeyForItem(url, customIconUrl = '') {
     return buildIconCacheKey(url, customIconUrl);
 }
 
+function createImageIconContent(item, classPrefix, iconContainer) {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.draggable = false;
+
+    const customIconUrl = item.icon || '';
+    const itemUrl = item.url || '';
+    const urls = [customIconUrl, ...getFaviconUrlCandidates(itemUrl, { size: DEFAULT_ICON_SIZE })].filter(Boolean);
+
+    let fallbackNode = null;
+    const showFallback = () => {
+        if (fallbackNode) return;
+        img.style.display = 'none';
+        fallbackNode = createTextIconContent(item, classPrefix);
+        iconContainer.appendChild(fallbackNode);
+    };
+    setImageSrcWithFallback(img, urls, showFallback, {
+        cacheKey: getCacheKeyForItem(itemUrl, customIconUrl),
+        customIconUrl: customIconUrl || undefined,
+        pageUrl: customIconUrl ? undefined : itemUrl,
+        onPending: customIconUrl ? undefined : showFallback,
+        onResolved: () => {
+            fallbackNode?.remove();
+            fallbackNode = null;
+            img.style.display = '';
+        }
+    });
+
+    return img;
+}
+
 /**
  * Create an icon container with image and fallback support
  *
@@ -69,25 +100,7 @@ export function createIconElement(item, classPrefix) {
         return iconDiv;
     }
 
-    const img = document.createElement('img');
-    img.alt = '';
-    img.draggable = false;
-
-    const fallbackToInitial = () => {
-        img.style.display = 'none';
-        iconDiv.appendChild(createTextIconContent(item, classPrefix));
-    };
-
-    const customIconUrl = item.icon || '';
-    const urls = [customIconUrl, ...getFaviconUrlCandidates(item.url, { size: DEFAULT_ICON_SIZE })].filter(Boolean);
-    const cacheKey = getCacheKeyForItem(item.url, customIconUrl);
-
-    setImageSrcWithFallback(img, urls, fallbackToInitial, {
-        cacheKey,
-        customIconUrl: customIconUrl || undefined
-    });
-
-    iconDiv.appendChild(img);
+    iconDiv.appendChild(createImageIconContent(item, classPrefix, iconDiv));
 
     return iconDiv;
 }
@@ -159,25 +172,7 @@ export function updateItemIcon(el, item, classPrefix) {
         return;
     }
 
-    const img = document.createElement('img');
-    img.alt = '';
-    img.draggable = false;
-
-    const fallbackToInitial = () => {
-        img.style.display = 'none';
-        iconDiv.appendChild(createTextIconContent(item, classPrefix));
-    };
-
-    const customIconUrl = item.icon || '';
-    const urls = [customIconUrl, ...getFaviconUrlCandidates(item.url || '', { size: DEFAULT_ICON_SIZE })].filter(Boolean);
-    const cacheKey = getCacheKeyForItem(item.url || '', customIconUrl);
-
-    setImageSrcWithFallback(img, urls, fallbackToInitial, {
-        cacheKey,
-        customIconUrl: customIconUrl || undefined
-    });
-
-    iconDiv.appendChild(img);
+    iconDiv.appendChild(createImageIconContent(item, classPrefix, iconDiv));
 }
 
 /**

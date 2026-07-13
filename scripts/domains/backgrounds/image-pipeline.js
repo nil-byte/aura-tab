@@ -207,14 +207,6 @@ class BlobUrlManager {
         return url;
     }
 
-    retain(url) {
-        const entry = this._urls.get(url);
-        if (entry) {
-            entry.refCount++;
-            entry.createdAt = Date.now();
-        }
-    }
-
     release(url, force = false) {
         if (!url || !url.startsWith('blob:')) return;
         const entry = this._urls.get(url);
@@ -887,7 +879,7 @@ async function analyzeImageForCrop(url, targetAspect) {
 
     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
-    let imageData = null;
+    let imageData;
     try {
         imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
     } catch {
@@ -1055,7 +1047,7 @@ export const backgroundApplyMethods = {
         const mountLayer = (url, scope) => {
             const item = this.createImageElement(url, background);
             this._attachBlobMetadata(item, url, scope);
-            this._commitBackgroundLayer(item, background.color || null, phase);
+            this._commitBackgroundLayer(item, background, phase);
             return item;
         };
 
@@ -1117,7 +1109,7 @@ export const backgroundApplyMethods = {
         item.dataset.blobScope = scope;
     },
 
-    _commitBackgroundLayer(item, color, phase = 'normal') {
+    _commitBackgroundLayer(item, background, phase = 'normal') {
         this.mediaContainer.prepend(item);
         this.wrapper.dataset.type = this.settings.type;
         this.wrapper.dataset.phase = phase;
@@ -1140,8 +1132,9 @@ export const backgroundApplyMethods = {
 
         this._emitBackgroundApplied({
             type: this.settings.type,
+            background,
             element: item,
-            color
+            color: background?.color || null
         });
         this._cleanupOldBackgrounds();
     },
@@ -1154,6 +1147,7 @@ export const backgroundApplyMethods = {
             const fallbackColor = getComputedStyle(document.documentElement).getPropertyValue('--solid-background').trim();
             const detail = {
                 type,
+                background: payload?.background,
                 image: el ? (el.style.backgroundImage || getComputedStyle(el).backgroundImage) : null,
                 size: el ? (el.style.backgroundSize || getComputedStyle(el).backgroundSize) : null,
                 position: el ? (el.style.backgroundPosition || getComputedStyle(el).backgroundPosition) : null,
@@ -1257,7 +1251,7 @@ export const backgroundApplyMethods = {
         this.wrapper.dataset.type = 'color';
         this.wrapper.dataset.phase = 'normal';
 
-        this._emitBackgroundApplied({ type: 'color', element: null, color });
+        this._emitBackgroundApplied({ type: 'color', background: null, element: null, color });
 
         const items = this.mediaContainer.querySelectorAll('.background-image');
         items.forEach(item => {
@@ -1370,6 +1364,7 @@ export const backgroundApplyMethods = {
         if (document.hidden) return;
 
         if (this._loadMutex.isLocked) {
+            await this.loadBackground(true);
             return;
         }
 

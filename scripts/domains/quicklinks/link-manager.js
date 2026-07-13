@@ -495,7 +495,7 @@ export class LinkManagerComponent {
             const customIcon = iconDiv.dataset.customIcon;
             const itemId = iconDiv.closest('[data-id]')?.dataset.id;
             const item = itemId ? store.getItem(itemId) : null;
-            const textAppearance = !customIcon ? normalizeIconAppearance(item?.iconAppearance, item) : null;
+            const textAppearance = !customIcon ? normalizeIconAppearance(item?.iconAppearance) : null;
             if (textAppearance) {
                 iconDiv.appendChild(createTextIconContent(item, 'mac', textAppearance));
                 return;
@@ -504,19 +504,28 @@ export class LinkManagerComponent {
             const img = document.createElement('img');
             img.alt = '';
 
+            let fallbackNode = null;
             const fallbackToInitial = () => {
+                if (fallbackNode) return;
                 img.style.display = 'none';
-                const initial = document.createElement('span');
-                initial.className = 'mac-icon-initial';
-                initial.textContent = this._getInitial(url);
-                iconDiv.appendChild(initial);
+                fallbackNode = document.createElement('span');
+                fallbackNode.className = 'mac-icon-initial';
+                fallbackNode.textContent = this._getInitial(url);
+                iconDiv.appendChild(fallbackNode);
             };
 
             const urls = [customIcon, ...getFaviconUrlCandidates(url, { size: 64 })].filter(Boolean);
             const cacheKey = buildIconCacheKey(url, customIcon || '');
             setImageSrcWithFallback(img, urls, fallbackToInitial, {
                 cacheKey,
-                customIconUrl: customIcon || undefined
+                customIconUrl: customIcon || undefined,
+                pageUrl: customIcon ? undefined : url,
+                onPending: customIcon ? undefined : fallbackToInitial,
+                onResolved: () => {
+                    fallbackNode?.remove();
+                    fallbackNode = null;
+                    img.style.display = '';
+                }
             });
             iconDiv.appendChild(img);
         });

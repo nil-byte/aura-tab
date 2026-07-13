@@ -152,7 +152,7 @@ class Search extends DisposableComponent {
             if (areaName !== 'sync') return;
 
             if (changes.searchOpenInNewTab) {
-                this.setOpenInNewTab(Boolean(changes.searchOpenInNewTab.newValue), false);
+                this.setOpenInNewTab(Boolean(changes.searchOpenInNewTab.newValue));
             }
 
             if (changes.preferredSearchEngine) {
@@ -184,12 +184,8 @@ class Search extends DisposableComponent {
         }
     }
 
-    setOpenInNewTab(openInNewTab, persist = false) {
+    setOpenInNewTab(openInNewTab) {
         this.openInNewTab = Boolean(openInNewTab);
-
-        if (persist) {
-            chrome.storage.sync.set({ searchOpenInNewTab: this.openInNewTab }).catch(() => {});
-        }
     }
 
     setSearchEngine(engine) {
@@ -207,9 +203,6 @@ class Search extends DisposableComponent {
             btn.setAttribute('aria-pressed', btn.dataset.engine === engine ? 'true' : 'false');
         });
 
-        chrome.storage.sync.set({
-            preferredSearchEngine: engine
-        }).catch(() => {});
     }
 
     openSwitcher() {
@@ -263,11 +256,16 @@ class Search extends DisposableComponent {
         }
     }
 
-    selectEngine(index) {
+    async selectEngine(index) {
         if (index < 0 || index >= this.engineBtns.length) return;
 
         const engine = this.engineBtns[index].dataset.engine;
-        this.setSearchEngine(engine);
+        try {
+            await chrome.storage.sync.set({ preferredSearchEngine: engine });
+            this.setSearchEngine(engine);
+        } catch (error) {
+            console.error('[Search] Failed to save preferred engine:', error);
+        }
     }
 
     updateHighlight(index) {

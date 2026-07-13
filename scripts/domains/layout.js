@@ -38,6 +38,7 @@ export class LayoutManager extends DisposableComponent {
 
         this._isDownloading = false;
         this._isFavoriting = false;
+        this._photoInfoUpdateGeneration = 0;
         this._storageChangeHandler = null;
         this._shortcuts = resolveShortcutSettings({
             [SHORTCUT_SETTING_KEYS.focusSearch]: SYNC_SETTINGS_DEFAULTS[SHORTCUT_SETTING_KEYS.focusSearch],
@@ -71,8 +72,8 @@ export class LayoutManager extends DisposableComponent {
 
         this._events.add(document, 'keydown', (e) => this._handleKeydown(e));
 
-        this._events.add(window, 'background:applied', () => {
-            void this._updatePhotoInfo();
+        this._events.add(window, 'background:applied', (event) => {
+            void this._updatePhotoInfo(event.detail?.background);
         });
 
         try {
@@ -230,15 +231,19 @@ export class LayoutManager extends DisposableComponent {
         void this._updatePhotoInfo();
     }
 
-    async _updatePhotoInfo() {
+    async _updatePhotoInfo(appliedBackground) {
         if (!this.backgroundSystem) return;
+        const generation = ++this._photoInfoUpdateGeneration;
 
         try {
             if (typeof this.backgroundSystem.whenReady === 'function') {
                 await this.backgroundSystem.whenReady(5000);
             }
+            if (generation !== this._photoInfoUpdateGeneration) return;
 
-            const currentBg = this.backgroundSystem.getCurrentBackground?.();
+            const currentBg = appliedBackground !== undefined
+                ? appliedBackground
+                : this.backgroundSystem.getCurrentBackground?.();
 
             if (currentBg?.username && this.authorName && this.photoAuthor) {
                 this.authorName.textContent = currentBg.username;
@@ -252,7 +257,7 @@ export class LayoutManager extends DisposableComponent {
                 }
                 this.photoInfo?.classList.remove('hidden');
 
-                await this._updateFavoriteButtonState(currentBg);
+                await this._updateFavoriteButtonState(currentBg, generation);
             } else {
                 if (this.authorName) this.authorName.textContent = '';
                 this.photoInfo?.classList.add('hidden');
@@ -267,7 +272,7 @@ export class LayoutManager extends DisposableComponent {
         }
     }
 
-    async _updateFavoriteButtonState(currentBg) {
+    async _updateFavoriteButtonState(currentBg, generation = this._photoInfoUpdateGeneration) {
         if (!this.favoriteBgBtn || !this.favoriteIconEmpty || !this.favoriteIconFilled) {
             return;
         }
@@ -275,6 +280,7 @@ export class LayoutManager extends DisposableComponent {
         try {
             const { libraryStore } = await import('./backgrounds/library-store.js');
             await libraryStore.init();
+            if (generation !== this._photoInfoUpdateGeneration) return;
 
             const isFavorited = currentBg?.id && libraryStore.has(currentBg.id);
 
@@ -454,7 +460,9 @@ export class LayoutManager extends DisposableComponent {
     }
 
     toggleSearch(force, save = true, { focus = false } = {}) {
+        const previousState = this.isSearchActive;
         this.isSearchActive = typeof force === 'boolean' ? force : !this.isSearchActive;
+        const nextState = this.isSearchActive;
 
         this.layoutContainer?.classList.toggle('search-active', this.isSearchActive);
         this.searchContainer?.classList.toggle('show', this.isSearchActive);
@@ -468,7 +476,12 @@ export class LayoutManager extends DisposableComponent {
         }
 
         if (save) {
-            chrome.storage.sync.set({ searchActive: this.isSearchActive });
+            chrome.storage.sync.set({ searchActive: nextState }).catch((error) => {
+                console.error('[LayoutManager] Failed to save search state:', error);
+                if (this.isSearchActive === nextState) {
+                    this.toggleSearch(previousState, false);
+                }
+            });
         }
     }
 

@@ -15,21 +15,20 @@ const launchpadDragMethods = {
 
         const pages = Array.from(this._dom.pagesContainer?.querySelectorAll('.launchpad-page') || []);
 
-        for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
-            const pageEl = pages[pageIndex];
-            this._initSortableForPage(pageEl, pageIndex);
+        for (const pageEl of pages) {
+            this._initSortableForPage(pageEl);
         }
     },
 
-    _initSortableForPage(pageEl, pageIndex) {
+    _initSortableForPage(pageEl) {
         if (this._state.isDestroyed || !this._state.isOpen) return;
         if (!this._gridSortableManager.isReady) return;
 
-        const config = this._createSortableConfig(pageIndex);
+        const config = this._createSortableConfig();
         this._gridSortableManager.createForPage(pageEl, config);
     },
 
-    _createSortableConfig(pageIndex) {
+    _createSortableConfig() {
         const maxItemsPerPage = this._config.PAGINATION.itemsPerPage;
 
         return {
@@ -58,8 +57,8 @@ const launchpadDragMethods = {
             emptyInsertThreshold: this._config.SORTABLE.emptyInsertThreshold,
 
             onChoose: (evt) => this._prepareFallbackDragStyles(evt),
-            onStart: (evt) => this._handleDragStart(evt, pageIndex),
-            onMove: (evt) => this._handleDragMove(evt),
+            onStart: (evt) => this._handleDragStart(evt),
+            onMove: () => this._handleDragMove(),
             onEnd: (evt) => this._handleDragEnd(evt)
         };
     },
@@ -301,32 +300,6 @@ const launchpadDragMethods = {
         }
     },
 
-    _removeGhostPageIncremental() {
-        if (this._state.isDestroyed || !this._dom.pagesContainer) return;
-
-        const pages = this._dom.pagesContainer.querySelectorAll('.launchpad-page');
-        const pageCount = pages.length;
-        if (pageCount <= 1) return;
-
-        const lastPageEl = pages[pageCount - 1];
-        const items = lastPageEl.querySelectorAll('.launchpad-item');
-
-        if (items.length > 0) return;
-
-        try {
-            this._gridSortableManager.destroyForPage(lastPageEl);
-        } catch {
-        }
-        lastPageEl.remove();
-
-        this._renderIndicator();
-
-        const remainingPages = this._dom.pagesContainer.querySelectorAll('.launchpad-page').length;
-        if (this._state.currentPage >= remainingPages) {
-            this._goToPage(Math.max(0, remainingPages - 1), { animate: false });
-        }
-    },
-
     _clearDragClasses() {
         if (!this._dom.pagesContainer) return;
 
@@ -514,7 +487,7 @@ const launchpadDragMethods = {
         newPage.dataset.page = String(newPageIndex);
         this._dom.pagesContainer.appendChild(newPage);
 
-        this._initSortableForPage(newPage, newPageIndex);
+        this._initSortableForPage(newPage);
 
         this._renderIndicator();
         this._goToPage(newPageIndex);

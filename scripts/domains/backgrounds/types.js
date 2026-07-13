@@ -1,4 +1,3 @@
-import { t } from '../../platform/i18n.js';
 export { DEFAULT_SETTINGS } from './defaults.js';
 
 /**
@@ -68,20 +67,8 @@ export { DEFAULT_SETTINGS } from './defaults.js';
  * @property {string} pexels
  */
 
-export const TEXTURE_TYPE_KEYS = Object.freeze(['none', 'grain', 'grid', 'lines']);
-export function getTextureLabel(type) {
-    const keyMap = {
-        none: 'textureNone',
-        grain: 'textureGrain',
-        grid: 'textureGrid',
-        lines: 'textureLines'
-    };
-    return t(keyMap[type] || keyMap.none);
-}
-
 export const CACHE_CONFIG = Object.freeze({
     name: 'aura-tab-backgrounds',
-    cacheKeyPrefix: 'https://aura-tab.local/backgrounds',
     maxAge: 7 * 24 * 60 * 60 * 1000,
     ttlMs: 14 * 24 * 60 * 60 * 1000,
     maxEntries: 120,

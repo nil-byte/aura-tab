@@ -434,15 +434,6 @@ describe('AsyncTaskTracker', () => {
         expect(task.isValid()).toBe(false);
     });
 
-    it('should cancel task', () => {
-        const task = tracker.createTask();
-
-        tracker.cancelTask(task.id);
-
-        expect(task.isValid()).toBe(false);
-        expect(task.signal.aborted).toBe(true);
-    });
-
     it('should abort all tasks on destroy', () => {
         const task1 = tracker.createTask();
         const task2 = tracker.createTask();

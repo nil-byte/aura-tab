@@ -15,9 +15,6 @@ export class DragStateMachine {
     get isDragging() {
         return this.#state === 'dragging';
     }
-    get isInCooldown() {
-        return this.#state === 'cooldown';
-    }
     get canOperate() {
         return this.#state === 'idle';
     }
@@ -89,13 +86,6 @@ export class AsyncTaskTracker {
     completeTask(id) {
         this.#tasks.delete(id);
     }
-    cancelTask(id) {
-        const controller = this.#tasks.get(id);
-        if (controller) {
-            controller.abort();
-            this.#tasks.delete(id);
-        }
-    }
     cancelAll() {
         for (const controller of this.#tasks.values()) {
             controller.abort();
@@ -109,13 +99,9 @@ export class AsyncTaskTracker {
     get isDestroyed() {
         return this.#destroyed;
     }
-    get pendingCount() {
-        return this.#tasks.size;
-    }
 }
 export class TimerManager {
     #timeouts = new Map();
-    #intervals = new Map();
     #rafs = new Map();
     #destroyed = false;
     setTimeout(name, callback, delay) {
@@ -133,22 +119,6 @@ export class TimerManager {
         if (id !== undefined) {
             clearTimeout(id);
             this.#timeouts.delete(name);
-        }
-    }
-    setInterval(name, callback, interval) {
-        if (this.#destroyed) return false;
-        this.clearInterval(name);
-        const id = setInterval(() => {
-            if (!this.#destroyed) callback();
-        }, interval);
-        this.#intervals.set(name, id);
-        return true;
-    }
-    clearInterval(name) {
-        const id = this.#intervals.get(name);
-        if (id !== undefined) {
-            clearInterval(id);
-            this.#intervals.delete(name);
         }
     }
     requestAnimationFrame(name, callback) {
@@ -181,10 +151,8 @@ export class TimerManager {
     }
     clearAll() {
         for (const id of this.#timeouts.values()) clearTimeout(id);
-        for (const id of this.#intervals.values()) clearInterval(id);
         for (const id of this.#rafs.values()) cancelAnimationFrame(id);
         this.#timeouts.clear();
-        this.#intervals.clear();
         this.#rafs.clear();
     }
     destroy() {

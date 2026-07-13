@@ -159,9 +159,7 @@ describe('Background smart crop integration', () => {
             smartCropEnabled: true
         };
 
-        expect(backgroundSystem._resolveRenderMode()).toBe('single-stage');
         expect(backgroundSystem._getApplyOptions('unsplash')).toEqual({ renderMode: 'single-stage' });
-        expect(backgroundSystem._getPrepareTimeoutMs(140, 'unsplash')).toBe(360);
     });
 
     it('should keep progressive render mode for local files even when smart crop is enabled', () => {
@@ -171,9 +169,7 @@ describe('Background smart crop integration', () => {
             smartCropEnabled: true
         };
 
-        expect(backgroundSystem._resolveRenderMode('files')).toBe('progressive');
         expect(backgroundSystem._getApplyOptions('files')).toEqual({ renderMode: 'progressive' });
-        expect(backgroundSystem._getPrepareTimeoutMs(140, 'files')).toBe(140);
     });
 
     it('should revalidate preloaded crop metadata on refresh before applying', async () => {

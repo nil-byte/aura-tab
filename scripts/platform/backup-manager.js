@@ -910,6 +910,13 @@ export class BackupManager {
             cacheKey,
             blob,
             sourceUrl: sourceUrl || '',
+            sourceKind: rawEntry.sourceKind || 'legacy',
+            mimeType: rawEntry.mimeType || blob.type || '',
+            width: Number(rawEntry.width) || 0,
+            height: Number(rawEntry.height) || 0,
+            score: Number(rawEntry.score) || 0,
+            purpose: rawEntry.purpose || '',
+            discoveryVersion: Number(rawEntry.discoveryVersion) || 0,
             cachedAt,
             lastAccessedAt,
             size

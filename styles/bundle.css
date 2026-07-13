@@ -10,52 +10,31 @@
     --color-green: #30D158;
     --color-red: #FF453A;
     --color-orange: #FF9F0A;
-    --color-yellow: #FFD60A;
-    --color-purple: #BF5AF2;
     --color-pink: #FF375F;
-    --color-teal: #64D2FF;
 
-    --color-gray-1: #8E8E93;
-    --color-gray-2: #636366;
-    --color-gray-3: #48484A;
-    --color-gray-4: #3A3A3C;
-    --color-gray-5: #2C2C2E;
     --color-gray-6: #1C1C1E;
 
     --text-primary: #FFFFFF;
     --text-secondary: rgba(255, 255, 255, 0.7);
     --text-tertiary: rgba(255, 255, 255, 0.5);
     --text-quaternary: rgba(255, 255, 255, 0.3);
-    --text-muted: rgba(255, 255, 255, 0.5);
 
-    --text-hint: rgba(255, 255, 255, 0.35);
 
     --bg-primary: rgba(28, 28, 30, 0.8);
-    --bg-secondary: rgba(44, 44, 46, 0.6);
-    --bg-tertiary: rgba(58, 58, 60, 0.4);
-    --bg-elevated: rgba(72, 72, 74, 0.5);
 
     --surface-glass: rgb(255 255 255 / 0.08);
     --surface-glass-hover: rgba(255, 255, 255, 0.12);
-    --surface-glass-active: rgba(255, 255, 255, 0.16);
 
     --overlay-highlight: rgb(255 255 255 / 0.15);
     --overlay-medium: rgba(255, 255, 255, 0.2);
-    --overlay-strong: rgba(255, 255, 255, 0.25);
 
     --border-subtle: rgba(255, 255, 255, 0.06);
     --border-default: rgb(255 255 255 / 0.1);
-    --border-strong: var(--overlay-highlight);
-    --border-focus: rgba(10, 132, 255, 0.5);
 
     /* Cool-tinted shadows (read as depth on dark navy UI, not flat gray-black) */
-    --shadow-subtle: rgba(8, 12, 28, 0.14);
-    --shadow-default: rgba(6, 10, 24, 0.28);
-    --shadow-elevated: rgba(4, 8, 22, 0.38);
 
     --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
     --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-    --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 
     --text-2xs: 9px;
     --text-xs: 11px;
@@ -67,27 +46,20 @@
     --text-xl: 20px;
     --text-2xl: 24px;
     --text-3xl: 28px;
-    --text-4xl: 34px;
-    --text-5xl: 48px;
     --text-clock: 120px;
 
     --font-regular: 400;
     --font-medium: 500;
     --font-semibold: 600;
     --font-bold: 700;
-    --font-heavy: 800;
 
-    --leading-tight: 1.1;
     --leading-snug: 1.25;
     --leading-normal: 1.5;
     --leading-relaxed: 1.625;
 
     --tracking-tight: -0.02em;
-    --tracking-normal: 0;
-    --tracking-wide: 0.02em;
     --tracking-caps: 0.04em;
 
-    --space-0: 0;
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -99,7 +71,6 @@
     --space-10: 40px;
     --space-12: 48px;
     --space-16: 64px;
-    --space-20: 80px;
 
     --radius-2xs: 2px;
     --radius-xs: 4px;
@@ -114,7 +85,6 @@
 
     --radius-input: 12px;
 
-    --radius-card: 16px;
 
     --shadow-color-light: rgb(8 14 32 / 0.1);
     --shadow-color-medium: rgba(6, 12, 28, 0.2);
@@ -155,16 +125,6 @@
         inset 0 1px 0 var(--overlay-highlight),
         inset 0 -0.5px 0 rgba(0, 0, 0, 0.03);
 
-    --shadow-sm: var(--shadow-elevation-1);
-    --shadow-md: var(--shadow-elevation-2);
-    --shadow-lg: var(--shadow-elevation-3);
-    --shadow-xl: var(--shadow-elevation-4);
-    --shadow-button: var(--shadow-elevation-1);
-    --shadow-button-hover: var(--shadow-elevation-2);
-    --shadow-card: var(--shadow-elevation-2);
-    --shadow-dock: var(--shadow-elevation-3);
-    --shadow-dropdown: var(--shadow-elevation-4);
-    --shadow-dialog: var(--shadow-elevation-4);
     --shadow-panel: var(--shadow-elevation-5);
 
     --shadow-focus: 0 0 0 3px rgba(10, 132, 255, 0.25);
@@ -177,7 +137,6 @@
         0 1px 2px var(--shadow-color-light);
 
     --blur-2xs: 4px;
-    --blur-xs: 8px;
     --blur-sm: 16px;
     --blur-md: 24px;
     --blur-lg: 32px;
@@ -185,20 +144,16 @@
     --blur-2xl: 48px;
 
     --glass-saturate: 180%;
-    --glass-filter-blur-md: blur(var(--blur-md)) saturate(var(--glass-saturate));
     --glass-filter-blur-xl: blur(var(--blur-xl)) saturate(var(--glass-saturate));
     --glass-filter-quicklink-title: blur(var(--blur-md)) saturate(var(--glass-saturate));
     --glass-filter-launchpad-search: blur(var(--blur-sm)) saturate(150%);
     --glass-filter-quicklink-menu: blur(var(--blur-2xl)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness-hover));
-    --glass-filter-quicklink-dialog: blur(var(--blur-2xl)) saturate(var(--glass-saturate));
     --glass-brightness: 1.02;
     --glass-brightness-hover: 1.05;
     --glass-brightness-dimmed: 0.7;
 
     --glass-tier-1-bg: rgba(255, 255, 255, 0.04);
-    --glass-tier-1-bg-hover: var(--surface-glass);
     --glass-tier-1-border: var(--surface-glass);
-    --glass-tier-1-blur: var(--blur-sm);
 
     --glass-tier-2-bg: rgba(255, 255, 255, 0.06);
     --glass-tier-2-bg-hover: rgba(255, 255, 255, 0.10);
@@ -220,18 +175,13 @@
     --launchpad-search-border-focus: var(--glass-tier-3-border-focus);
 
     --glass-tier-4-bg: rgba(255, 255, 255, 0.10);
-    --glass-tier-4-bg-hover: rgba(255, 255, 255, 0.14);
     --glass-tier-4-border: rgba(255, 255, 255, 0.14);
-    --glass-tier-4-blur: var(--blur-xl);
 
     --glass-tier-5-bg: rgba(28, 28, 30, 0.88);
     --glass-tier-5-border: var(--surface-glass);
     --glass-tier-5-blur: var(--blur-2xl);
 
-    --glass-inset-highlight: inset 0 1px 0 var(--overlay-highlight);
-    --glass-inset-shadow: inset 0 -0.5px 0 rgba(0, 0, 0, 0.03);
 
-    --duration-instant: 0ms;
     --duration-fast: 150ms;
     --duration-normal: 250ms;
     --duration-slow: 400ms;
@@ -246,11 +196,9 @@
 
     --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
-    --ease-spring-snappy: cubic-bezier(0.34, 1.56, 0.64, 1);
 
     --ease-spring-gentle: cubic-bezier(0.25, 1, 0.5, 1);
 
-    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --ease-sortable: var(--ease-spring-gentle);
 
@@ -276,9 +224,6 @@
 
     --transition-fast: var(--duration-fast) var(--ease-default);
     --transition-normal: var(--duration-normal) var(--ease-default);
-    --transition-slow: var(--duration-slow) var(--ease-default);
-    --transition-spring: var(--duration-normal) var(--ease-spring);
-    --transition-spring-fast: var(--duration-fast) var(--ease-spring);
 
     --elevation-bg-wrapper: -1;
 
@@ -292,16 +237,12 @@
 
     --z-layer-1: 1;
     --z-layer-2: 2;
-    --z-layer-3: 3;
-    --z-layer-4: 4;
-    --z-layer-5: 5;
 
     --elevation-raised: 10;
     --elevation-dock: 300;
     --elevation-overlay: 400;
     --elevation-modal: 500;
     --elevation-tooltip: 700;
-    --elevation-toast: 800;
     --elevation-drag-mirror: 900;
     --elevation-context-menu: 950;
     --elevation-max: 1000;
@@ -310,7 +251,6 @@
     --z-fixed: var(--elevation-dock);
     --z-modal: var(--elevation-modal);
     --z-tooltip: var(--elevation-tooltip);
-    --z-notification: var(--elevation-toast);
     --z-drag-mirror: var(--elevation-drag-mirror);
     --z-context-menu: var(--elevation-context-menu);
     --z-toast: var(--elevation-max);
@@ -319,11 +259,9 @@
     --z-raised: var(--elevation-raised);
     --z-settings-overlay: var(--elevation-overlay);
 
-    --z-window-content: 1;
     --z-window-viewer: 50;
     --z-window-controls: 200;
 
-    --z-viewer-backdrop: 0;
 
     --z-viewer-content: 1;
 
@@ -337,11 +275,7 @@
 
     --icon-md: 20px;
 
-    --input-height: 44px;
 
-    --toggle-width: 51px;
-    --toggle-height: 31px;
-    --toggle-thumb: 27px;
 
     --bg-blur: 0px;
     --bg-brightness: 1;
@@ -356,10 +290,8 @@
     --texture-color: #ffffff;
 
     --dock-glass-bg: var(--glass-tier-3-bg);
-    --dock-glass-bg-hover: var(--glass-tier-3-bg-hover);
     --dock-glass-border: var(--glass-tier-3-border);
     --dock-glass-blur: var(--glass-tier-3-blur);
-    --dock-glass-radius: var(--radius-2xl);
 
     --ql-base-size-small: 36px;
     --ql-base-size-medium: 48px;
@@ -1449,35 +1381,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
     }
 }
 
-.close-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-full);
-    background: var(--surface-glass);
-    border: none;
-    color: var(--text-tertiary);
-    font-size: var(--text-lg);
-    font-weight: 300;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition:
-        background-color var(--transition-fast),
-        color var(--transition-fast),
-        transform var(--transition-fast);
-}
-
-.close-btn:hover {
-    background: var(--surface-glass-hover);
-    color: var(--text-primary);
-}
-
-
-.close-btn:active {
-    transform: scale(var(--scale-pressed));
-}
-
 .refresh-bg-btn.refreshing svg {
     animation: spin var(--duration-slow) var(--ease-in-out) infinite;
 }
@@ -1685,7 +1588,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
     -webkit-user-select: none;
 
     --fisheye-scale: 1;
-    --fisheye-translate-y: 0px;
 
     height: var(--ql-icon-size);
 
@@ -3177,16 +3079,15 @@ body.launchpad-dragging .launchpad-container {
     }
 }
 
+/* ── Quicklink Dialog ─────────────────────────────────────── */
+
 .quicklink-dialog-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: transparent;
-    --ct-glass-blur: 20px;
-    --ct-glass-saturate: 180%;
-    --ct-glass-tint: rgba(0, 0, 0, 0.5);
+    --ct-glass-blur: 24px;
+    --ct-glass-saturate: 200%;
+    --ct-glass-tint: rgba(0, 0, 0, 0.52);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3194,8 +3095,8 @@ body.launchpad-dragging .launchpad-container {
     opacity: 0;
     visibility: hidden;
     transition:
-        opacity var(--duration-normal) var(--ease-default),
-        visibility var(--duration-normal) var(--ease-default);
+        opacity var(--duration-normal) var(--ease-out),
+        visibility var(--duration-normal) var(--ease-out);
 }
 
 .quicklink-dialog-overlay.active {
@@ -3204,33 +3105,36 @@ body.launchpad-dragging .launchpad-container {
 }
 
 body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
-    --ct-glass-blur: 8px;
+    --ct-glass-blur: 10px;
     --ct-glass-saturate: 150%;
-    --ct-glass-tint: rgba(0, 0, 0, 0.25);
+    --ct-glass-tint: rgba(0, 0, 0, 0.28);
 }
 
 .quicklink-dialog {
-    width: clamp(760px, 72vw, 880px);
+    width: min(660px, calc(100vw - 48px));
     max-width: calc(100vw - 48px);
-    max-height: min(760px, calc(100vh - 48px));
+    max-height: min(640px, calc(100vh - 48px));
     display: flex;
     flex-direction: column;
-
-    background: linear-gradient(180deg,
-            rgba(50, 50, 52, 0.95) 0%,
-            rgba(40, 40, 42, 0.98) 100%);
-    -webkit-backdrop-filter: var(--glass-filter-quicklink-dialog);
-    backdrop-filter: var(--glass-filter-quicklink-dialog);
-    border: 0.5px solid var(--glass-tier-4-border);
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.025) 50%,
+            rgba(255, 255, 255, 0.04) 100%),
+        rgba(28, 28, 32, 0.92);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-2xl);
-
     box-shadow:
-        var(--shadow-elevation-4),
-        var(--shadow-glass-inset);
-    transform: scale(var(--scale-overlay-initial)) translateY(10px);
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        0 2px 8px rgba(0, 0, 0, 0.2);
+    transform: scale(0.96) translateY(4px);
     transition:
-        transform var(--duration-normal) var(--ease-spring),
-        opacity var(--duration-normal) var(--ease-default);
+        transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        opacity 0.25s var(--ease-out);
     overflow: hidden;
     opacity: 0;
 }
@@ -3240,12 +3144,34 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     opacity: 1;
 }
 
+/* ── Header ────────────────────────────────────────────────── */
+
 .quicklink-dialog-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-4);
-    border-bottom: 1px solid var(--border-subtle);
+    height: 60px;
+    padding: 0 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.quicklink-dialog-header-start {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.quicklink-dialog-header-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 132, 255, 0.12);
+    border-radius: var(--radius-sm);
+    color: var(--color-blue);
+    flex-shrink: 0;
 }
 
 .quicklink-dialog-header h3 {
@@ -3253,162 +3179,150 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     font-size: var(--text-lg);
     font-weight: var(--font-semibold);
     color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
-.quicklink-dialog-header .close-btn {
+.quicklink-dialog-close {
     width: 28px;
     height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface-glass);
+    background: transparent;
     border: none;
-    border-radius: var(--radius-full);
-    color: var(--text-secondary);
+    border-radius: 0;
+    color: var(--text-tertiary);
     cursor: pointer;
+    flex-shrink: 0;
     transition:
-        background-color var(--duration-fast) var(--ease-default),
-        color var(--duration-fast) var(--ease-default);
+        color var(--duration-fast) var(--ease-default),
+        transform var(--duration-fast) var(--ease-spring);
 }
 
-.quicklink-dialog-header .close-btn:hover {
-    background: var(--surface-glass-hover);
+.quicklink-dialog-close:hover {
     color: var(--text-primary);
 }
 
-
-.quicklink-dialog-content {
-    padding: var(--space-6);
-    display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: var(--space-8);
-    overflow-y: auto;
+.quicklink-dialog-close:focus-visible {
+    outline: 2px solid rgba(10, 132, 255, 0.72);
+    outline-offset: 2px;
 }
 
-.quicklink-dialog-icon-editor {
+.quicklink-dialog-close:active {
+    transform: scale(0.88);
+}
+
+/* ── Content ───────────────────────────────────────────────── */
+
+.quicklink-dialog-content {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: 24px;
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.quicklink-dialog-content::-webkit-scrollbar { width: 5px; }
+.quicklink-dialog-content::-webkit-scrollbar-track { background: transparent; }
+.quicklink-dialog-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+}
+
+/* ── Identity Editor (icon + fields) ───────────────────────── */
+
+.quicklink-identity-editor {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    align-items: stretch;
+    gap: 20px;
     min-width: 0;
-    min-height: 294px;
 }
 
 .quicklink-dialog-preview {
     display: flex;
-    justify-content: center;
-    margin: 0 0 var(--space-2);
-    min-height: 88px;
     align-items: center;
+    justify-content: center;
+    transform: translateY(4px);
 }
 
 .quicklink-preview-icon {
-    width: 88px;
-    height: 88px;
+    width: 84px;
+    height: 84px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent;
-    border-radius: calc(88px * var(--ql-radius-ratio));
-    border: 0;
+    background: rgba(255, 255, 255, .07);
+    border-radius: calc(84px * var(--ql-radius-ratio));
+    outline: 1px solid rgba(255, 255, 255, .08);
+    outline-offset: -1px;
     overflow: hidden;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition:
+        box-shadow var(--duration-fast) var(--ease-default),
+        transform var(--duration-fast) var(--ease-spring);
 }
 
 .quicklink-preview-icon img {
-    width: 88px;
-    height: 88px;
+    width: 84px;
+    height: 84px;
     object-fit: cover;
     border-radius: inherit;
 }
 
-.quicklink-preview-icon .icon-text-content { width: 88px; height: 88px; border-radius: inherit; font-size: 32px; }
-
-.quicklink-icon-mode {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    padding: 3px;
-    gap: 2px;
-    background: rgba(255,255,255,.08);
-    border-radius: var(--radius-md);
+.quicklink-preview-icon .icon-text-content {
+    width: 84px;
+    height: 84px;
+    border-radius: inherit;
+    font-size: 32px;
 }
-
-.quicklink-icon-mode button {
-    min-width: 0;
-    min-height: 36px;
-    padding: 8px 5px;
-    border: 0;
-    border-radius: calc(var(--radius-md) - 2px);
-    background: transparent;
-    color: var(--text-tertiary);
-    font: 500 var(--text-xs)/1.2 var(--font-system);
-    cursor: pointer;
-}
-
-.quicklink-icon-mode button[aria-checked="true"] { background: rgba(255,255,255,.16); color: var(--text-primary); box-shadow: 0 1px 4px rgba(0,0,0,.22); }
-.quicklink-icon-options { min-height: 112px; }
-.quicklink-icon-options p { margin: 0; color: var(--text-quaternary); font-size: var(--text-xs); line-height: 1.5; }
-.quicklink-color-picker-anchor { position: relative; }
-.quicklink-color-palette { display: grid; grid-template-columns: repeat(9, 24px); gap: 5px; margin-top: var(--space-3); }
-.quicklink-color-palette button { width: 24px; height: 24px; border: 2px solid transparent; border-radius: 8px; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
-.quicklink-color-palette button[aria-checked="true"] { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.22); }
-.quicklink-custom-color-btn { background: conic-gradient(#ff453a, #ff9f0a, #ffd60a, #30d158, #64d2ff, #0a84ff, #bf5af2, #ff375f, #ff453a); }
-.quicklink-custom-color-btn[aria-checked="true"] { background: var(--selected-custom-color); }
-.quicklink-custom-color-popover { position: absolute; z-index: var(--z-tooltip); left: 0; top: calc(100% + 10px); display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px 12px; width: 210px; padding: 12px; background: rgba(42,42,44,.98); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-elevation-3); }
-.quicklink-custom-color-popover.hidden { display: none; }
-.quicklink-custom-color-popover label { color: var(--text-secondary); font-size: var(--text-xs); font-weight: var(--font-medium); }
-.quicklink-custom-color-popover input[type="color"] { width: 38px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: transparent; cursor: pointer; }
-.quicklink-custom-color-popover output { grid-column: 1 / -1; color: var(--text-tertiary); font: 500 var(--text-xs)/1.2 ui-monospace, monospace; }
 
 .quicklink-preview-icon .preview-fallback {
-    font-size: var(--text-2xl);
+    font-size: 26px;
     font-weight: var(--font-semibold);
     color: var(--text-tertiary);
     text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
-.quicklink-dialog-form {
+/* ── Identity Main (form fields) ───────────────────────────── */
+
+.quicklink-identity-main {
+    --quicklink-url-column: minmax(0, 7fr);
+    --quicklink-title-column: minmax(148px, 3fr);
+    --quicklink-field-gap: 20px;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: 16px;
     min-width: 0;
 }
 
-.quicklink-form-option {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: 44px;
-    margin-top: calc(var(--space-1) * -1);
-    padding: 0 var(--space-2);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-}
-.quicklink-form-option:hover { background: var(--surface-glass); }
-
-.quicklink-form-option span {
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
+.quicklink-primary-fields {
+    display: grid;
+    grid-template-columns: var(--quicklink-url-column) var(--quicklink-title-column);
+    gap: var(--quicklink-field-gap);
+    min-width: 0;
 }
 
-.quicklink-form-option input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--color-blue);
-}
+/* ── Form Label ────────────────────────────────────────────── */
 
 .quicklink-form-label {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: 8px;
     position: relative;
 }
 
-.quicklink-form-label span {
+.quicklink-form-label > span:first-child {
     font-size: var(--text-sm);
     font-weight: var(--font-medium);
     color: var(--text-secondary);
+    padding-left: 2px;
 }
 
 .quicklink-form-label span small {
@@ -3418,38 +3332,76 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     margin-left: var(--space-1);
 }
 
-.quicklink-form-label input:not(.quicklink-tags-wrapper input) {
+.quicklink-form-label input:not(.quicklink-tags-wrapper input):not(.quicklink-mode-input) {
     width: 100%;
-    height: var(--input-height);
-    padding: 0 var(--space-3);
-    background: var(--surface-glass);
-    border: 1px solid var(--border-default);
+    height: 40px;
+    padding: 0 14px;
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.18) 0%,
+            rgba(0, 0, 0, 0.12) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-input);
     color: var(--text-primary);
     font-size: var(--text-base);
     font-family: var(--font-system);
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
     transition:
         border-color var(--duration-fast) var(--ease-default),
-        box-shadow var(--duration-fast) var(--ease-default);
-    box-sizing: border-box;
+        box-shadow var(--duration-fast) var(--ease-default),
+        background var(--duration-fast) var(--ease-default);
 }
 
-.quicklink-form-label input[type="url"] { text-overflow: ellipsis; white-space: nowrap; }
-.quicklink-form-label input[type="url"]:focus { text-overflow: clip; }
+.quicklink-form-label input:not(.quicklink-tags-wrapper input):not(.quicklink-mode-input):hover {
+    border-color: rgba(255, 255, 255, 0.16);
+}
 
-.quicklink-form-label input:not(.quicklink-tags-wrapper input):focus {
+.quicklink-form-label input:not(.quicklink-tags-wrapper input):not(.quicklink-mode-input):focus {
     outline: none;
-    border-color: var(--border-focus);
-    box-shadow: var(--shadow-focus);
+    border-color: rgba(10, 132, 255, 0.45);
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.12) 0%,
+            rgba(0, 0, 0, 0.06) 100%);
+    box-shadow:
+        0 0 0 3px rgba(10, 132, 255, 0.14),
+        inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.quicklink-form-label input:not(.quicklink-tags-wrapper input)::placeholder {
+.quicklink-form-label input:not(.quicklink-tags-wrapper input):not(.quicklink-mode-input)::placeholder {
     color: var(--text-quaternary);
 }
 
+/* ── Input Shell (input with leading icon) ─────────────────── */
+
+.quicklink-input-shell {
+    position: relative;
+}
+
+.quicklink-input-shell input {
+    padding-left: 38px !important;
+}
+
+.quicklink-input-leading-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-tertiary);
+    transition: color var(--duration-fast) var(--ease-default);
+}
+
+.quicklink-input-shell:focus-within .quicklink-input-leading-icon {
+    color: var(--color-blue);
+}
+
+/* ── URL Error ─────────────────────────────────────────────── */
+
 .quicklink-url-error {
     display: none;
-    margin: calc(var(--space-1) * -1) 0 0;
+    margin: 2px 0 0;
     font-size: var(--text-xs);
     font-weight: var(--font-medium);
     color: var(--color-red);
@@ -3461,33 +3413,316 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 }
 
 .quicklink-form-label input.quicklink-input-invalid:not(.quicklink-tags-wrapper input) {
-    border-color: rgba(255, 69, 58, 0.65);
-    box-shadow: 0 0 0 1px rgba(255, 69, 58, 0.35);
+    border-color: rgba(255, 69, 58, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(255, 69, 58, 0.12) !important;
 }
+
+/* ── Appearance Row ────────────────────────────────────────── */
+
+.quicklink-appearance-row {
+    display: grid;
+    grid-template-columns: var(--quicklink-url-column) var(--quicklink-title-column);
+    align-items: center;
+    gap: var(--quicklink-field-gap);
+    min-width: 0;
+}
+
+.quicklink-icon-mode {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 3px;
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.quicklink-icon-mode button {
+    min-width: 0;
+    min-height: 34px;
+    padding: 8px 5px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font: 500 var(--text-sm)/1.2 var(--font-system);
+    cursor: pointer;
+    transition:
+        background-color var(--duration-fast) var(--ease-default),
+        color var(--duration-fast) var(--ease-default),
+        box-shadow var(--duration-fast) var(--ease-default),
+        transform 120ms var(--ease-out);
+}
+
+.quicklink-icon-mode button:hover:not([aria-checked="true"]) {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.quicklink-icon-mode button[aria-checked="true"] {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.19), rgba(255, 255, 255, 0.13));
+    color: var(--text-primary);
+    box-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.quicklink-icon-mode button:active {
+    transform: scale(0.97);
+}
+
+/* ── Mode Slot ─────────────────────────────────────────────── */
+
+.quicklink-mode-slot,
+.quicklink-icon-options {
+    width: 100%;
+    height: 40px;
+    min-width: 0;
+}
+
+.quicklink-icon-options.hidden {
+    display: none !important;
+}
+
+.quicklink-icon-options[data-icon-panel="auto"] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.quicklink-icon-options[data-icon-panel="auto"]:has(.quicklink-form-action:not(.hidden)) p {
+    display: none;
+}
+
+.quicklink-icon-options[data-icon-panel="text"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px;
+    gap: 8px;
+}
+
+.quicklink-icon-options[data-icon-panel="text"].hidden {
+    display: none !important;
+}
+
+.quicklink-icon-options p {
+    margin: 0;
+    overflow: hidden;
+    color: var(--text-tertiary);
+    font-size: var(--text-xs);
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.quicklink-mode-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.18) 0%,
+            rgba(0, 0, 0, 0.12) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-input);
+    color: var(--text-primary);
+    font: var(--text-base)/1 var(--font-system);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+    transition:
+        border-color var(--duration-fast) var(--ease-default),
+        box-shadow var(--duration-fast) var(--ease-default),
+        background var(--duration-fast) var(--ease-default);
+}
+
+.quicklink-mode-input:focus {
+    outline: none;
+    border-color: rgba(10, 132, 255, 0.45);
+    box-shadow:
+        0 0 0 3px rgba(10, 132, 255, 0.14),
+        inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.12) 0%,
+            rgba(0, 0, 0, 0.06) 100%);
+}
+
+.quicklink-mode-input::placeholder {
+    color: var(--text-quaternary);
+}
+
+/* ── Color Well ────────────────────────────────────────────── */
+
+.quicklink-color-well {
+    width: 40px;
+    height: 40px;
+    padding: 5px;
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.18) 0%,
+            rgba(0, 0, 0, 0.12) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-input);
+    cursor: pointer;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+    transition:
+        border-color var(--duration-fast) var(--ease-default),
+        box-shadow var(--duration-fast) var(--ease-default),
+        transform var(--duration-fast) var(--ease-spring);
+}
+
+.quicklink-color-well:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.quicklink-color-well:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.16);
+    border-color: rgba(10, 132, 255, 0.4);
+}
+
+.quicklink-color-well:active {
+    transform: scale(0.95);
+}
+
+.quicklink-color-well-swatch {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--quicklink-color, #475569);
+    border-radius: 7px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.quicklink-native-color-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ── Secondary Fields (tags + dock) ────────────────────────── */
+
+.quicklink-secondary-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: end;
+    gap: 18px;
+    min-width: 0;
+}
+
+.quicklink-form-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    margin: 0;
+    background: transparent;
+}
+
+.quicklink-form-option:hover {
+    background: transparent;
+}
+
+.quicklink-form-option span {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
+}
+
+.quicklink-secondary-fields .quicklink-form-option {
+    min-height: 42px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.quicklink-secondary-fields .quicklink-form-option:hover {
+    background: transparent;
+}
+
+.quicklink-secondary-fields .quicklink-form-option input[type="checkbox"] {
+    appearance: none;
+    width: 38px;
+    height: 22px;
+    padding: 3px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-default);
+}
+
+.quicklink-secondary-fields .quicklink-form-option input[type="checkbox"]::before {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.2),
+        0 0 0 0.5px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.quicklink-secondary-fields .quicklink-form-option input[type="checkbox"]:checked {
+    background: var(--color-blue);
+}
+
+.quicklink-secondary-fields .quicklink-form-option input[type="checkbox"]:checked::before {
+    transform: translateX(16px);
+}
+
+.quicklink-secondary-fields .quicklink-form-option input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2);
+}
+
+/* ── Tags ──────────────────────────────────────────────────── */
 
 .quicklink-tags-wrapper {
     position: relative;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: var(--space-1) var(--space-3);
-    background: var(--surface-glass);
+    padding: 5px 14px;
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.18) 0%,
+            rgba(0, 0, 0, 0.12) 100%);
     border-radius: var(--radius-input);
-    border: 1px solid var(--border-default);
-    min-height: var(--input-height);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 40px;
     align-items: center;
-    margin-top: var(--space-1);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
     transition:
         border-color var(--duration-fast) var(--ease-default),
         box-shadow var(--duration-fast) var(--ease-default),
-        background-color var(--duration-fast) var(--ease-default);
+        background var(--duration-fast) var(--ease-default);
     box-sizing: border-box;
 }
 
 .quicklink-tags-wrapper:focus-within {
-    border-color: var(--border-focus);
-    box-shadow: var(--shadow-focus);
-    background: var(--surface-glass-hover);
+    border-color: rgba(10, 132, 255, 0.45);
+    box-shadow:
+        0 0 0 3px rgba(10, 132, 255, 0.14),
+        inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.12) 0%,
+            rgba(0, 0, 0, 0.06) 100%);
 }
 
 .quicklink-tags-container {
@@ -3498,44 +3733,35 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
-    padding: 3px var(--space-2) 3px 10px;
-
-    background: var(--surface-glass-hover);
-    backdrop-filter: blur(var(--blur-xs));
-    -webkit-backdrop-filter: blur(var(--blur-xs));
-    border: 0.5px solid var(--overlay-highlight);
-
-    color: rgba(255, 255, 255, 0.95);
+    padding: 4px 8px 4px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
     font-size: var(--text-xs);
     font-weight: 500;
     line-height: 1.2;
     letter-spacing: 0.01em;
-
     border-radius: var(--radius-sm);
-
     animation: tag-appear 0.2s var(--ease-out);
     white-space: nowrap;
     transition:
-        background-color 0.2s var(--ease-default),
-        border-color 0.2s var(--ease-default),
-        color 0.2s var(--ease-default),
-        box-shadow 0.2s var(--ease-default);
+        background-color 0.15s var(--ease-default),
+        border-color 0.15s var(--ease-default),
+        box-shadow 0.15s var(--ease-default);
     user-select: none;
     max-width: 100%;
 }
 
 .quicklink-tag:hover {
-    background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.25);
-    color: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .quicklink-tag-remove {
     width: 16px;
     height: 16px;
     border-radius: var(--radius-xs);
-
     background: transparent;
     border: none;
     cursor: pointer;
@@ -3551,7 +3777,7 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 }
 
 .quicklink-tag-remove:hover {
-    background: var(--overlay-medium);
+    background: rgba(255, 255, 255, 0.2);
     color: #fff;
 }
 
@@ -3582,17 +3808,18 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     left: 0;
     right: 0;
     padding: var(--space-2);
-
-    background: linear-gradient(180deg,
-            rgba(60, 60, 60, 0.85) 0%,
-            rgba(45, 45, 45, 0.9) 100%);
-    backdrop-filter: var(--glass-filter-blur-xl);
-    -webkit-backdrop-filter: var(--glass-filter-blur-xl);
-    border: 0.5px solid var(--overlay-highlight);
+    background:
+        linear-gradient(180deg,
+            rgba(45, 45, 50, 0.96) 0%,
+            rgba(35, 35, 40, 0.98) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-lg);
     box-shadow:
-        0 10px 40px rgba(0, 0, 0, 0.4),
-        0 0 0 0.5px rgba(255, 255, 255, 0.05) inset;
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
     display: none;
     flex-wrap: wrap;
     gap: 6px;
@@ -3600,8 +3827,7 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     max-height: 140px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--overlay-highlight) transparent;
-
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
     opacity: 0;
     transform: translateY(-4px);
     transition:
@@ -3609,16 +3835,10 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
         transform 0.15s var(--ease-out);
 }
 
-.quicklink-tags-suggestions::-webkit-scrollbar {
-    width: 4px;
-}
-
-.quicklink-tags-suggestions::-webkit-scrollbar-track {
-    background: transparent;
-}
-
+.quicklink-tags-suggestions::-webkit-scrollbar { width: 4px; }
+.quicklink-tags-suggestions::-webkit-scrollbar-track { background: transparent; }
 .quicklink-tags-suggestions::-webkit-scrollbar-thumb {
-    background: var(--overlay-highlight);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-2xs);
 }
 
@@ -3629,15 +3849,13 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 }
 
 .quicklink-tag-suggestion {
-
     appearance: none;
     -webkit-appearance: none;
     font-family: inherit;
     outline: none;
-
     padding: 5px var(--space-3);
-    background: var(--surface-glass);
-    border: 1px solid var(--border-default);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 100px;
     font-size: var(--text-xs);
     font-weight: 500;
@@ -3646,7 +3864,8 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     transition:
         background 0.15s var(--ease-out),
         color 0.15s var(--ease-out),
-        transform 0.1s var(--ease-out);
+        transform 0.1s var(--ease-out),
+        border-color 0.15s var(--ease-out);
     white-space: nowrap;
 }
 
@@ -3654,12 +3873,14 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     background: var(--color-blue);
     color: white;
     border-color: transparent;
-    transform: scale(1.02);
+    transform: scale(1.03);
 }
 
 .quicklink-tag-suggestion:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
+
+/* ── Launchpad Item Tags (used in grid, not dialog) ────────── */
 
 .launchpad-item-tags {
     display: flex;
@@ -3714,41 +3935,40 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
         opacity: 0;
         transform: scale(0.8);
     }
-
     to {
         opacity: 1;
         transform: scale(1);
     }
 }
 
+/* ── Footer ────────────────────────────────────────────────── */
+
 .quicklink-dialog-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-4) var(--space-6);
-    border-top: 1px solid var(--border-subtle);
+    height: 60px;
+    padding: 0 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     gap: var(--space-3);
+    flex-shrink: 0;
 }
 
-.quicklink-dialog-footer .quicklink-btn-primary { flex: 0 0 180px; margin-left: auto; }
-
-@media (max-width: 719px) {
-    .quicklink-dialog { width: calc(100% - 24px); max-height: calc(100vh - 24px); }
-    .quicklink-dialog-content { grid-template-columns: 1fr; gap: var(--space-5); }
-    .quicklink-dialog-icon-editor { align-items: stretch; }
-    .quicklink-dialog-preview { margin: 0; }
+.quicklink-dialog-footer-end {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-left: auto;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .quicklinks-container[data-position="top"] .quicklink-item,
-    .quicklinks-container[data-position="top"] .launchpad-btn,
-    .quicklinks-container[data-position="top"] .quicklinks-add-wrapper,
-    .quicklinks-container[data-position="top"] .quicklink-icon,
-    .quicklinks-container[data-position="top"] .quicklinks-add-btn { transform: none !important; transition: none !important; }
+.quicklink-dialog-footer .quicklink-btn-primary {
+    min-width: 100px;
 }
+
+/* ── Buttons ───────────────────────────────────────────────── */
 
 .quicklink-btn {
-    height: 40px;
+    height: 36px;
     padding: 0 var(--space-4);
     border: none;
     border-radius: var(--radius-button);
@@ -3758,32 +3978,69 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     cursor: pointer;
     transition:
         background-color var(--duration-fast) var(--ease-default),
-        transform var(--duration-fast) var(--ease-spring);
+        box-shadow var(--duration-fast) var(--ease-default),
+        transform var(--duration-fast) var(--ease-spring),
+        opacity var(--duration-fast) var(--ease-default);
+    position: relative;
+    white-space: nowrap;
 }
 
 .quicklink-btn:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
 }
 
 .quicklink-btn-primary {
-    flex: 1;
     background: var(--color-blue);
     color: white;
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .quicklink-btn-primary:hover {
-    background: var(--color-blue);
+    background: #0a7fff;
+    box-shadow:
+        0 2px 6px rgba(10, 132, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.quicklink-btn-primary:active {
+    background: #0070e0;
+    transform: scale(0.96);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.quicklink-btn-cancel {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.quicklink-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.quicklink-btn-cancel:active {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .quicklink-btn-secondary {
-    background: var(--surface-glass);
+    background: transparent;
     color: var(--color-red);
-    border: 1px solid var(--border-default);
+    border: 1px solid transparent;
 }
 
 .quicklink-btn-secondary:hover {
-    background: rgba(255, 69, 58, 0.15);
-    border-color: var(--color-red);
+    background: rgba(255, 69, 58, 0.1);
+    border-color: rgba(255, 69, 58, 0.2);
+}
+
+.quicklink-btn-secondary:active {
+    background: rgba(255, 69, 58, 0.16);
 }
 
 .quicklink-btn-secondary.hidden {
@@ -3797,13 +4054,25 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     height: auto;
     padding: var(--space-1) var(--space-2);
     background: transparent;
+    border: none;
     color: var(--color-blue);
     font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    font-family: var(--font-system);
     border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition:
+        background-color var(--duration-fast) var(--ease-default),
+        color var(--duration-fast) var(--ease-default);
 }
 
 .quicklink-btn-text:hover {
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(10, 132, 255, 0.1);
+    color: #4da2ff;
+}
+
+.quicklink-btn-text:active {
+    background: rgba(10, 132, 255, 0.15);
 }
 
 .quicklink-btn-text:disabled {
@@ -3815,6 +4084,8 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     flex-shrink: 0;
 }
 
+/* ── Form Action ───────────────────────────────────────────── */
+
 .quicklink-form-action {
     display: flex;
     justify-content: flex-end;
@@ -3823,6 +4094,93 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 
 .quicklink-form-action.hidden {
     display: none;
+}
+
+.quicklink-icon-options .quicklink-form-action {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    margin: 0;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+
+@media (max-width: 719px) {
+    .quicklink-dialog {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        border-radius: var(--radius-xl);
+    }
+
+    .quicklink-dialog-header,
+    .quicklink-dialog-footer {
+        padding: 0 20px;
+        height: 56px;
+    }
+
+    .quicklink-dialog-content {
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .quicklink-identity-editor {
+        grid-template-columns: 56px minmax(0, 1fr);
+        align-items: start;
+        gap: 14px;
+    }
+
+    .quicklink-dialog-preview {
+        align-items: flex-start;
+        transform: none;
+    }
+
+    .quicklink-preview-icon,
+    .quicklink-preview-icon img,
+    .quicklink-preview-icon .icon-text-content {
+        width: 56px;
+        height: 56px;
+    }
+
+    .quicklink-preview-icon .preview-fallback {
+        font-size: 22px;
+    }
+
+    .quicklink-primary-fields,
+    .quicklink-appearance-row,
+    .quicklink-secondary-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .quicklink-icon-mode {
+        width: 100%;
+    }
+
+    .quicklink-dialog-footer .quicklink-btn-primary {
+        min-width: 88px;
+    }
+
+    .quicklink-dialog-header-icon {
+        display: none;
+    }
+}
+
+/* ── Reduced Motion ────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .quicklink-dialog,
+    .quicklink-btn,
+    .quicklink-color-well {
+        transform: none !important;
+        transition-property: opacity, background-color, color, border-color !important;
+    }
+
+    .quicklinks-container[data-position="top"] .quicklink-item,
+    .quicklinks-container[data-position="top"] .launchpad-btn,
+    .quicklinks-container[data-position="top"] .quicklinks-add-wrapper,
+    .quicklinks-container[data-position="top"] .quicklink-icon,
+    .quicklinks-container[data-position="top"] .quicklinks-add-btn {
+        transform: none !important;
+        transition: none !important;
+    }
 }
 
 .toast-container {
@@ -4981,7 +5339,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 
     --mac-content-bg: var(--color-white);
     --mac-dialog-bg: rgb(242 242 247);
-    --mac-content-padding: var(--space-6) var(--space-8);
     --mac-titlebar-height: 52px;
 
     --mac-btn-close: #ff5f57;
@@ -5030,7 +5387,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     --mac-select-bg: rgba(0, 0, 0, 0.05);
 
     --mac-transition-fast: 0.15s ease;
-    --mac-transition-normal: 0.25s ease;
     --mac-window-appear-transform: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     --mac-window-appear-opacity: 0.2s ease-out;
 
@@ -5038,7 +5394,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     --mac-font-size-xs: 12px;
     --mac-font-size-sm: 13px;
     --mac-font-size-md: 14px;
-    --mac-font-size-lg: 16px;
     --mac-font-size-title: 24px;
     --mac-font-weight-normal: 400;
     --mac-font-weight-medium: 500;
@@ -5644,9 +5999,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     font-size: var(--mac-font-size-sm);
     line-height: 1.65;
     color: var(--mac-text-secondary);
-}
-
-.mac-about-description {
     text-align: center;
 }
 
@@ -6149,58 +6501,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     width: var(--mac-action-button-width);
 }
 
-.mac-color-picker {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.mac-color-swatch {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm);
-    border: 2px solid var(--mac-border-color);
-    overflow: hidden;
-    cursor: pointer;
-}
-
-.mac-color-swatch input[type="color"] {
-    position: absolute;
-    inset: calc(-1 * var(--space-1));
-    width: calc(100% + 8px);
-    height: calc(100% + 8px);
-    border: none;
-    cursor: pointer;
-    padding: 0;
-}
-
-.mac-color-swatch input[type="color"]::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-.mac-color-swatch input[type="color"]::-webkit-color-swatch {
-    border: none;
-}
-
-.mac-color-text {
-    width: 80px;
-    height: 28px;
-    padding: 0 var(--space-2);
-    background: var(--mac-select-bg);
-    border: none;
-    border-radius: var(--mac-select-radius);
-    font-family: var(--mac-font-family);
-    font-size: var(--mac-font-size-sm);
-    color: var(--mac-text-primary);
-    text-transform: uppercase;
-}
-
-.mac-color-text:focus {
-    outline: 2px solid var(--mac-accent-color);
-    outline-offset: 1px;
-}
-
 .mac-texture-selector {
     display: flex;
     gap: var(--space-2);
@@ -6410,116 +6710,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 
 .mac-local-file-delete:hover {
     background: rgba(255, 59, 48, 0.9);
-}
-
-/* Toolbar Icon Customization */
-.mac-toolbar-icon-row {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-4);
-}
-
-.mac-toolbar-icon-preview {
-    width: 64px;
-    height: 64px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--mac-select-bg);
-    border: 1px solid var(--mac-border-color);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.mac-toolbar-icon-preview canvas,
-.mac-toolbar-icon-preview img {
-    width: 48px;
-    height: 48px;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-}
-
-.mac-toolbar-icon-upload {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-1);
-    padding: var(--space-3) var(--space-4);
-    min-height: 64px;
-    background: var(--mac-select-bg);
-    border: 2px dashed var(--mac-border-color);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: border-color var(--mac-transition-fast), background var(--mac-transition-fast);
-}
-
-.mac-toolbar-icon-upload:hover {
-    border-color: var(--mac-accent-color);
-    background: rgba(0, 122, 255, 0.05);
-}
-
-.mac-toolbar-icon-upload.dragover {
-    border-color: var(--mac-accent-color);
-    background: rgba(0, 122, 255, 0.08);
-}
-
-.mac-toolbar-icon-upload-icon {
-    color: var(--mac-text-tertiary);
-}
-
-.mac-toolbar-icon-upload-text {
-    font-size: var(--text-xs);
-    color: var(--mac-text-tertiary);
-}
-
-.mac-toolbar-icon-actions {
-    display: flex;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
-}
-
-.mac-toolbar-icon-actions button {
-    padding: 5px 14px;
-    border-radius: 6px;
-    font-size: var(--text-xs);
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
-    transition: opacity var(--mac-transition-fast), background var(--mac-transition-fast);
-}
-
-.mac-toolbar-icon-apply {
-    background: var(--mac-accent-color);
-    color: white;
-}
-
-.mac-toolbar-icon-apply:hover {
-    opacity: 0.85;
-}
-
-.mac-toolbar-icon-apply:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.mac-toolbar-icon-reset {
-    background: var(--mac-select-bg);
-    color: var(--mac-text-secondary);
-    border: 1px solid var(--mac-border-color) !important;
-}
-
-.mac-toolbar-icon-reset:hover {
-    background: var(--mac-hover-bg);
-}
-
-.mac-toolbar-icon-note {
-    font-size: 11px;
-    color: var(--mac-text-tertiary);
-    margin-top: var(--space-1);
-    line-height: 1.4;
 }
 
 .link-manager {
@@ -6871,11 +7061,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     display: none !important;
 }
 
-.webdav-config-section {
-    margin-bottom: var(--space-2);
-
-}
-
 .mac-input {
     height: 28px;
     padding: 0 10px;
@@ -7108,8 +7293,7 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     }
 
     /* Preserve loading spinners (slowed, no spatial motion) */
-    .refresh-bg-btn.refreshing svg,
-    .webdav-sync-status-icon.syncing svg {
+    .refresh-bg-btn.refreshing svg {
         animation: spin 2s linear infinite !important;
     }
 }

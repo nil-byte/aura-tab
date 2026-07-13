@@ -154,11 +154,86 @@ describe('Storage change handling', () => {
 
         store.destroy?.();
     });
+
+    it('should ignore staged chunk changes until the active pointer is published', async () => {
+        seedV6Items(['qlink_stable'], { setId: 'seedset_stable' });
+
+        const store = await freshStore();
+        await store.init();
+        const reloadSpy = vi.spyOn(store, '_reloadDataFromStorage');
+
+        triggerStorageChange({
+            quicklinksChunkSet_staged_next_0: {
+                newValue: {
+                    qlink_next: {
+                        _id: 'qlink_next',
+                        title: 'Next',
+                        url: 'https://next.example.com'
+                    }
+                }
+            }
+        }, 'sync');
+
+        expect(reloadSpy).not.toHaveBeenCalled();
+
+        reloadSpy.mockRestore();
+        store.destroy?.();
+    });
+
+    it('serializes storage reloads so older reads cannot finish last', async () => {
+        seedV6Items(['qlink_reload'], { setId: 'seedset_reload' });
+        const store = await freshStore();
+        await store.init();
+        let releaseFirstReload;
+        const loadSpy = vi.spyOn(store, 'loadData')
+            .mockImplementationOnce(() => new Promise((resolve) => {
+                releaseFirstReload = resolve;
+            }))
+            .mockResolvedValueOnce();
+
+        store._reloadDataFromStorage();
+        store._reloadDataFromStorage();
+        await vi.waitFor(() => expect(loadSpy).toHaveBeenCalledTimes(1));
+
+        releaseFirstReload();
+        await vi.waitFor(() => expect(loadSpy).toHaveBeenCalledTimes(2));
+
+        loadSpy.mockRestore();
+        store.destroy?.();
+    });
 });
 
 describe('Dock pin snapshot validation', () => {
     const SETTINGS_ID = '__SYSTEM_SETTINGS__';
     const PHOTOS_ID = '__SYSTEM_PHOTOS__';
+
+    it('keeps dock reads free of persistence side effects', async () => {
+        const store = await freshStore();
+        store.dockPins = ['qlink_missing'];
+        chrome.storage.sync.set.mockClear();
+
+        expect(store.getDockItems()).toEqual([]);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        expect(chrome.storage.sync.set).not.toHaveBeenCalled();
+        store.destroy?.();
+    });
+
+    it('reconciles invalid dock pins during initialization', async () => {
+        seedV6Items(['qlink_valid'], {
+            dockPins: ['qlink_missing', 'qlink_valid'],
+            setId: 'seedset_dock_reconcile'
+        });
+
+        const store = await freshStore();
+        await store.init();
+
+        await vi.waitFor(() => {
+            expect(getStorageData('sync').quicklinksDockPins).toEqual(['qlink_valid']);
+        });
+        expect(store.dockPins).toEqual(['qlink_valid']);
+        store.destroy?.();
+    });
 
     it('should allow pinning folder child when child exists in committed snapshot', async () => {
         const folderId = 'qfolder_pin_snapshot_ok';
@@ -330,7 +405,10 @@ describe('Grid density and commit retry', () => {
 
         expect(store.getPages(10).length).toBe(2);
 
-        await store.updateSettings({ launchpadGridColumns: 2, launchpadGridRows: 2 });
+        triggerStorageChange({
+            launchpadGridColumns: { oldValue: 5, newValue: 2 },
+            launchpadGridRows: { oldValue: 2, newValue: 2 }
+        }, 'sync');
         expect(store.getPages(4).length).toBe(3);
 
         store.destroy?.();
