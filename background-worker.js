@@ -1,4 +1,3 @@
-import { clearCustomIcon, restoreToolbarIcon } from './scripts/platform/toolbar-icon-service.js';
 import { createBackgroundSettingsDefaults } from './scripts/platform/settings-contract.js';
 import { resolveEffectiveFrequency } from './scripts/domains/backgrounds/refresh-policy.js';
 
@@ -32,18 +31,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
             }
         }
 
-        // Toolbar icon customization was removed; clear legacy state on upgrade
-        // so an old custom icon is not restored without a settings reset path.
-        if (details.reason === 'update') {
-            await clearCustomIcon().catch(error => {
-                console.error('[SW] legacy toolbar icon cleanup on update:', error);
-            });
-        }
-
-        restoreToolbarIcon().catch(error => {
-            console.error('[SW] toolbar icon restore on install:', error);
-        });
-
         // Trigger changelog notification broadcast after update
         if (details.reason === 'update') {
             try {
@@ -61,9 +48,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 chrome.runtime.onStartup.addListener(() => {
-    restoreToolbarIcon().catch(error => {
-        console.error('[SW] toolbar icon restore on startup:', error);
-    });
     syncAutoRefresh().catch(error => {
         console.error('[SW] onStartup error:', error);
     });
@@ -374,13 +358,6 @@ async function handleDiscoverIcon(pageUrl) {
 }
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && changes.toolbarIconConfig) {
-        restoreToolbarIcon().catch(error => {
-            console.error('[SW] toolbar icon update on storage change:', error);
-        });
-        return;
-    }
-
     if (areaName !== 'sync' || !changes.backgroundSettings) return;
 
     const { oldValue, newValue } = changes.backgroundSettings;

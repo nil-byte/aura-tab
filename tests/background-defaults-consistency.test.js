@@ -4,12 +4,10 @@ import { DEFAULT_SETTINGS } from '../scripts/domains/backgrounds/defaults.js';
 const mocks = vi.hoisted(() => ({
     syncGet: vi.fn(),
     syncSet: vi.fn(async () => {}),
-    clearCustomIcon: vi.fn(async () => {}),
     restoreToolbarIcon: vi.fn(async () => {})
 }));
 
 vi.mock('../scripts/platform/toolbar-icon-service.js', () => ({
-    clearCustomIcon: mocks.clearCustomIcon,
     restoreToolbarIcon: mocks.restoreToolbarIcon
 }));
 
@@ -80,8 +78,6 @@ describe('background-defaults-consistency', () => {
         mocks.syncGet.mockReset();
         mocks.syncSet.mockReset();
         mocks.syncSet.mockResolvedValue(undefined);
-        mocks.clearCustomIcon.mockReset();
-        mocks.clearCustomIcon.mockResolvedValue(undefined);
         mocks.restoreToolbarIcon.mockReset();
         mocks.restoreToolbarIcon.mockResolvedValue(undefined);
     });
@@ -115,19 +111,16 @@ describe('background-defaults-consistency', () => {
         expect(mocks.syncSet).not.toHaveBeenCalled();
     });
 
-    it('update should clear removed toolbar icon state before restoring', async () => {
+    it('update should not touch the removed toolbar icon state', async () => {
         mocks.syncGet.mockResolvedValue({ backgroundSettings: undefined });
 
         const listeners = await loadWorker();
         await listeners.onInstalled({ reason: 'update' });
 
-        expect(mocks.clearCustomIcon).toHaveBeenCalledTimes(1);
-        expect(mocks.restoreToolbarIcon).toHaveBeenCalledTimes(1);
-        expect(mocks.clearCustomIcon.mock.invocationCallOrder[0])
-            .toBeLessThan(mocks.restoreToolbarIcon.mock.invocationCallOrder[0]);
+        expect(mocks.restoreToolbarIcon).not.toHaveBeenCalled();
     });
 
-    it('local toolbar icon changes should still trigger runtime restore listener', async () => {
+    it('local toolbar icon changes should not trigger the removed restore path', async () => {
         const listeners = await loadWorker();
 
         expect(typeof listeners.onStorageChanged).toBe('function');
@@ -139,6 +132,6 @@ describe('background-defaults-consistency', () => {
             }
         }, 'local');
 
-        expect(mocks.restoreToolbarIcon).toHaveBeenCalledTimes(1);
+        expect(mocks.restoreToolbarIcon).not.toHaveBeenCalled();
     });
 });
